@@ -1,0 +1,204 @@
+{
+  "ux_spec": {
+    "scan_screen": {
+      "layout": {
+        "description": "スキャンタブは全画面カメラプレビューを背景とし、その上にオーバーレイUIを重ねる構成。AppBarは非表示にし、戻るボタンはオーバーレイ側に半透明で配置。下部に手動ISBN入力への切り替えボタンを置く。",
+        "z_layers": [
+          {
+            "layer": "背景",
+            "widget": "MobileScanner",
+            "details": "mobile_scanner パッケージの MobileScanner ウィジェットを Expanded または全画面で配置。カメラ初期化エラー時は errorBuilder でエラー表示にフォールバック。torchEnabled は検出時自動ON/OFFではなく、右上ボタンでユーザー操作。"
+          },
+          {
+            "layer": "スキャン枠オーバーレイ",
+            "widget": "CustomPaint + Stack",
+            "details": "画面中央にバーコードスキャンエリアを示す角丸四角の枠線。色は AppTheme.accent（#7C3AED）、太さ 2px、角半径 16px。枠外は半透明黒（Colors.black54）でマスクしてフォーカスを誘導。枠内に 'バーコードを枠内にかざしてください' のガイドテキスト。枠サイズは画面幅の80%、高さは幅の40%（バーコード比を想定）。"
+          },
+          {
+            "layer": "状態表示バー（上部）",
+            "widget": "Column内のRow",
+            "details": "SafeArea の上部に半透明背景（Colors.black45）のバーを配置。左に閉じるボタン（Icons.close/arrow_back）、中央にステータステキスト、右にフラッシュライトトグルボタン（Icons.flashlight_on/flashlight_off）。高さ48px。"
+          },
+          {
+            "layer": "アクションバー（下部）",
+            "widget": "SafeArea内のRow",
+            "details": "下部に半透明背景バー。中央に「ISBNを手入力」ボタン（OutlinedButton, borderColor: AppTheme.active）、手入力モードに切り替え。高さ56px。"
+          }
+        ]
+      },
+      "states": {
+        "idle": {
+          "label": "待機中",
+          "description": "カメラが起動しバーコード検出待ち。スキャン枠は紫アクセントの実線（定常）。枠内に「バーコードを枠内にかざしてください」とアニメーションなしの静的なガイド表示。",
+          "visual": "accent実線枠、textSecondary色のガイドテキスト、フラッシュライトアイコンはオフ状態"
+        },
+        "scanning": {
+          "label": "走査中",
+          "description": "mobile_scanner のデフォルトでは連続検出だが、最初の検出で即ロックする設計。検出成功時に枠線が一瞬 AppTheme.active（#A78BFA）に光るアニメーション（300ms ease-out）。statusText に「バーコード検出中…」表示。",
+          "visual": "active色に枠線変化（一瞬）、ステータス文字列変化"
+        },
+        "detected": {
+          "label": "検出成功",
+          "description": "バーコード検出後、ISBN番号が表示され、APIルックアップに進む。スキャン枠が AppTheme.progress（#34D399）に変化。枠内に検出されたISBN番号を表示（例: 'ISBN: 978-4-XX-XXXXXX-X'）。カメラプレビューは継続表示（ユーザーが結果を視認）。下にキャンセルボタン（「もう一度スキャン」）。",
+          "visual": "progress色の枠線、ISBN番号表示（18px, textPrimary, fontWeight.bold）、下部にリトライボタン"
+        },
+        "looking_up": {
+          "label": "書籍検索中",
+          "description": "ISBNルックアップAPI呼び出し中。枠内にCircularProgressIndicator（AppTheme.accent色）と「冒険の書を探しています…」テキストを表示。スキャン枠の色は accent と active を交互にしたパルスアニメーション。カメラプレビューは継続。",
+          "visual": "パルスアニメーション枠線、ローディングスピナー + RPG調テキスト、下部のアクションは非活性"
+        },
+        "book_found": {
+          "label": "書籍発見",
+          "description": "APIが本を見つけた場合。枠がprogress色に変化し、本のタイトル・著者・表紙サムネイルを表示する確認カードをオーバーレイ表示。下部に「この冒険の書を登録する」ボタン（ElevatedButton, accent）と「キャンセル」テキストボタン。この状態の確認カードはカメラプレビューの上に半透明オーバーレイ + 中央カードで表示。",
+          "visual": "半透明黒オーバーレイ + cardBackgroundの確認カード（角丸16px, パディング24px）。表紙サムネイル(96x140) + タイトル(16px, bold) + 著者(14px, textSecondary) + 出版社・発行日。登録・キャンセルボタン。"
+        },
+        "not_found": {
+          "label": "該当なし",
+          "description": "APIルックアップで本が見つからなかった場合。枠線が amber色（AppTheme.calendarToday #FBBF24）に変化。枠内に「⚔️ この書は未知の領域にあります」のRPG調メッセージとサブテキスト「手入力での登録をお試しください」。下部に「手入力で登録」ボタン（→手入力タブ切替）と「もう一度スキャン」ボタン。",
+          "visual": "amber色枠線、RPG調エラーメッセージ、2ボタン"
+        },
+        "error": {
+          "label": "カメラエラー",
+          "description": "カメラ権限が拒否された、またはカメラハードウェアにアクセスできない場合。全画面でエラー表示。アイコン（Icons.no_photography, 64px, Colors.redAccent）＋「カメラを起動できません」＋「設定アプリからカメラ権限を許可してください」。下部に「設定を開く」ボタン（→AppSettings.openAppSettings）と「手入力で登録」ボタン。",
+          "visual": "赤系エラーアイコン + 説明文 + 2ボタン、背景はcardBackground"
+        },
+        "permission_denied": {
+          "label": "権限未許可",
+          "description": "初回起動時のカメラ権限リクエスト前の状態。またはユーザーが権限ダイアログで拒否した場合。アイコン（Icons.camera_alt, 48px, textSecondary）＋「本をスキャンするにはカメラへのアクセス許可が必要です」＋サブテキスト「📷 バーコードを読み取って冒険の書を自動登録できます」＋「カメラを許可する」ElevatedButton。許可後、自動でスキャンモードに遷移。",
+          "visual": "カメライラスト的アイコン + 説明的CTA、accent色の許可ボタン"
+        }
+      },
+      "feedback": {
+        "scan_success_haptic": "ISBN検出成功時に HapticFeedback.lightImpact() で触覚フィードバック。",
+        "scan_frame_animation": "枠線の色変化には暗黙的アニメーション（AnimatedContainer + ColorTween, 300ms）を使用。looking_up 状態ではパルスアニメーション（_AnimationController で opacity 0.4↔1.0 を繰り返し）。",
+        "sound_effect": "Phase 5 対応。将来的に検出成功時に 'se_item_get.mp3' を再生（RPGのアイテム取得SE）。",
+        "error_toast": "APIエラー時は SnackBar（snackBarTheme準拠、cardBackground、floating、8px角丸）で「通信に失敗しました。再試行してください」＋ UNDOアクション",
+        "not_found_snackbar": "not_found 状態では表示せず、枠内UIで完結。SnackBarは出さない。"
+      }
+    },
+    "registration_flow": {
+      "success_feedback": {
+        "primary": "SnackBar 表示",
+        "snackbar_content": "『{book.title}』を書庫に登録しました！",
+        "snackbar_style": "AppTheme.snackBarTheme準拠（backgroundColor: cardBackground, contentTextStyle: textPrimary, shape: 角丸8px, behavior: floating）。左に✅アイコン（Icons.check_circle, AppTheme.progress色）。",
+        "snackbar_duration": "3秒",
+        "snackbar_action": "SnackBarAction(label: '書庫へ', textColor: AppTheme.active, onPressed: → context.go('/'))。デフォルトではSnackBar表示後自動で書庫へ遷移。",
+        "transition": "登録ボタン押下 → 0.2秒のボタンローディング（CircularProgressIndicatorをボタン内に表示）→ API成功 → SnackBar表示 → 300ms後に context.go('/') で書庫へ遷移。Transitionはデフォルトのgo_routerフェード。",
+        "rpg_flavor": "書庫遷移後、新規登録本がある場合、その本のBookCardに 'new' バッジ（AppTheme.badge色 #EAB308）を3秒間表示。フェードアウトアニメーション。"
+      },
+      "failure_feedback": {
+        "api_error": "APIルックアップ失敗時：「通信に失敗しました。しばらく経ってからお試しください」SnackBar（5秒）。再試行アクション付き。",
+        "duplicate_book": "既に登録済みの本を登録しようとした場合：「📚 この冒険の書は既に書庫にあります」SnackBar（4秒、AppTheme.calendarToday色のアイコン）。action: '書庫を見る'（→ context.go('/')）。登録処理はスキップ。",
+        "invalid_barcode": "バーコードがISBNとして認識できない場合（EAN-13で先頭が978/979以外、または桁数10/13でない）：「📷 このバーコードは書籍ではありません」SnackBar（3秒）。再スキャン可能。",
+        "network_error": "オフライン時：「🌐 ネットワークに接続されていません。オンラインで再試行するか、手入力で登録してください」SnackBar（5秒）。action: '手入力'（→手入力タブ切替）。"
+      },
+      "user_flow": "ユーザーが探索タブ（/explore）にいる → スキャンタブ選択 → カメラ権限確認 → 許可ならプレビュー起動 → バーコードをかざす → 検出 → ISBNルックアップ → 成功 → 確認カード表示 → 「登録する」タップ → 登録中ローディング → 成功SnackBar → 書庫へ自動遷移。失敗時は各エラー状態に応じたリカバリーパス（手入力フォールバック含む）を提供。"
+    },
+    "accessibility": {
+      "semantics_approach": "既存の SemanticHelper パターンを踏襲。全インタラクティブ要素に testId を付与し、Semantics ウィジェットでラップ。",
+      "scan_screen_semantics": [
+        {
+          "element": "スキャン枠領域全体",
+          "test_id": "view_scan_preview",
+          "type": "container",
+          "label": "カメラプレビュー。バーコードを画面中央の枠内にかざしてください",
+          "explicitChildNodes": true
+        },
+        {
+          "element": "閉じるボタン（上部左）",
+          "test_id": "btn_scan_close",
+          "type": "button",
+          "label": "スキャンを閉じる",
+          "hint": "タップして探索画面に戻る"
+        },
+        {
+          "element": "フラッシュライトボタン（上部右）",
+          "test_id": "btn_scan_flashlight",
+          "type": "toggle",
+          "label": "フラッシュライト",
+          "hint": "タップしてライトをON/OFF"
+        },
+        {
+          "element": "ステータステキスト",
+          "test_id": "txt_scan_status",
+          "type": "liveRegion",
+          "label": "状態に応じて動的更新: 'スキャン待機中' / '本を検出しました' / '書籍情報を検索中' / '本が見つかりました: {title}' / '本が見つかりませんでした' / 'カメラエラー'"
+        },
+        {
+          "element": "検出ISBN表示",
+          "test_id": "txt_detected_isbn",
+          "type": "text",
+          "label": "検出されたISBN: {isbn}"
+        },
+        {
+          "element": "確認カード（book_found時）",
+          "test_id": "dlg_book_confirm",
+          "type": "dialog",
+          "label": "登録確認: {title}, 著者: {authors}"
+        },
+        {
+          "element": "登録ボタン",
+          "test_id": "btn_register_book",
+          "type": "button",
+          "label": "この冒険の書を登録する",
+          "hint": "タップして書庫に追加"
+        },
+        {
+          "element": "手入力ボタン（下部）",
+          "test_id": "btn_manual_entry",
+          "type": "button",
+          "label": "ISBNを手入力する",
+          "hint": "タップして手入力画面に切り替え"
+        },
+        {
+          "element": "リトライボタン",
+          "test_id": "btn_scan_retry",
+          "type": "button",
+          "label": "もう一度スキャン",
+          "hint": "タップして再スキャン"
+        }
+      ],
+      "live_regions": "ステータス変化（not_found → detected → looking_up → book_found）は SemanticsService.announce() で動的に読み上げ。SnackBar メッセージも同様。",
+      "contrast": "全テキストは暗色背景（#0C0A09）上で WCAG AA 準拠（コントラスト比 4.5:1以上）。textPrimary（#F5F5F4）は背景に対して12.6:1。textSecondary（#78716C）は4.6:1でAA合格。accent（#7C3AED）の上に白文字を置く場合は問題なし（対象箇所はElevatedButtonのみ）。",
+      "talkback_order": "上部バー → スキャン枠 → 下部バー の順でフォーカス移動。確認カード表示時はカードを最初にフォーカス（dialog扱い）。",
+      "font_scale": "ガイドテキスト・ボタンラベルは MediaQuery.textScaleFactor 非依存の固定サイズとせず、システムフォントサイズに追従。ただし、ISBN表示のみ行溢れ防止のため maxLines:1 + overflow: TextOverflow.ellipsis。"
+    }
+  },
+  "concerns": [
+    {
+      "id": "C1",
+      "category": "パフォーマンス",
+      "description": "MobileScanner の連続スキャンモードはバッテリー消費が大きい。検出成功後は即座に scanWindow を外すか、controller.stop() でカメラを停止することを推奨。detected 状態に遷移した時点でカメラストリームを停止し、静止画キャプチャに切り替える設計が望ましい。"
+    },
+    {
+      "id": "C2",
+      "category": "カメラ権限UX",
+      "description": "iOSでは初回権限ダイアログをシステムが出すが、ユーザーが拒否した後の再許可導線が弱い。設定アプリへの誘導はAndroidは可能（app_settingsパッケージ）だが、iOSは不可（設定アプリの当該アプリページまで深く誘導できない）。拒否時の画面で具体的な手順（「設定 → プライバシー → カメラ → ツンドクエストをON」）を表示する必要がある。"
+    },
+    {
+      "id": "C3",
+      "category": "ISBNバリデーション",
+      "description": "バーコードから読み取ったISBNにはチェックディジット誤りがあり得る。mobile_scanner が返す生の値に対して、ISBN-10/13 のチェックディジット検証を実装すべき。無効なISBNの場合は invalid_barcode エラーとして扱う。"
+    },
+    {
+      "id": "C4",
+      "category": "ダークテーマのスキャン枠視認性",
+      "description": "紫アクセント（#7C3AED）の枠線は暗色カメラプレビュー上で十分視認できるが、明るい本の表紙を写した際に枠線が埋没する可能性。枠線に外側グロー効果（boxShadow: blurRadius 8, color: accent.withAlpha(100)）を追加して視認性を確保することを推奨。"
+    },
+    {
+      "id": "C5",
+      "category": "重複登録",
+      "description": "同一ISBNの本を再スキャンした場合、現在の addBook() は上書き（upsert）する。重複時は上書きせず、duplicate_book SnackBar を表示してスキップする方がユーザーに親切。ただし手動登録の場合は例外（manual source の本は重複判定から除外）。"
+    },
+    {
+      "id": "C6",
+      "category": "エラーハンドリング",
+      "description": "mobile_scanner の MobileScannerException は型が確定しておらず、エラー文言はプラットフォーム依存。全エラーを捕捉してユーザーフレンドリーなメッセージに変換するラッパーが必要。特に cameraAccessDenied エラーコードだけは判別可能なため、permission_denied 状態への分岐に使用する。"
+    },
+    {
+      "id": "C7",
+      "category": "RPGフレーバー一貫性",
+      "description": "全状態表示テキスト（待機中・検出中・検索中・成功・失敗）はRPG世界観に合わせた表現で統一すべき。例：「スキャン中」→「📷 バーコードを解析中…」、「書籍検索中」→「🔮 冒険の書を探しています…」、「登録成功」→「✨ 新たな冒険の書が書庫に加わりました！」。仕様書のテキストサンプルはあくまで例示であり、最終的な文言はRPG世界観チューニングが必要。"
+    }
+  ]
+}
