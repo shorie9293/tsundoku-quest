@@ -1,3 +1,9 @@
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file('key.properties')
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 plugins {
     id "com.android.application"
     id "kotlin-android"
@@ -7,7 +13,7 @@ plugins {
 
 android {
     namespace = "com.takamagahara.tsundoku_quest"
-    compileSdk = 36
+    compileSdk = flutter.compileSdkVersion
     ndkVersion = "27.0.12077973"
 
     compileOptions {
@@ -19,9 +25,18 @@ android {
         jvmTarget = JavaVersion.VERSION_1_8
     }
 
+    signingConfigs {
+        release {
+            keyAlias = keystoreProperties['keyAlias']
+            keyPassword = keystoreProperties['keyPassword']
+            storeFile = keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+            storePassword = keystoreProperties['storePassword']
+        }
+    }
+
     defaultConfig {
         applicationId = "com.takamagahara.tsundoku_quest"
-        minSdk = 23
+        minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -29,9 +44,11 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.debug
+            signingConfig = signingConfigs.release
+            // ⚠️ BUG-001 再発防止: Hive TypeAdapter が R8 で削除され起動不能になるため
+            //    isMinifyEnabled は無効化している
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 }
