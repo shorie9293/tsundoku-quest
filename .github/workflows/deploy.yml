@@ -64,20 +64,22 @@ jobs:
       - name: 🔨 Build App Bundle
         run: flutter build appbundle --release
 
-      - name: 💎 Setup Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: '3.2'
-          bundler-cache: true
-          working-directory: android
-
-      - name: 🚀 Deploy to Google Play
-        working-directory: android
-        env:
-          GOOGLE_PLAY_JSON_KEY: ${{ secrets.GOOGLE_PLAY_JSON_KEY }}
-        run: |
-          TRACK="${{ github.event.inputs.track || 'internal' }}"
-          bundle exec fastlane deploy track:${TRACK}
+      # Fastlane deploy is skipped until GOOGLE_PLAY_JSON_KEY is set
+      # Download the AAB artifact and upload manually at:
+      # https://play.google.com/console
+      # - name: 💎 Setup Ruby
+      #   uses: ruby/setup-ruby@v1
+      #   with:
+      #     ruby-version: '3.2'
+      #     bundler-cache: true
+      #     working-directory: android
+      # - name: 🚀 Deploy to Google Play
+      #   working-directory: android
+      #   env:
+      #     GOOGLE_PLAY_JSON_KEY: ${{ secrets.GOOGLE_PLAY_JSON_KEY }}
+      #   run: |
+      #     TRACK="${{ github.event.inputs.track || 'internal' }}"
+      #     bundle exec fastlane deploy track:${TRACK}
 
       - name: 📤 Upload AAB artifact
         uses: actions/upload-artifact@v4
