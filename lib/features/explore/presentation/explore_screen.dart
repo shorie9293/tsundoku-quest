@@ -152,7 +152,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
     return Scaffold(
       key: AppKeys.exploreScreen,
       appBar: AppBar(title: const Text('🧭 探索')),
-      body: DungeonBackground(
+      body: DungeonBackground(screenType: ScreenType.explore,
         child: Column(
         children: [
           // Tab selector

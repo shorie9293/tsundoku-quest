@@ -7,7 +7,7 @@ void main() {
     testWidgets('should render background with gradient layers', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: DungeonBackground(),
+          home: DungeonBackground(screenType: ScreenType.bookshelf),
         ),
       );
 
@@ -22,6 +22,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: DungeonBackground(
+            screenType: ScreenType.bookshelf,
             child: Center(
               child: Text('テスト文字', textDirection: TextDirection.ltr),
             ),
@@ -37,7 +38,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: DungeonBackground(),
+            body: DungeonBackground(screenType: ScreenType.bookshelf),
           ),
         ),
       );
@@ -54,10 +55,11 @@ void main() {
           home: Scaffold(
             appBar: AppBar(title: const Text('テスト')),
             body: const DungeonBackground(
-              child: Center(
-                child: Text('本棚の中身', textDirection: TextDirection.ltr),
-              ),
-            ),
+          screenType: ScreenType.bookshelf,
+          child: Center(
+            child: Text('本棚の中身', textDirection: TextDirection.ltr),
+          ),
+        ),
           ),
         ),
       );

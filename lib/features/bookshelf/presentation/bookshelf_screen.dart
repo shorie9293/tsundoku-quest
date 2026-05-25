@@ -75,7 +75,7 @@ class _BookshelfScreenState extends ConsumerState<BookshelfScreen> {
         appBar: AppBar(
           title: const Text('📚 書庫'),
         ),
-        body: DungeonBackground(
+        body: DungeonBackground(screenType: ScreenType.bookshelf,
           child: _buildSkeletonLoading(),
         ),
       );
@@ -86,7 +86,7 @@ class _BookshelfScreenState extends ConsumerState<BookshelfScreen> {
       appBar: AppBar(
         title: const Text('📚 書庫'),
       ),
-      body: DungeonBackground(
+      body: DungeonBackground(screenType: ScreenType.bookshelf,
         child: ListView(
           children: [
           // Adventurer header (watches adventurerProvider internally)

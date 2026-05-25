@@ -196,6 +196,7 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
       return Scaffold(
         appBar: AppBar(title: const Text('読書中')),
         body: const DungeonBackground(
+          screenType: ScreenType.reading,
           child: Center(child: Text('本が見つかりません')),
         ),
       );

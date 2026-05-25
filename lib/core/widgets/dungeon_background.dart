@@ -6,18 +6,27 @@ import 'package:flutter/material.dart';
 /// Stackで構成され、最背面にグラデーション背景を配置する。
 ///
 /// 使用例:
-/// ```dart
-/// Scaffold(
-///   body: DungeonBackground(
-///     child: Center(child: Text('本棚の中身')),
-///   ),
-/// )
-/// ```
+// ```dart
+// Scaffold(
+//   body: DungeonBackground(
+//     child: Center(child: Text('本棚の中身')),
+//   ),
+// )
+// ```
+enum ScreenType { bookshelf, explore, history, recommendation, reading, auth }
+
 class DungeonBackground extends StatelessWidget {
   /// 背景の上に表示する子Widget
   final Widget? child;
 
-  const DungeonBackground({super.key, this.child});
+  /// 画面タイプに応じた背景を切り替える
+  final ScreenType screenType;
+
+  const DungeonBackground({
+    super.key,
+    this.child,
+    this.screenType = ScreenType.bookshelf,
+  });
 
   // ━━━ 背景色 ━━━
   // 深いダンジョンの石壁の色調（半透明で画像を透過）
@@ -29,8 +38,53 @@ class DungeonBackground extends StatelessWidget {
   static const Color _torchGlow = Color(0x1AF59E0B); // amberの微量
   static const Color _mysticPurple = Color(0x0D7C3AED); // dungeon紫の微量
 
+  // 画面タイプごとのグラデーション色
+  List<Color> _getGradientColors() {
+    switch (screenType) {
+      case ScreenType.bookshelf:
+        return [_deepStone, _midStone, _warmStone];
+      case ScreenType.explore:
+        // 探索画面：やや緑がかった石壁
+        return [
+          Color(0xCC0A0C08), // 深い暗黒（緑み）
+          Color(0xCC141310), // 中間の石色（緑み）
+          Color(0xCC1A1A14), // やや暖色がかった石色（緑み）
+        ];
+      case ScreenType.history:
+        // 足跡画面：セピアトーンの石壁
+        return [
+          Color(0xCC0A080A), // 深い暗黒（セピア）
+          Color(0xCC141210), // 中間の石色（セピア）
+          Color(0xCC1A1814), // やや暖色がかった石色（セピア）
+        ];
+      case ScreenType.recommendation:
+        // おすすめ画面：紫がかった石壁
+        return [
+          Color(0xCC0A080C), // 深い暗黒（紫み）
+          Color(0xCC14101A), // 中間の石色（紫み）
+          Color(0xCC1A151E), // やや暖色がかった石色（紫み）
+        ];
+      case ScreenType.reading:
+        // 読書中画面：青みがかった石壁
+        return [
+          Color(0xCC080A0C), // 深い暗黒（青み）
+          Color(0xCC12141A), // 中間の石色（青み）
+          Color(0xCC1A1A1E), // やや暖色がかった石色（青み）
+        ];
+      case ScreenType.auth:
+        // 認証画面：赤みがかった石壁
+        return [
+          Color(0xCC0C080A), // 深い暗黒（赤み）
+          Color(0xCC1A1010), // 中間の石色（赤み）
+          Color(0xCC1E1514), // やや暖色がかった石色（赤み）
+        ];
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final gradientColors = _getGradientColors();
+
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -45,22 +99,17 @@ class DungeonBackground extends StatelessWidget {
         // ━━━ Layer 0.5: 暗色オーバーレイ（白文字の可読性確保）━━━
         Container(color: Colors.black.withValues(alpha: 0.10)),
         // ━━━ Layer 1: ベースグラデーション ━━━
-        // 上から下へ：深い暗黒 → やや温かみのある石灰色
+        // 上から下へ：深い暗黒 → やや温かみのある石灰色（画面タイプごとに色調変化）
         Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [
-                _deepStone,   // 0%: 深い暗黒
-                _midStone,    // 35%: 中間の石色
-                _warmStone,   // 100%: やや暖色がかった石色
-              ],
+              colors: gradientColors,
               stops: [0.0, 0.35, 1.0],
             ),
           ),
         ),
-
         // ━━━ Layer 2: 松明の灯り ━━━
         // 上部中央から放射状の暖かい光
         Container(
@@ -76,7 +125,6 @@ class DungeonBackground extends StatelessWidget {
             ),
           ),
         ),
-
         // ━━━ Layer 3: 神秘的な紫の灯り ━━━
         // 右下からの淡い紫色の空気感
         Container(
@@ -92,7 +140,6 @@ class DungeonBackground extends StatelessWidget {
             ),
           ),
         ),
-
         // ━━━ 子Widget（最前面） ━━━
         if (child != null) child!,
       ],

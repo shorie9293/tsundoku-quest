@@ -21,7 +21,7 @@ class HistoryScreen extends ConsumerWidget {
     return Scaffold(
       key: AppKeys.historyScreen,
       appBar: AppBar(title: const Text('📊 足跡')),
-      body: DungeonBackground(
+      body: DungeonBackground(screenType: ScreenType.history,
         child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
