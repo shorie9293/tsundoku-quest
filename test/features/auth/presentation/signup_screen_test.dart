@@ -41,8 +41,8 @@ final mockSignupAuthRepositoryProvider = Provider<AuthRepository>((ref) {
 Widget createSignupTestApp() {
   return ProviderScope(
     overrides: [
-      authRepositoryProvider.overrideWithProvider(
-        mockSignupAuthRepositoryProvider,
+      authRepositoryProvider.overrideWith(
+        (ref) => MockSignupAuthRepository(),
       ),
     ],
     child: MaterialApp(

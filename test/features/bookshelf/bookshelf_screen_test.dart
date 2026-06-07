@@ -56,6 +56,8 @@ void main() {
 
     testWidgets('should show daily quest', (tester) async {
       await tester.pumpWidget(testBookshelfScreen());
+      // DailyMissionNotifier が非同期で SharedPreferences から読み込むのを待つ
+      await tester.pumpAndSettle();
 
       expect(find.text('今日のクエスト'), findsOneWidget);
     });
@@ -71,7 +73,7 @@ void main() {
       await tester.pumpWidget(testBookshelfScreen());
 
       expect(find.text('待機中の冒険'), findsOneWidget);
-      expect(find.text('討伐完了'), findsOneWidget);
+      expect(find.text('討伐済'), findsOneWidget);
     });
   });
 

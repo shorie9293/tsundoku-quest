@@ -11,14 +11,14 @@ void main() {
     });
 
     test('returns a recommendation for non-empty list', () {
-      final book = Book(
+      const book = Book(
         id: 'b1',
         title: 'テスト本',
         authors: ['著者A'],
         source: BookSource.manual,
         createdAt: '2026-01-01T00:00:00Z',
       );
-      final userBook = UserBook(
+      const userBook = UserBook(
         id: 'ub-1',
         userId: 'user-1',
         bookId: 'b1',
@@ -37,7 +37,7 @@ void main() {
     test('reason contains correct day count for old books (>30 days)', () {
       // Create a book from 40 days ago
       final oldDate = DateTime.now().subtract(const Duration(days: 40));
-      final book = Book(
+      const book = Book(
         id: 'b1',
         title: '古い本',
         authors: ['著者B'],
@@ -68,7 +68,7 @@ void main() {
     test('reason uses 今日のランダムな一冊 for recent books', () {
       // Create a book from just 1 day ago
       final recentDate = DateTime.now().subtract(const Duration(days: 1));
-      final book = Book(
+      const book = Book(
         id: 'b1',
         title: '新しい本',
         authors: ['著者C'],

@@ -17,7 +17,7 @@ void main() {
     }
 
     testWidgets('shows book title, author, and reason', (tester) async {
-      final book = Book(
+      const book = Book(
         id: 'b1',
         title: '推奨される本',
         authors: ['偉大な著者'],
@@ -66,7 +66,7 @@ void main() {
     });
 
     testWidgets('does not show cover image when imageUrl is null', (tester) async {
-      final book = Book(
+      const book = Book(
         id: 'b1',
         title: 'カバー無し本',
         authors: ['著者'],
@@ -110,7 +110,7 @@ void main() {
     });
 
     testWidgets('recommendation card has semantics wrappers', (tester) async {
-      final book = Book(
+      const book = Book(
         id: 'b1',
         title: 'セマンティクス本',
         authors: ['著者'],

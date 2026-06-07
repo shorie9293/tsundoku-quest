@@ -7,7 +7,7 @@ void main() {
   group('WeeklyChartWidget', () {
     testWidgets('should display title', (tester) async {
       await tester.pumpWidget(
-        ProviderScope(
+        const ProviderScope(
           child: MaterialApp(
             home: Scaffold(
               body: SingleChildScrollView(
@@ -23,7 +23,7 @@ void main() {
 
     testWidgets('should display total weekly minutes', (tester) async {
       await tester.pumpWidget(
-        ProviderScope(
+        const ProviderScope(
           child: MaterialApp(
             home: Scaffold(
               body: SingleChildScrollView(
@@ -39,7 +39,7 @@ void main() {
 
     testWidgets('should handle empty weekly data', (tester) async {
       await tester.pumpWidget(
-        ProviderScope(
+        const ProviderScope(
           child: MaterialApp(
             home: Scaffold(
               body: SingleChildScrollView(
@@ -55,7 +55,7 @@ void main() {
 
     testWidgets('should display day labels', (tester) async {
       await tester.pumpWidget(
-        ProviderScope(
+        const ProviderScope(
           child: MaterialApp(
             home: Scaffold(
               body: SingleChildScrollView(

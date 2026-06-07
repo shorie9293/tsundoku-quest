@@ -6,7 +6,7 @@ import 'package:tsundoku_quest/features/recommendation/presentation/widgets/soci
 void main() {
   group('SocialReadingSection', () {
     Widget buildTestWidget() {
-      return MaterialApp(
+      return const MaterialApp(
         home: Scaffold(
           body: SingleChildScrollView(
             child: SocialReadingSection(),

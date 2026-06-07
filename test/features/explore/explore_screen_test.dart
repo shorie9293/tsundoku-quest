@@ -130,8 +130,8 @@ void main() {
     setUp(() {
       container = ProviderContainer(
         overrides: [
-          bookSearchServiceProvider.overrideWithProvider(
-            Provider<BookSearchService>((ref) => _MockBookSearchService()),
+          bookSearchServiceProvider.overrideWith(
+            (ref) => _MockBookSearchService(),
           ),
         ],
       );
@@ -203,8 +203,8 @@ void main() {
         (tester) async {
       final noResultsContainer = ProviderContainer(
         overrides: [
-          bookSearchServiceProvider.overrideWithProvider(
-            Provider<BookSearchService>((ref) => _MockEmptyBookSearchService()),
+          bookSearchServiceProvider.overrideWith(
+            (ref) => _MockEmptyBookSearchService(),
           ),
         ],
       );

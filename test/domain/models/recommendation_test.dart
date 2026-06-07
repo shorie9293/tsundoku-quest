@@ -24,14 +24,14 @@ void main() {
     });
 
     test('fromUserBook derives bookTitle/author from book', () {
-      final book = Book(
+      const book = Book(
         id: 'b1',
         title: '本のタイトル',
         authors: ['著者X'],
         source: BookSource.manual,
         createdAt: '2026-01-01T00:00:00Z',
       );
-      final userBook = UserBook(
+      const userBook = UserBook(
         id: 'ub-1',
         userId: 'user-1',
         bookId: 'b1',
@@ -53,14 +53,14 @@ void main() {
     });
 
     test('fromUserBook explicit overrides take precedence', () {
-      final book = Book(
+      const book = Book(
         id: 'b1',
         title: '元のタイトル',
         authors: ['元の著者'],
         source: BookSource.manual,
         createdAt: '2026-01-01T00:00:00Z',
       );
-      final userBook = UserBook(
+      const userBook = UserBook(
         id: 'ub-1',
         userId: 'user-1',
         bookId: 'b1',
@@ -93,7 +93,7 @@ void main() {
     });
 
     test('fromUserBook with all explicit fields', () {
-      final book = Book(
+      const book = Book(
         id: 'b1',
         title: '工場テスト',
         authors: ['著者Z'],
@@ -101,7 +101,7 @@ void main() {
         createdAt: '2026-01-01T00:00:00Z',
         coverImageUrl: 'https://img.example.com/cover.jpg',
       );
-      final userBook = UserBook(
+      const userBook = UserBook(
         id: 'ub-2',
         userId: 'user-1',
         bookId: 'b1',
@@ -124,14 +124,14 @@ void main() {
     });
 
     test('fromUserBook handles book with no authors', () {
-      final book = Book(
+      const book = Book(
         id: 'b1',
         title: '無著者の本',
         authors: [],
         source: BookSource.manual,
         createdAt: '2026-01-01T00:00:00Z',
       );
-      final userBook = UserBook(
+      const userBook = UserBook(
         id: 'ub-3',
         userId: 'user-1',
         bookId: 'b1',

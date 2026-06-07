@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:tsundoku_quest/domain/models/book.dart';
 import 'package:tsundoku_quest/domain/models/user_book.dart';
 
 void main() {
@@ -97,7 +96,7 @@ void main() {
 
   group('UserBook.toJson', () {
     test('should serialize to JSON', () {
-      final userBook = UserBook(
+      const userBook = UserBook(
         id: 'ub-2',
         userId: 'user-2',
         bookId: 'book-2',

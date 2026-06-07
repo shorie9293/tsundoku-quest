@@ -18,7 +18,7 @@ Widget testReadingCalendar({List<String> readingDates = const []}) {
     ],
     child: MaterialApp(
       theme: ThemeData.dark(),
-      home: Scaffold(
+      home: const Scaffold(
         body: SingleChildScrollView(
           child: ReadingCalendarWidget(),
         ),
@@ -88,7 +88,7 @@ void main() {
         final color = decoration.color;
         // 緑色系（alpha 付き）
         expect(color, isNotNull);
-        expect(color!.alpha, greaterThan(0));
+        expect(color!.a, greaterThan(0));
       }
     });
 

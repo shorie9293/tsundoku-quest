@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:tsundoku_quest/core/testing/widget_keys.dart';
 import 'package:tsundoku_quest/domain/models/book.dart';
 import 'package:tsundoku_quest/domain/models/recommendation.dart';
 import 'package:tsundoku_quest/domain/models/user_book.dart';
@@ -17,7 +16,7 @@ void main() {
     }
 
     testWidgets('shows book title, author, and reason', (tester) async {
-      final book = Book(
+      const book = Book(
         id: 'b1',
         title: '推奨される本',
         authors: ['偉大な著者'],
@@ -58,7 +57,7 @@ void main() {
     });
 
     testWidgets('shows correct content for old book recommendation', (tester) async {
-      final book = Book(
+      const book = Book(
         id: 'b1',
         title: '放置された本',
         authors: ['有名な著者'],
@@ -99,7 +98,7 @@ void main() {
     });
 
     testWidgets('recommendation card has semantics wrappers', (tester) async {
-      final book = Book(
+      const book = Book(
         id: 'b1',
         title: 'セマンティクス本',
         authors: ['著者'],

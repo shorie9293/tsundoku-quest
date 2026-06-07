@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tsundoku_quest/app_router.dart';
-import 'package:tsundoku_quest/core/testing/widget_keys.dart';
 
 void main() {
   /// Creates a test app with ProviderScope + fresh router per test.

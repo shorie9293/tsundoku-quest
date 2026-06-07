@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:tsundoku_quest/domain/models/reading_session.dart';
 import 'package:tsundoku_quest/domain/repositories/reading_session_repository.dart';
 import 'package:tsundoku_quest/features/reading/data/supabase_reading_session_repository.dart';
 

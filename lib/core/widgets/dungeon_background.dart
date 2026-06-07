@@ -46,37 +46,37 @@ class DungeonBackground extends StatelessWidget {
       case ScreenType.explore:
         // 探索画面：やや緑がかった石壁
         return [
-          Color(0xCC0A0C08), // 深い暗黒（緑み）
-          Color(0xCC141310), // 中間の石色（緑み）
-          Color(0xCC1A1A14), // やや暖色がかった石色（緑み）
+          const Color(0xCC0A0C08), // 深い暗黒（緑み）
+          const Color(0xCC141310), // 中間の石色（緑み）
+          const Color(0xCC1A1A14), // やや暖色がかった石色（緑み）
         ];
       case ScreenType.history:
         // 足跡画面：セピアトーンの石壁
         return [
-          Color(0xCC0A080A), // 深い暗黒（セピア）
-          Color(0xCC141210), // 中間の石色（セピア）
-          Color(0xCC1A1814), // やや暖色がかった石色（セピア）
+          const Color(0xCC0A080A), // 深い暗黒（セピア）
+          const Color(0xCC141210), // 中間の石色（セピア）
+          const Color(0xCC1A1814), // やや暖色がかった石色（セピア）
         ];
       case ScreenType.recommendation:
         // おすすめ画面：紫がかった石壁
         return [
-          Color(0xCC0A080C), // 深い暗黒（紫み）
-          Color(0xCC14101A), // 中間の石色（紫み）
-          Color(0xCC1A151E), // やや暖色がかった石色（紫み）
+          const Color(0xCC0A080C), // 深い暗黒（紫み）
+          const Color(0xCC14101A), // 中間の石色（紫み）
+          const Color(0xCC1A151E), // やや暖色がかった石色（紫み）
         ];
       case ScreenType.reading:
         // 読書中画面：青みがかった石壁
         return [
-          Color(0xCC080A0C), // 深い暗黒（青み）
-          Color(0xCC12141A), // 中間の石色（青み）
-          Color(0xCC1A1A1E), // やや暖色がかった石色（青み）
+          const Color(0xCC080A0C), // 深い暗黒（青み）
+          const Color(0xCC12141A), // 中間の石色（青み）
+          const Color(0xCC1A1A1E), // やや暖色がかった石色（青み）
         ];
       case ScreenType.auth:
         // 認証画面：赤みがかった石壁
         return [
-          Color(0xCC0C080A), // 深い暗黒（赤み）
-          Color(0xCC1A1010), // 中間の石色（赤み）
-          Color(0xCC1E1514), // やや暖色がかった石色（赤み）
+          const Color(0xCC0C080A), // 深い暗黒（赤み）
+          const Color(0xCC1A1010), // 中間の石色（赤み）
+          const Color(0xCC1E1514), // やや暖色がかった石色（赤み）
         ];
     }
   }
@@ -106,7 +106,7 @@ class DungeonBackground extends StatelessWidget {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: gradientColors,
-              stops: [0.0, 0.35, 1.0],
+              stops: const [0.0, 0.35, 1.0],
             ),
           ),
         ),

@@ -44,7 +44,7 @@ void main() {
       test('should replace book with same id', () {
         final notifier = BookDataNotifier();
         final book1 = _testBook('book-1');
-        final book2 = Book(
+        const book2 = Book(
           id: 'book-1',
           title: '更新後の本',
           authors: ['新しい著者'],
@@ -119,7 +119,7 @@ void main() {
     group('addTrophy / getTrophy', () {
       test('should add a trophy', () {
         final notifier = BookDataNotifier();
-        final trophy = WarTrophy(
+        const trophy = WarTrophy(
           id: 'wt-1',
           userBookId: 'ub-1',
           userId: 'user-1',

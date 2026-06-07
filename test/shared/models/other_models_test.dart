@@ -7,7 +7,7 @@ void main() {
   // ━━━ AdventurerStats ━━━
   group('AdventurerStats', () {
     test('should create with all fields', () {
-      final stats = AdventurerStats(
+      const stats = AdventurerStats(
         level: 5,
         xp: 230,
         xpToNextLevel: 400,
@@ -49,7 +49,7 @@ void main() {
   // ━━━ WarTrophy ━━━
   group('WarTrophy', () {
     test('should create with all fields', () {
-      final trophy = WarTrophy(
+      const trophy = WarTrophy(
         id: 'wt-1',
         userBookId: 'ub-1',
         userId: 'user-1',
@@ -86,7 +86,7 @@ void main() {
     });
 
     test('toJson should serialize correctly', () {
-      final trophy = WarTrophy(
+      const trophy = WarTrophy(
         id: 'wt-3',
         userBookId: 'ub-3',
         userId: 'user-1',
@@ -106,7 +106,7 @@ void main() {
   // ━━━ ReadingSession ━━━
   group('ReadingSession', () {
     test('should create active session', () {
-      final session = ReadingSession(
+      const session = ReadingSession(
         id: 'rs-1',
         userBookId: 'ub-1',
         startedAt: '2026-05-04T10:00:00Z',
@@ -124,7 +124,7 @@ void main() {
     });
 
     test('should create completed session', () {
-      final session = ReadingSession(
+      const session = ReadingSession(
         id: 'rs-2',
         userBookId: 'ub-1',
         startedAt: '2026-05-04T10:00:00Z',

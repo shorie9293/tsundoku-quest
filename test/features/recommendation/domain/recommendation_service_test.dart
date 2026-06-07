@@ -11,14 +11,14 @@ void main() {
     });
 
     test('returns a recommendation for non-empty list', () {
-      final book = Book(
+      const book = Book(
         id: 'b1',
         title: 'テスト本',
         authors: ['著者A'],
         source: BookSource.manual,
         createdAt: '2026-01-01T00:00:00Z',
       );
-      final userBook = UserBook(
+      const userBook = UserBook(
         id: 'ub-1',
         userId: 'user-1',
         bookId: 'b1',
@@ -36,7 +36,7 @@ void main() {
 
     test('reason contains correct day count for old books (>30 days)', () {
       final oldDate = DateTime.now().subtract(const Duration(days: 40));
-      final book = Book(
+      const book = Book(
         id: 'b1',
         title: '古い本',
         authors: ['著者B'],
@@ -64,7 +64,7 @@ void main() {
 
     test('reason uses 今日のランダムな一冊 for recent books', () {
       final recentDate = DateTime.now().subtract(const Duration(days: 1));
-      final book = Book(
+      const book = Book(
         id: 'b1',
         title: '新しい本',
         authors: ['著者C'],
@@ -96,7 +96,7 @@ void main() {
     });
 
     test('returns local picks when no Supabase client provided', () async {
-      final book = Book(
+      const book = Book(
         id: 'b1',
         title: 'ローカル本',
         authors: ['ローカル著者'],
@@ -123,7 +123,7 @@ void main() {
     });
 
     test('returns local picks when Supabase throws', () async {
-      final book = Book(
+      const book = Book(
         id: 'b1',
         title: 'フォールバック本',
         authors: ['著者'],

@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:tsundoku_quest/domain/models/book.dart';
 import 'package:tsundoku_quest/domain/models/user_book.dart';
 import 'package:tsundoku_quest/shared/providers/book_data_provider.dart';
 import 'package:tsundoku_quest/shared/providers/derived_provider.dart';
@@ -8,7 +7,7 @@ import 'package:tsundoku_quest/shared/providers/derived_provider.dart';
 BookDataNotifier _setupNotifierWithBooks() {
   final notifier = BookDataNotifier();
   // 積読2冊
-  notifier.addUserBook(UserBook(
+  notifier.addUserBook(const UserBook(
     id: 'ub-1',
     userId: 'u1',
     bookId: 'b1',
@@ -16,7 +15,7 @@ BookDataNotifier _setupNotifierWithBooks() {
     medium: BookMedium.physical,
     createdAt: '2026-01-01T00:00:00Z',
   ));
-  notifier.addUserBook(UserBook(
+  notifier.addUserBook(const UserBook(
     id: 'ub-2',
     userId: 'u1',
     bookId: 'b2',
@@ -25,7 +24,7 @@ BookDataNotifier _setupNotifierWithBooks() {
     createdAt: '2026-02-01T00:00:00Z',
   ));
   // 読書中1冊
-  notifier.addUserBook(UserBook(
+  notifier.addUserBook(const UserBook(
     id: 'ub-3',
     userId: 'u1',
     bookId: 'b3',
@@ -36,7 +35,7 @@ BookDataNotifier _setupNotifierWithBooks() {
     createdAt: '2026-03-01T00:00:00Z',
   ));
   // 読了1冊
-  notifier.addUserBook(UserBook(
+  notifier.addUserBook(const UserBook(
     id: 'ub-4',
     userId: 'u1',
     bookId: 'b4',

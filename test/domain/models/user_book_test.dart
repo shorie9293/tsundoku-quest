@@ -99,7 +99,7 @@ void main() {
 
   group('UserBook.toSupabase', () {
     test('should serialize to Supabase-compatible Map', () {
-      final userBook = UserBook(
+      const userBook = UserBook(
         id: 'ub-2',
         userId: 'user-2',
         bookId: 'book-2',
@@ -135,7 +135,7 @@ void main() {
     });
 
     test('should handle nullable fields correctly', () {
-      final userBook = UserBook(
+      const userBook = UserBook(
         id: 'ub-3',
         userId: 'user-3',
         bookId: 'book-3',

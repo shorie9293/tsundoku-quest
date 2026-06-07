@@ -92,7 +92,7 @@ void main() {
 
   group('Book.toJson', () {
     test('should serialize all fields to JSON', () {
-      final book = Book(
+      const book = Book(
         id: 'book-2',
         isbn13: '9789876543210',
         isbn10: null,
@@ -143,14 +143,14 @@ void main() {
 
   group('Book equality', () {
     test('should be equal when all fields match', () {
-      final book1 = Book(
+      const book1 = Book(
         id: 'same',
         title: '同じ本',
         authors: ['著者A'],
         source: BookSource.manual,
         createdAt: '2026-01-01T00:00:00Z',
       );
-      final book2 = Book(
+      const book2 = Book(
         id: 'same',
         title: '同じ本',
         authors: ['著者A'],
@@ -162,14 +162,14 @@ void main() {
     });
 
     test('should not be equal when id differs', () {
-      final book1 = Book(
+      const book1 = Book(
         id: 'book-a',
         title: '本',
         authors: ['著者'],
         source: BookSource.manual,
         createdAt: '2026-01-01T00:00:00Z',
       );
-      final book2 = Book(
+      const book2 = Book(
         id: 'book-b',
         title: '本',
         authors: ['著者'],

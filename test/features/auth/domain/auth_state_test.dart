@@ -4,7 +4,7 @@ import 'package:tsundoku_quest/features/auth/domain/auth_state.dart';
 void main() {
   group('AuthState', () {
     test('AuthGuest should have uid', () {
-      final state = AuthGuest('guest-123');
+      const state = AuthGuest('guest-123');
       expect(state, isA<AuthState>());
       expect(state.uid, 'guest-123');
     });

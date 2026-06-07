@@ -32,7 +32,7 @@ void main() {
     test('addTrophy should replace existing trophy with same id', () {
       final notifier = WarTrophyNotifier();
       notifier.addTrophy(_testTrophy('wt-1'));
-      notifier.addTrophy(WarTrophy(
+      notifier.addTrophy(const WarTrophy(
         id: 'wt-1', userBookId: 'ub-1', userId: 'user-1',
         learnings: ['新しい学び'], action: '新しいアクション',
         createdAt: '2026-05-05T10:00:00Z'));
@@ -93,7 +93,7 @@ void main() {
 
     test('addTrophy twice syncs both via updateTrophy', () async {
       final trophy1 = _testTrophy('wt-1');
-      final trophy2 = WarTrophy(
+      const trophy2 = WarTrophy(
         id: 'wt-1', userBookId: 'ub-1', userId: 'user-1',
         learnings: ['新しい学び'], action: '新しいアクション',
         createdAt: '2026-05-05T10:00:00Z');

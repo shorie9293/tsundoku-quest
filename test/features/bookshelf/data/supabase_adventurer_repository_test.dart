@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:tsundoku_quest/domain/models/adventurer_stats.dart';
 import 'package:tsundoku_quest/domain/models/user_book.dart';
 import 'package:tsundoku_quest/domain/repositories/adventurer_repository.dart';
 import 'package:tsundoku_quest/domain/repositories/reading_session_repository.dart';

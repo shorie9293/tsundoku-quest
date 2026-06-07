@@ -43,7 +43,7 @@ final mockAuthRepositoryProvider = Provider<AuthRepository>((ref) {
 Widget createTestApp({Widget? home}) {
   return ProviderScope(
     overrides: [
-      authRepositoryProvider.overrideWithProvider(mockAuthRepositoryProvider),
+      authRepositoryProvider.overrideWith((ref) => MockScreenAuthRepository()),
     ],
     child: MaterialApp(
       theme: ThemeData.dark(),
