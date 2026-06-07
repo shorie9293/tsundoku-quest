@@ -94,6 +94,18 @@ class AppKeys {
   static const Key recommendationList = Key('list_recommendation');
   static const Key socialReadingSection = Key('section_social_reading');
 
+  // ━━━ チュートリアル ━━━
+  static const Key tutorialScreen = Key('screen_tutorial');
+  static const Key tutorialPageView = Key('view_tutorial_page');
+  static const Key tutorialPageIndicator = Key('indicator_tutorial_page');
+  static const Key tutorialSkipButton = Key('btn_tutorial_skip');
+  static const Key tutorialStartButton = Key('btn_tutorial_start');
+  static const Key tutorialLorePage1 = Key('page_tutorial_lore_1');
+  static const Key tutorialLorePage2 = Key('page_tutorial_lore_2');
+  static const Key tutorialLorePage3 = Key('page_tutorial_lore_3');
+  static const Key tutorialLorePage4 = Key('page_tutorial_lore_4');
+  static const Key tutorialOperationPage = Key('page_tutorial_operation');
+
   // ━━━ 汎用 ━━━
   static const Key backButton = Key('btn_back');
   static const Key closeButton = Key('btn_close');
