@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tsundoku_quest/core/testing/widget_keys.dart';
 import 'package:tsundoku_quest/domain/models/book.dart';
 import 'package:tsundoku_quest/domain/models/user_book.dart';
@@ -37,6 +38,9 @@ UserBook _testUserBook(String id, BookStatus status, {Book? book}) =>
     );
 
 void main() {
+  // DailyQuest が内部で SharedPreferences を使うため mock 初期化
+  SharedPreferences.setMockInitialValues({});
+
   group('BookshelfScreen', () {
     testWidgets('should display app bar with title', (tester) async {
       await tester.pumpWidget(testBookshelfScreen());
@@ -67,7 +71,7 @@ void main() {
       await tester.pumpWidget(testBookshelfScreen());
 
       expect(find.text('待機中の冒険'), findsOneWidget);
-      expect(find.text('討伐済'), findsOneWidget);
+      expect(find.text('討伐完了'), findsOneWidget);
     });
   });
 

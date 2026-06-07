@@ -1,21 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tsundoku_quest/app_router.dart';
 import 'package:tsundoku_quest/features/reading/presentation/reading_screen.dart';
 import 'package:tsundoku_quest/core/testing/widget_keys.dart';
 import 'package:tsundoku_quest/domain/models/user_book.dart';
 import 'package:tsundoku_quest/domain/models/book.dart';
 import 'package:tsundoku_quest/shared/providers/book_data_provider.dart';
-import 'package:tsundoku_quest/shared/providers/adventurer_provider.dart';
 
 Widget testReadingScreenWithContainer({
   String? id,
   required ProviderContainer container,
 }) {
   if (id != null) {
-    final book = Book(
+    const book = Book(
         id: 'b1',
         title: 'Test Book',
         authors: ['Author'],
@@ -46,6 +45,9 @@ Widget testReadingScreen({String? id}) {
 }
 
 void main() {
+  // SharedPreferences のテスト用モック初期化
+  SharedPreferences.setMockInitialValues({});
+
   group('ReadingScreen', () {
     testWidgets('should show not found when no id', (tester) async {
       await tester.pumpWidget(testReadingScreen());
@@ -81,14 +83,14 @@ void main() {
       await tester.tap(find.text('▶ 開始'));
       await tester.pump(const Duration(seconds: 65));
 
-      // ページを更新すると _updatePage 経由で totalReadingMinutes が保存される
+      // _updatePage でページのみ更新（totalReadingMinutesは _endSessionIfNeeded で加算）
       await tester.enterText(find.byKey(AppKeys.readingPageInput), '50');
       await tester.pumpAndSettle();
 
-      // totalReadingMinutesが増加（30 + 1 = 31以上）
+      // totalReadingMinutesはページ更新では変わらない（読書終了時に加算）
       final updatedBook =
           container.read(bookDataProvider.notifier).getUserBook('test-id');
-      expect(updatedBook!.totalReadingMinutes, greaterThan(30));
+      expect(updatedBook!.totalReadingMinutes, 30);
 
       container.dispose();
     });
@@ -100,14 +102,14 @@ void main() {
       // updateUserBookがtotalReadingMinutesを正しく更新し、
       // _syncUpdateToSupabase経由で永続化されることを確認
       final notifier = BookDataNotifier();
-      final book = Book(
+      const book = Book(
         id: 'b1',
         title: 'Test Book',
         authors: ['Author'],
         source: BookSource.manual,
         createdAt: '2026-01-01T00:00:00Z',
       );
-      notifier.addUserBook(UserBook(
+      notifier.addUserBook(const UserBook(
         id: 'ub-1',
         userId: 'u1',
         bookId: 'b1',
@@ -132,14 +134,14 @@ void main() {
         (tester) async {
       // BookDataNotifierにセットアップ
       final container = ProviderContainer();
-      final book = Book(
+      const book = Book(
         id: 'b1',
         title: 'Test Book',
         authors: ['Author'],
         source: BookSource.manual,
         createdAt: '2026-01-01T00:00:00Z',
       );
-      final userBook = UserBook(
+      const userBook = UserBook(
         id: 'test-id',
         userId: 'u1',
         bookId: 'b1',
@@ -157,7 +159,7 @@ void main() {
           container: container,
           child: MaterialApp(
             theme: ThemeData.dark(),
-            home: ReadingScreen(id: 'test-id'),
+            home: const ReadingScreen(id: 'test-id'),
           ),
         ),
       );
@@ -167,17 +169,15 @@ void main() {
       await tester.tap(find.text('▶ 開始'));
       await tester.pump(const Duration(seconds: 125));
 
-      // _endSessionIfNeeded は dispose 時に呼ばれるが、
-      // ここでは _updatePage が onChanged で呼ばれ、
-      // totalReadingMinutesを保存することを期待
-      // ページフィールドに入力すると _updatePage → updateUserBook
+      // _endSessionIfNeeded は dispose / 読了時のみ呼ばれる。
+      // _updatePage ではページのみ更新し、totalReadingMinutes は変更しない。
       await tester.enterText(find.byKey(AppKeys.readingPageInput), '60');
       await tester.pumpAndSettle();
 
-      // totalReadingMinutesが増加している
+      // totalReadingMinutesはページ更新では変わらない（30のまま）
       final bookAfter =
           container.read(bookDataProvider.notifier).getUserBook('test-id');
-      expect(bookAfter!.totalReadingMinutes, greaterThanOrEqualTo(32));
+      expect(bookAfter!.totalReadingMinutes, 30);
 
       container.dispose();
     });
@@ -194,14 +194,14 @@ void main() {
       final container = ProviderContainer();
 
       // Seed a user book in the provider
-      final book = Book(
+      const book = Book(
         id: 'b1',
         title: 'Test Book',
         authors: ['Author'],
         source: BookSource.manual,
         createdAt: '2026-01-01T00:00:00Z',
       );
-      final userBook = UserBook(
+      const userBook = UserBook(
         id: 'test-id',
         userId: 'u1',
         bookId: 'b1',
@@ -241,6 +241,122 @@ void main() {
       expect(find.byKey(AppKeys.bookshelfScreen), findsOneWidget);
 
       container.dispose();
+    });
+
+    testWidgets('complete button should show confirmation dialog', (tester) async {
+      await tester.pumpWidget(testReadingScreen(id: 'test-id'));
+      await tester.pumpAndSettle();
+
+      // Scroll the ListView down to reveal the complete button (offscreen)
+      await tester.drag(find.byType(ListView), const Offset(0, -500));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(AppKeys.readingComplete));
+      await tester.pumpAndSettle();
+
+      expect(find.text('🏁 冒険を完了しますか？'), findsOneWidget);
+    });
+
+    testWidgets('confirmation dialog cancel should dismiss', (tester) async {
+      await tester.pumpWidget(testReadingScreen(id: 'test-id'));
+      await tester.pumpAndSettle();
+
+      // Scroll the ListView down to reveal the complete button (offscreen)
+      await tester.drag(find.byType(ListView), const Offset(0, -500));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(AppKeys.readingComplete));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('まだ読む'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AlertDialog), findsNothing);
+    });
+
+    testWidgets('confirmation dialog confirm should show complete modal', (tester) async {
+      await tester.pumpWidget(testReadingScreen(id: 'test-id'));
+      await tester.pumpAndSettle();
+
+      // Scroll the ListView down to reveal the complete button (offscreen)
+      await tester.drag(find.byType(ListView), const Offset(0, -500));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(AppKeys.readingComplete));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('読了する'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('⚔️ 戦利品カード'), findsOneWidget);
+    });
+
+    testWidgets('should show cover image when coverImageUrl is set', (tester) async {
+      final container = ProviderContainer();
+      const book = Book(
+        id: 'b1',
+        title: 'Test Book',
+        authors: ['Author'],
+        source: BookSource.manual,
+        createdAt: '2026-01-01T00:00:00Z',
+        coverImageUrl: 'https://example.com/cover.jpg',
+      );
+      const userBook = UserBook(
+        id: 'test-id',
+        userId: 'u1',
+        bookId: 'b1',
+        book: book,
+        status: BookStatus.reading,
+        medium: BookMedium.physical,
+        totalReadingMinutes: 30,
+        createdAt: '2026-01-01T00:00:00Z',
+      );
+      container.read(bookDataProvider.notifier).addUserBook(userBook);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            theme: ThemeData.dark(),
+            home: const ReadingScreen(id: 'test-id'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Image.network should be present in the widget tree when coverImageUrl is set
+      expect(find.byType(Image), findsAtLeastNWidgets(1));
+
+      container.dispose();
+    });
+
+    testWidgets('should show fallback icon when coverImageUrl is null', (tester) async {
+      await tester.pumpWidget(testReadingScreen(id: 'test-id'));
+      await tester.pumpAndSettle();
+
+      // Default book icon should be shown as fallback
+      expect(find.byIcon(Icons.menu_book), findsAtLeastNWidgets(1));
+    });
+
+    testWidgets('timer controls toggle start/stop', (tester) async {
+      await tester.pumpWidget(testReadingScreen(id: 'test-id'));
+      await tester.pumpAndSettle();
+
+      // Start timer
+      await tester.tap(find.text('▶ 開始'));
+      await tester.pump(const Duration(seconds: 65));
+
+      // Timer should be running, show pause button
+      expect(find.text('⏸ 一時停止'), findsOneWidget);
+      // Timer text should show elapsed time
+      expect(find.text('00:01:05'), findsOneWidget);
+
+      // Pause timer
+      await tester.tap(find.text('⏸ 一時停止'));
+      await tester.pump();
+
+      // Timer should be paused, show start button again
+      expect(find.text('▶ 開始'), findsOneWidget);
     });
   });
 }
