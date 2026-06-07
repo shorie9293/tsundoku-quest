@@ -470,7 +470,7 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
       return Scaffold(
         appBar: AppBar(title: const Text('読書中')),
         body: const DungeonBackground(
-          type: ScreenBackgroundType.reading,
+          screenType: ScreenType.reading,
           child: Center(child: Text('本が見つかりません')),
         ),
       );
@@ -493,8 +493,8 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
           title: Text(book.book?.title ?? '読書中'),
         ),
         body: DungeonBackground(
-          type: ScreenBackgroundType.reading,
-          child: ListView(
+          screenType: ScreenType.reading,
+        child: ListView(
           padding: const EdgeInsets.all(16),
         children: [
           // Cover + Title

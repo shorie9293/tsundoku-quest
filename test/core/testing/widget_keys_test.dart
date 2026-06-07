@@ -1,0 +1,210 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:tsundoku_quest/core/testing/widget_keys.dart';
+
+void main() {
+  group('AppKeys - 一意性検証（重複Key禁止）', () {
+    test('全Keyの文字列表現が重複していない', () {
+      // リフレクションを使わず、既知の全Key文字列を手動列挙
+      final allKeys = <String>[
+        // 書庫
+        AppKeys.bookshelfScreen.toString(),
+        AppKeys.adventurerHeader.toString(),
+        AppKeys.dungeonSummary.toString(),
+        AppKeys.xpBar.toString(),
+        AppKeys.streakDisplay.toString(),
+        AppKeys.dailyQuest.toString(),
+        AppKeys.bookShelfSection.toString(),
+        AppKeys.bookCard.toString(),
+        AppKeys.bookCardCover.toString(),
+        AppKeys.bookCardTitle.toString(),
+        AppKeys.bookCardProgress.toString(),
+        AppKeys.bookEditModal.toString(),
+        // 探索
+        AppKeys.exploreScreen.toString(),
+        AppKeys.searchTab.toString(),
+        AppKeys.scanTab.toString(),
+        AppKeys.manualTab.toString(),
+        AppKeys.searchField.toString(),
+        AppKeys.searchButton.toString(),
+        AppKeys.searchResultsList.toString(),
+        AppKeys.searchResultItem.toString(),
+        AppKeys.scanPreview.toString(),
+        AppKeys.scanFrame.toString(),
+        AppKeys.manualTitleField.toString(),
+        AppKeys.manualAuthorField.toString(),
+        AppKeys.manualIsbnField.toString(),
+        AppKeys.manualSubmit.toString(),
+        // 読書中
+        AppKeys.readingScreen.toString(),
+        AppKeys.readingCover.toString(),
+        AppKeys.readingTitle.toString(),
+        AppKeys.readingTimer.toString(),
+        AppKeys.readingProgress.toString(),
+        AppKeys.readingPageInput.toString(),
+        AppKeys.readingMemo.toString(),
+        AppKeys.readingComplete.toString(),
+        AppKeys.completeModal.toString(),
+        AppKeys.trophyLearning1.toString(),
+        AppKeys.trophyLearning2.toString(),
+        AppKeys.trophyLearning3.toString(),
+        AppKeys.trophyAction.toString(),
+        AppKeys.trophyQuote.toString(),
+        AppKeys.trophySubmit.toString(),
+        // 足跡
+        AppKeys.historyScreen.toString(),
+        AppKeys.monthlyStatsGrid.toString(),
+        AppKeys.readingCalendar.toString(),
+        AppKeys.genreDistribution.toString(),
+        AppKeys.badgeCollection.toString(),
+        // タブバー
+        AppKeys.mainTabBar.toString(),
+        AppKeys.tabBookshelf.toString(),
+        AppKeys.tabExplore.toString(),
+        AppKeys.tabReading.toString(),
+        AppKeys.tabHistory.toString(),
+        // 認証
+        AppKeys.authScreen.toString(),
+        AppKeys.authGuestButton.toString(),
+        AppKeys.authLoginButton.toString(),
+        AppKeys.authSignupButton.toString(),
+        AppKeys.authEmailField.toString(),
+        AppKeys.authPasswordField.toString(),
+        AppKeys.authConfirmPasswordField.toString(),
+        AppKeys.authSubmitButton.toString(),
+        AppKeys.authErrorText.toString(),
+        AppKeys.authBackButton.toString(),
+        // おすすめ
+        AppKeys.recommendationSection.toString(),
+        AppKeys.recommendationCard.toString(),
+        AppKeys.recommendationTitle.toString(),
+        AppKeys.recommendationAuthor.toString(),
+        AppKeys.recommendationReason.toString(),
+        AppKeys.recommendationButton.toString(),
+        AppKeys.recommendationScreen.toString(),
+        AppKeys.recommendationList.toString(),
+        AppKeys.socialReadingSection.toString(),
+        // 汎用
+        AppKeys.backButton.toString(),
+        AppKeys.closeButton.toString(),
+        AppKeys.confirmDialog.toString(),
+        AppKeys.errorBoundary.toString(),
+        // チュートリアル
+        AppKeys.tutorialScreen.toString(),
+        AppKeys.tutorialPageView.toString(),
+        AppKeys.tutorialStartButton.toString(),
+        AppKeys.tutorialSkipButton.toString(),
+        AppKeys.tutorialPageIndicator.toString(),
+        AppKeys.tutorialLorePage1.toString(),
+        AppKeys.tutorialLorePage2.toString(),
+        AppKeys.tutorialLorePage3.toString(),
+        AppKeys.tutorialLorePage4.toString(),
+        AppKeys.tutorialOperationPage.toString(),
+      ];
+
+      final uniqueKeys = allKeys.toSet();
+      if (uniqueKeys.length != allKeys.length) {
+        final duplicates = allKeys
+            .toSet()
+            .where((k) => allKeys.where((e) => e == k).length > 1);
+        fail('重複Key検出: $duplicates');
+      }
+      expect(uniqueKeys.length, allKeys.length);
+    });
+
+    test('全Keyの数は83個（増減の検知用）', () {
+      // 新たにKeyを追加する際は、このテストの期待値も更新せよ
+      final allKeys = [
+        AppKeys.bookshelfScreen,
+        AppKeys.adventurerHeader,
+        AppKeys.dungeonSummary,
+        AppKeys.xpBar,
+        AppKeys.streakDisplay,
+        AppKeys.dailyQuest,
+        AppKeys.bookShelfSection,
+        AppKeys.bookCard,
+        AppKeys.bookCardCover,
+        AppKeys.bookCardTitle,
+        AppKeys.bookCardProgress,
+        AppKeys.bookEditModal,
+        AppKeys.exploreScreen,
+        AppKeys.searchTab,
+        AppKeys.scanTab,
+        AppKeys.manualTab,
+        AppKeys.searchField,
+        AppKeys.searchButton,
+        AppKeys.searchResultsList,
+        AppKeys.searchResultItem,
+        AppKeys.scanPreview,
+        AppKeys.scanFrame,
+        AppKeys.manualTitleField,
+        AppKeys.manualAuthorField,
+        AppKeys.manualIsbnField,
+        AppKeys.manualSubmit,
+        AppKeys.readingScreen,
+        AppKeys.readingCover,
+        AppKeys.readingTitle,
+        AppKeys.readingTimer,
+        AppKeys.readingProgress,
+        AppKeys.readingPageInput,
+        AppKeys.readingMemo,
+        AppKeys.readingComplete,
+        AppKeys.completeModal,
+        AppKeys.trophyLearning1,
+        AppKeys.trophyLearning2,
+        AppKeys.trophyLearning3,
+        AppKeys.trophyAction,
+        AppKeys.trophyQuote,
+        AppKeys.trophySubmit,
+        AppKeys.historyScreen,
+        AppKeys.monthlyStatsGrid,
+        AppKeys.readingCalendar,
+        AppKeys.genreDistribution,
+        AppKeys.badgeCollection,
+        AppKeys.mainTabBar,
+        AppKeys.tabBookshelf,
+        AppKeys.tabExplore,
+        AppKeys.tabReading,
+        AppKeys.tabHistory,
+        AppKeys.authScreen,
+        AppKeys.authGuestButton,
+        AppKeys.authLoginButton,
+        AppKeys.authSignupButton,
+        AppKeys.authEmailField,
+        AppKeys.authPasswordField,
+        AppKeys.authConfirmPasswordField,
+        AppKeys.authSubmitButton,
+        AppKeys.authErrorText,
+        AppKeys.authBackButton,
+        AppKeys.recommendationSection,
+        AppKeys.recommendationCard,
+        AppKeys.recommendationTitle,
+        AppKeys.recommendationAuthor,
+        AppKeys.recommendationReason,
+        AppKeys.recommendationButton,
+        AppKeys.recommendationScreen,
+        AppKeys.recommendationList,
+        AppKeys.socialReadingSection,
+        AppKeys.backButton,
+        AppKeys.closeButton,
+        AppKeys.confirmDialog,
+        AppKeys.errorBoundary,
+        AppKeys.tutorialScreen,
+        AppKeys.tutorialPageView,
+        AppKeys.tutorialStartButton,
+        AppKeys.tutorialSkipButton,
+        AppKeys.tutorialPageIndicator,
+        AppKeys.tutorialLorePage1,
+        AppKeys.tutorialLorePage2,
+        AppKeys.tutorialLorePage3,
+        AppKeys.tutorialLorePage4,
+        AppKeys.tutorialOperationPage,
+      ];
+
+      // 数えて検証
+      final uniqueValues = allKeys.map((k) => k.toString()).toSet();
+      expect(uniqueValues.length, 84,
+          reason: 'Keyの数が変更されました。期待値を更新してください。'
+              '（重複がないことのみ重要で、数は増減の検知用です）');
+    });
+  });
+}
