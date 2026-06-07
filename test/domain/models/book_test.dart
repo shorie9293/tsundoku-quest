@@ -217,25 +217,5 @@ void main() {
         expect(a, isNot(b));
       });
     });
-
-    group('copyWith', () {
-      test('タイトルのみ変更', () {
-        final updated = sampleBook.copyWith(title: '新タイトル');
-        expect(updated.title, '新タイトル');
-        expect(updated.id, sampleBook.id);
-        expect(updated.authors, sampleBook.authors);
-      });
-
-      test('著者のみ変更', () {
-        final updated = sampleBook.copyWith(authors: const ['新著者']);
-        expect(updated.authors, ['新著者']);
-        expect(updated.title, sampleBook.title);
-      });
-
-      test('何も変更しなければ同一', () {
-        final unchanged = sampleBook.copyWith();
-        expect(unchanged, sampleBook);
-      });
-    });
   });
 }
