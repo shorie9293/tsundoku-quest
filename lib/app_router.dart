@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'core/widgets/app_scaffold.dart';
 import 'features/bookshelf/presentation/bookshelf_screen.dart';
 import 'features/explore/presentation/explore_screen.dart';
@@ -9,6 +10,8 @@ import 'features/auth/presentation/auth_screen.dart';
 import 'features/auth/presentation/login_screen.dart';
 import 'features/auth/presentation/signup_screen.dart';
 import 'features/recommendation/presentation/recommendation_screen.dart';
+import 'features/tutorial/presentation/tutorial_screen.dart';
+import 'features/tutorial/data/tutorial_preferences.dart';
 
 /// アプリ全体のルーティング設定
 ///
@@ -66,6 +69,24 @@ class AppRouter {
         GoRoute(
           path: '/recommendations',
           builder: (context, state) => const RecommendationScreen(),
+        ),
+        GoRoute(
+          path: '/tutorial',
+          builder: (context, state) {
+            return FutureBuilder<SharedPreferences>(
+              future: SharedPreferences.getInstance(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const Scaffold(
+                    body: Center(child: CircularProgressIndicator()),
+                  );
+                }
+                return TutorialScreen(
+                  prefs: TutorialPreferences(snapshot.data!),
+                );
+              },
+            );
+          },
         ),
       ],
     );

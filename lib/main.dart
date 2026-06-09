@@ -1,12 +1,15 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/theme/app_theme.dart';
 import 'core/infrastructure/supabase/supabase_config.dart';
 import 'core/infrastructure/connectivity/connectivity_provider.dart';
 import 'app_router.dart';
 import 'features/shared/data/adventurer_repository_provider.dart';
+import 'features/tutorial/data/tutorial_preferences.dart';
 import 'shared/providers/adventurer_provider.dart';
 import 'package:takamagahara_ui/takamagahara_ui.dart';
 
@@ -140,15 +143,36 @@ class _AppStartupInitializerState
   @override
   void initState() {
     super.initState();
-    // 初回フレーム描画後に Supabase からステータスをロード
+    // 初回フレーム描画後に初期化処理を実行
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      try {
-        final repository = ref.read(adventurerRepositoryProvider);
-        ref.read(adventurerProvider.notifier).loadFromRepository(repository);
-      } catch (e) {
-        debugPrint('⚠️ 冒険者ステータスの初期ロード失敗: $e');
-      }
+      _loadAdventurerStatus();
+      _checkTutorial();
     });
+  }
+
+  /// Supabase から冒険者ステータスを読み込む
+  void _loadAdventurerStatus() {
+    try {
+      final repository = ref.read(adventurerRepositoryProvider);
+      ref.read(adventurerProvider.notifier).loadFromRepository(repository);
+    } catch (e) {
+      debugPrint('⚠️ 冒険者ステータスの初期ロード失敗: $e');
+    }
+  }
+
+  /// 初回起動時にチュートリアル画面を表示
+  Future<void> _checkTutorial() async {
+    if (!mounted) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final tutorialPrefs = TutorialPreferences(prefs);
+      if (!mounted) return;
+      if (tutorialPrefs.isFirstLaunch) {
+        GoRouter.of(context).push('/tutorial');
+      }
+    } catch (e) {
+      debugPrint('⚠️ チュートリアル判定失敗: $e');
+    }
   }
 
   @override

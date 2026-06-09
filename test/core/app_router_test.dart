@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tsundoku_quest/app_router.dart';
 import 'package:tsundoku_quest/core/testing/widget_keys.dart';
 
@@ -168,6 +169,67 @@ void main() {
         }
       }
       expect(hasNavSemantics, isTrue);
+    });
+  });
+
+  group('AppRouter - Tutorial Route', () {
+    setUp(() {
+      // TutorialScreen が SharedPreferences を使うため mock 初期化
+      SharedPreferences.setMockInitialValues({});
+    });
+
+    testWidgets('should display tutorial screen at /tutorial',
+        (tester) async {
+      final router = AppRouter.createRouter();
+
+      await tester.pumpWidget(ProviderScope(
+        child: MaterialApp.router(
+          routerConfig: router,
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      // Navigate to /tutorial
+      router.push('/tutorial');
+      await tester.pumpAndSettle();
+
+      // Tutorial screen should be displayed
+      expect(find.byKey(AppKeys.tutorialScreen), findsOneWidget);
+      expect(find.byKey(AppKeys.tutorialPageView), findsOneWidget);
+    });
+
+    testWidgets('should show tutorial page indicator', (tester) async {
+      final router = AppRouter.createRouter();
+
+      await tester.pumpWidget(ProviderScope(
+        child: MaterialApp.router(
+          routerConfig: router,
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      router.push('/tutorial');
+      await tester.pumpAndSettle();
+
+      // Page indicator should be visible
+      expect(find.byKey(AppKeys.tutorialPageIndicator), findsOneWidget);
+    });
+
+    testWidgets('should show start button on tutorial screen', (tester) async {
+      final router = AppRouter.createRouter();
+
+      await tester.pumpWidget(ProviderScope(
+        child: MaterialApp.router(
+          routerConfig: router,
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      router.push('/tutorial');
+      await tester.pumpAndSettle();
+
+      // Start button should be visible
+      expect(find.byKey(AppKeys.tutorialStartButton), findsOneWidget);
     });
   });
 }
