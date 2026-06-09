@@ -282,4 +282,70 @@ void main() {
       expect(BookSearchService.isIsbn('12345678901234'), false); // 14 digits
     });
   });
+
+  // ━━━━━ error handling / SearchException ━━━━━
+
+  group('BookSearchService error handling', () {
+    test('should throw SearchException when all APIs throw in search',
+        () async {
+      fakeRakuten.onSearch = (_) => throw Exception('Rakuten down');
+      fakeOpenbd.onLookupByIsbn = (_) => throw Exception('OpenBD down');
+      fakeGoogle.onSearch = (_) => throw Exception('Google down');
+
+      expect(
+        () => service.search('9784000000000'),
+        throwsA(isA<SearchException>()),
+      );
+    });
+
+    test('should throw SearchException when all APIs throw in lookupByIsbn',
+        () async {
+      fakeRakuten.onLookupByIsbn = (_) => throw Exception('Rakuten down');
+      fakeOpenbd.onLookupByIsbn = (_) => throw Exception('OpenBD down');
+      fakeGoogle.onLookupByIsbn = (_) => throw Exception('Google down');
+
+      expect(
+        () => service.lookupByIsbn('9784000000000'),
+        throwsA(isA<SearchException>()),
+      );
+    });
+
+    test('should fall back to next API when one throws in search', () async {
+      fakeRakuten.onSearch = (_) => throw Exception('Rakuten down');
+      fakeOpenbd.onLookupByIsbn =
+          (isbn) => _book(id: 'obd', title: 'OpenBD fallback', isbn13: isbn);
+      fakeGoogle.onSearch = (_) => throw Exception('Google down');
+
+      final results = await service.search('9784000000000');
+
+      expect(results.length, 1);
+      expect(results.first.title, 'OpenBD fallback');
+    });
+
+    test(
+        'should fall back to next API when one throws in lookupByIsbn',
+        () async {
+      fakeRakuten.onLookupByIsbn = (_) => throw Exception('Rakuten down');
+      fakeOpenbd.onLookupByIsbn = (_) => _book(id: 'obd', title: 'ISBN fallback');
+      fakeGoogle.onLookupByIsbn = (_) => throw Exception('Google down');
+
+      final book = await service.lookupByIsbn('9784000000000');
+
+      expect(book, isNotNull);
+      expect(book!.title, 'ISBN fallback');
+    });
+
+    test('SearchException should contain error message', () async {
+      fakeRakuten.onSearch = (_) => throw Exception('Rakuten down');
+      fakeGoogle.onSearch = (_) => throw Exception('Google down');
+
+      try {
+        await service.search('普通のキーワード');
+        fail('Should have thrown');
+      } on SearchException catch (e) {
+        expect(e.message, contains('すべての検索サービスが利用できません'));
+        expect(e.errors.length, 2);
+      }
+    });
+  });
 }

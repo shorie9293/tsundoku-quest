@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'dart:io';
+import 'dart:async';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/testing/widget_keys.dart';
 import '../../../core/widgets/dungeon_background.dart';
@@ -9,6 +11,7 @@ import '../../../domain/models/book.dart';
 import '../../../domain/models/user_book.dart';
 import '../../../shared/providers/book_data_provider.dart';
 import '../../../shared/providers/book_search_service_provider.dart';
+import '../../../shared/repositories/book_search_service.dart';
 import 'widgets/search_results_widget.dart';
 
 /// 探索画面（本の登録）
@@ -74,7 +77,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
       if (mounted) {
         setState(() => _isSearching = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('🔌 検索エラー: $e')),
+          SnackBar(content: Text(_errorMessage(e))),
         );
       }
     }
@@ -128,7 +131,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('🔌 検索エラー: $e')),
+          SnackBar(content: Text(_errorMessage(e))),
         );
         await Future.delayed(const Duration(milliseconds: 1500));
       }
@@ -145,6 +148,20 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
     _isbnController.dispose();
     _scannerController?.dispose();
     super.dispose();
+  }
+
+  /// 例外の種類に応じた日本語エラーメッセージを返す
+  String _errorMessage(Object e) {
+    if (e is SocketException || e is HandshakeException) {
+      return 'ネットワーク接続を確認してください';
+    }
+    if (e is TimeoutException) {
+      return '検索がタイムアウトしました。再度お試しください';
+    }
+    if (e is SearchException) {
+      return '検索サービスが一時的に利用できません';
+    }
+    return '検索エラーが発生しました';
   }
 
   @override

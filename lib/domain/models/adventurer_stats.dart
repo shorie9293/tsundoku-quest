@@ -11,6 +11,7 @@ class AdventurerStats {
   final int currentStreak;
   final int longestStreak;
   final List<String> readingDates;
+  final String? errorMessage;
 
   const AdventurerStats({
     required this.level,
@@ -24,6 +25,7 @@ class AdventurerStats {
     required this.currentStreak,
     required this.longestStreak,
     required this.readingDates,
+    this.errorMessage,
   });
 
   /// 駆け出し冒険者の初期ステータス

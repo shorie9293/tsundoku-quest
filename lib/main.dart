@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/theme/app_theme.dart';
 import 'core/infrastructure/supabase/supabase_config.dart';
+import 'core/infrastructure/connectivity/connectivity_provider.dart';
 import 'app_router.dart';
 import 'features/shared/data/adventurer_repository_provider.dart';
 import 'shared/providers/adventurer_provider.dart';
@@ -66,8 +67,50 @@ Future<void> main() async {
   debugPrint('🏁 runApp 完了');
 }
 
-class TsundokuQuestApp extends StatelessWidget {
+class TsundokuQuestApp extends ConsumerStatefulWidget {
   const TsundokuQuestApp({super.key});
+
+  @override
+  ConsumerState<TsundokuQuestApp> createState() => _TsundokuQuestAppState();
+}
+
+class _TsundokuQuestAppState extends ConsumerState<TsundokuQuestApp> {
+  bool _wasOffline = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // 接続状態の変化を監視し、オンライン復帰時に自動リトライ
+    ref.listenManual(isOnlineProvider, (prev, next) {
+      if (prev == false && next == true) {
+        // オフライン → オンライン復帰
+        _wasOffline = false;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('✅ 接続が復帰しました'),
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
+        });
+        // Supabase から冒険者ステータスを再取得
+        _retryLoadAdventurer();
+      } else if (next == false) {
+        _wasOffline = true;
+      }
+    });
+  }
+
+  void _retryLoadAdventurer() {
+    try {
+      final repository = ref.read(adventurerRepositoryProvider);
+      ref.read(adventurerProvider.notifier).loadFromRepository(repository);
+    } catch (e) {
+      debugPrint('⚠️ 冒険者ステータスの再取得失敗: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -76,7 +119,9 @@ class TsundokuQuestApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
       routerConfig: AppRouter.router,
-      builder: (context, child) => _AppStartupInitializer(child: child!),
+      builder: (context, child) {
+        return _AppStartupInitializer(child: child!);
+      },
     );
   }
 }
@@ -107,5 +152,31 @@ class _AppStartupInitializerState
   }
 
   @override
-  Widget build(BuildContext context) => widget.child;
+  Widget build(BuildContext context) {
+    // オフラインバナーを画面上部に表示
+    final isOnline = ref.watch(isOnlineProvider);
+    return Column(
+      children: [
+        if (!isOnline)
+          MaterialBanner(
+            content: const Row(
+              children: [
+                Text('⚠️', style: TextStyle(fontSize: 20)),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'オフラインモード — 一部機能が制限されます',
+                    style: TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.orange.shade900,
+            actions: const [SizedBox.shrink()],
+            forceActionsBelow: true,
+          ),
+        Expanded(child: widget.child),
+      ],
+    );
+  }
 }

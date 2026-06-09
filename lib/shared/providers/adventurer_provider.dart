@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tsundoku_quest/domain/models/adventurer_stats.dart';
 import 'package:tsundoku_quest/domain/repositories/adventurer_repository.dart';
@@ -13,8 +14,10 @@ class AdventurerNotifier extends StateNotifier<AdventurerStats> {
       // level/XP はクライアントサイド管理だが stats() は常に level=1 から始まるため
       // そのまま上書きして問題ない（XP永続化は未実装）
       state = stats;
-    }).catchError((_) {
-      // Supabase が使えない場合は初期状態のまま
+    }).catchError((error, stackTrace) {
+      // Supabase が使えない場合は初期状態のまま。エラー情報を state に保持
+      debugPrint('⚠️ Supabase から冒険者ステータス取得失敗: $error\n$stackTrace');
+      state = _copyWith(errorMessage: 'サーバーに接続できません（オフラインモード）');
     });
   }
 
@@ -84,6 +87,7 @@ class AdventurerNotifier extends StateNotifier<AdventurerStats> {
     int? currentStreak,
     int? longestStreak,
     List<String>? readingDates,
+    String? errorMessage,
   }) {
     return AdventurerStats(
       level: level ?? state.level,
@@ -97,6 +101,7 @@ class AdventurerNotifier extends StateNotifier<AdventurerStats> {
       currentStreak: currentStreak ?? state.currentStreak,
       longestStreak: longestStreak ?? state.longestStreak,
       readingDates: readingDates ?? state.readingDates,
+      errorMessage: errorMessage ?? state.errorMessage,
     );
   }
 
