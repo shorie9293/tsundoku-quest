@@ -84,7 +84,7 @@ void main() {
   group('updateTrophy', () {
     test('updates and returns', () async {
       repo.seedTrophies([_t('wt-1')]);
-      final updated = WarTrophy(
+      const updated = WarTrophy(
         id: 'wt-1', userBookId: 'ub-1', userId: 'user-1',
         learnings: ['更新'], action: 'new-act',
         favoriteQuote: 'new-q', createdAt: '2026-05-05T10:00:00Z',

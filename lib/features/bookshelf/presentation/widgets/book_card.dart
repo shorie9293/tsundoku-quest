@@ -40,6 +40,16 @@ class BookCard extends StatelessWidget {
     }
   }
 
+  /// ISO8601文字列を yyyy/MM/dd に変換
+  String _formatCompletedDate(String iso8601) {
+    try {
+      final dt = DateTime.parse(iso8601);
+      return '${dt.year}/${dt.month.toString().padLeft(2, '0')}/${dt.day.toString().padLeft(2, '0')}';
+    } catch (_) {
+      return iso8601;
+    }
+  }
+
   Future<bool> _confirmDelete(BuildContext context) async {
     final result = await showDialog<bool>(
       context: context,
@@ -158,6 +168,34 @@ class BookCard extends StatelessWidget {
                             fontSize: 10,
                             color: AppTheme.textSecondary,
                           ),
+                        ),
+                      ),
+                    // 読了本：星評価と読了日を表示
+                    if (book.status == BookStatus.completed)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Row(
+                          children: [
+                            if (book.rating != null) ...[
+                              ...List.generate(
+                                5,
+                                (i) => Icon(
+                                  i < book.rating! ? Icons.star : Icons.star_border,
+                                  size: 12,
+                                  color: AppTheme.badge,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                            ],
+                            if (book.completedAt != null)
+                              Text(
+                                _formatCompletedDate(book.completedAt!),
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  color: AppTheme.textSecondary,
+                                ),
+                              ),
+                          ],
                         ),
                       ),
                     if (book.status == BookStatus.reading)

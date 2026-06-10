@@ -132,6 +132,8 @@ void main() {
 
     testWidgets('_endSessionIfNeeded should persist UserBook totalReadingMinutes',
         (tester) async {
+      // 前テストからのSharedPreferences状態リークを防止
+      SharedPreferences.setMockInitialValues({});
       // BookDataNotifierにセットアップ
       final container = ProviderContainer();
       const book = Book(

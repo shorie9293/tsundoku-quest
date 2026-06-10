@@ -15,6 +15,7 @@ import 'widgets/book_shelf_section.dart';
 import 'widgets/edit_book_modal.dart';
 import '../../recommendation/domain/recommendation_service.dart';
 import '../../recommendation/presentation/widgets/social_reading_section.dart';
+import 'widgets/completed_book_detail_modal.dart';
 
 /// 書庫画面（ホーム）
 class BookshelfScreen extends ConsumerStatefulWidget {
@@ -27,7 +28,7 @@ class BookshelfScreen extends ConsumerStatefulWidget {
 class _BookshelfScreenState extends ConsumerState<BookshelfScreen> {
   bool _readingOpen = true;
   bool _tsundokuOpen = true;
-  bool _completedOpen = false;
+  bool _completedOpen = true;
 
   @override
   void initState() {
@@ -50,6 +51,10 @@ class _BookshelfScreenState extends ConsumerState<BookshelfScreen> {
     } else {
       context.go('/explore');
     }
+  }
+
+  void _showCompletedDetail(UserBook book) {
+    CompletedBookDetailModal.show(context, book);
   }
 
   @override
@@ -153,22 +158,23 @@ class _BookshelfScreenState extends ConsumerState<BookshelfScreen> {
           ),
 
           // Completed section
-          BookShelfSection(
-            title: '討伐済',
-            icon: Icons.check_circle,
-            iconColor: AppTheme.completedColor,
-            isOpen: _completedOpen,
-            onToggle: () => setState(() => _completedOpen = !_completedOpen),
-            children: completedBooks
-                .map((book) => BookCard(
-                      book: book,
-                      onTap: () => context.go('/history'),
-                      onEdit: () => EditBookModal.show(context, book),
-                      onDelete: () =>
-                          ref.read(bookDataProvider.notifier).removeUserBook(book.id),
-                    ))
-                .toList(),
-          ),
+          if (completedBooks.isNotEmpty)
+            BookShelfSection(
+              title: '討伐済',
+              icon: Icons.check_circle,
+              iconColor: AppTheme.completedColor,
+              isOpen: _completedOpen,
+              onToggle: () => setState(() => _completedOpen = !_completedOpen),
+              children: completedBooks
+                  .map((book) => BookCard(
+                        book: book,
+                        onTap: () => _showCompletedDetail(book),
+                        onEdit: () => EditBookModal.show(context, book),
+                        onDelete: () =>
+                            ref.read(bookDataProvider.notifier).removeUserBook(book.id),
+                      ))
+                  .toList(),
+            ),
 
           // Empty state
           if (!hasBooks)

@@ -6,6 +6,9 @@ import 'package:tsundoku_quest/app_router.dart';
 import 'package:tsundoku_quest/core/testing/widget_keys.dart';
 
 void main() {
+  // SharedPreferences のテスト用モック初期化（reading_screen_test の修正パターンと同様）
+  SharedPreferences.setMockInitialValues({});
+
   // Helper to create a test app with ProviderScope + fresh router per test
   Widget testApp() {
     return ProviderScope(
@@ -173,11 +176,6 @@ void main() {
   });
 
   group('AppRouter - Tutorial Route', () {
-    setUp(() {
-      // TutorialScreen が SharedPreferences を使うため mock 初期化
-      SharedPreferences.setMockInitialValues({});
-    });
-
     testWidgets('should display tutorial screen at /tutorial',
         (tester) async {
       final router = AppRouter.createRouter();
