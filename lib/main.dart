@@ -78,8 +78,6 @@ class TsundokuQuestApp extends ConsumerStatefulWidget {
 }
 
 class _TsundokuQuestAppState extends ConsumerState<TsundokuQuestApp> {
-  bool _wasOffline = false;
-
   @override
   void initState() {
     super.initState();
@@ -87,7 +85,6 @@ class _TsundokuQuestAppState extends ConsumerState<TsundokuQuestApp> {
     ref.listenManual(isOnlineProvider, (prev, next) {
       if (prev == false && next == true) {
         // オフライン → オンライン復帰
-        _wasOffline = false;
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -101,7 +98,8 @@ class _TsundokuQuestAppState extends ConsumerState<TsundokuQuestApp> {
         // Supabase から冒険者ステータスを再取得
         _retryLoadAdventurer();
       } else if (next == false) {
-        _wasOffline = true;
+        // オフライン検知（ログのみ）
+        debugPrint('📡 [App] オフライン状態を検知');
       }
     });
   }
