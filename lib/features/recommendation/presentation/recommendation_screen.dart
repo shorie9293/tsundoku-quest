@@ -75,6 +75,7 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen> {
         title: const Text('おすすめ'),
       ),
       body: DungeonBackground(
+        screenType: ScreenType.recommendation,
         child: _buildBody(),
       ),
     );

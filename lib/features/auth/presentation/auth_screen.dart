@@ -20,6 +20,7 @@ class AuthScreen extends StatelessWidget {
       child: Scaffold(
         key: AppKeys.authScreen,
         body: DungeonBackground(
+          screenType: ScreenType.auth,
           child: SafeArea(
           child: Center(
             child: Padding(
