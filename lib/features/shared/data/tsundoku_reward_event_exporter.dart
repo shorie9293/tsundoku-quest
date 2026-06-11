@@ -34,25 +34,24 @@ class TsundokuRewardEventExporter {
   String _nowTimestamp() => DateTime.now().toUtc().toIso8601String();
 
   /// JSONLに1行追記。書き込み失敗は握りつぶす（best-effort）。
-  /// 同期的に書き込む — 呼び出し元からawaitされないfire-and-forgetパターンのため。
-  void _writeEvent(Map<String, dynamic> event) {
+  Future<void> _writeEvent(Map<String, dynamic> event) async {
     try {
       final file = File(filePath);
-      file.parent.createSync(recursive: true);
+      await file.parent.create(recursive: true);
       final line = jsonEncode(event);
-      file.writeAsStringSync('$line\n', mode: FileMode.append);
+      await file.writeAsString('$line\n', mode: FileMode.append);
     } catch (_) {
       // Best-effort export — silently ignore write failures
     }
   }
 
   /// レベルアップイベント
-  void exportLevelUp({
+  Future<void> exportLevelUp({
     required int newLevel,
     required String title,
     String? timestamp,
-  }) {
-    _writeEvent({
+  }) async {
+    await _writeEvent({
       'event_id': _generateEventId(),
       'event_type': 'level_up',
       'user_id': _userId,
@@ -63,12 +62,12 @@ class TsundokuRewardEventExporter {
   }
 
   /// XPマイルストーン達成イベント
-  void exportXpMilestone({
+  Future<void> exportXpMilestone({
     required int milestone,
     required int totalXp,
     String? timestamp,
-  }) {
-    _writeEvent({
+  }) async {
+    await _writeEvent({
       'event_id': _generateEventId(),
       'event_type': 'xp_milestone',
       'user_id': _userId,
@@ -79,13 +78,13 @@ class TsundokuRewardEventExporter {
   }
 
   /// デイリーミッション全達成イベント
-  void exportDailyMissionComplete({
+  Future<void> exportDailyMissionComplete({
     required String date,
     required int completedCount,
     required int totalCount,
     String? timestamp,
-  }) {
-    _writeEvent({
+  }) async {
+    await _writeEvent({
       'event_id': _generateEventId(),
       'event_type': 'daily_mission_complete',
       'user_id': _userId,
@@ -97,13 +96,13 @@ class TsundokuRewardEventExporter {
   }
 
   /// 戦利品執筆イベント
-  void exportTrophyWritten({
+  Future<void> exportTrophyWritten({
     required String trophyId,
     required String userBookId,
     required int learningCount,
     String? timestamp,
-  }) {
-    _writeEvent({
+  }) async {
+    await _writeEvent({
       'event_id': _generateEventId(),
       'event_type': 'trophy_written',
       'user_id': _userId,
@@ -115,12 +114,12 @@ class TsundokuRewardEventExporter {
   }
 
   /// 読了イベント
-  void exportBookCompleted({
+  Future<void> exportBookCompleted({
     required String bookId,
     required String? bookTitle,
     String? timestamp,
-  }) {
-    _writeEvent({
+  }) async {
+    await _writeEvent({
       'event_id': _generateEventId(),
       'event_type': 'book_completed',
       'user_id': _userId,
@@ -131,12 +130,12 @@ class TsundokuRewardEventExporter {
   }
 
   /// 読書ページ数マイルストーン達成イベント
-  void exportPagesMilestone({
+  Future<void> exportPagesMilestone({
     required int milestone,
     required int totalPages,
     String? timestamp,
-  }) {
-    _writeEvent({
+  }) async {
+    await _writeEvent({
       'event_id': _generateEventId(),
       'event_type': 'pages_milestone',
       'user_id': _userId,
@@ -147,11 +146,11 @@ class TsundokuRewardEventExporter {
   }
 
   /// 読書継続日数マイルストーン達成イベント
-  void exportReadingStreak({
+  Future<void> exportReadingStreak({
     required int streak,
     String? timestamp,
-  }) {
-    _writeEvent({
+  }) async {
+    await _writeEvent({
       'event_id': _generateEventId(),
       'event_type': 'reading_streak',
       'user_id': _userId,

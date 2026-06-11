@@ -1,3 +1,5 @@
+// ignore_for_file: use_of_void_result
+
 import 'dart:convert';
 import 'dart:io';
 
