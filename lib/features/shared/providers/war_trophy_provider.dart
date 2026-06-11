@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tsundoku_quest/domain/models/war_trophy.dart';
 import 'package:tsundoku_quest/domain/repositories/war_trophy_repository.dart';
 import 'package:tsundoku_quest/features/bookshelf/data/war_trophy_repository_provider.dart';
+import 'package:tsundoku_quest/features/shared/data/tsundoku_reward_event_exporter.dart';
 
 /// 戦利品を管理するStateNotifier
 ///
@@ -11,10 +12,15 @@ import 'package:tsundoku_quest/features/bookshelf/data/war_trophy_repository_pro
 /// - Repository なし → インメモリのみ（テスト／オフライン用）
 class WarTrophyNotifier extends StateNotifier<List<WarTrophy>> {
   final WarTrophyRepository? _repository;
+  final TsundokuRewardEventExporter? _rewardExporter;
 
   /// [repository] が null の場合はインメモリモード、
   /// 指定時は Supabase 透過永続化モードで動作する。
-  WarTrophyNotifier([this._repository]) : super(const []);
+  /// [rewardExporter] が指定された場合、新規戦利品追加時に
+  /// イベントを共有ストレージに書き出す。
+  WarTrophyNotifier([this._repository, TsundokuRewardEventExporter? rewardExporter])
+      : _rewardExporter = rewardExporter,
+        super(const []);
 
   // ═══════════════════════════════════════════
   //  Supabase 連携
@@ -42,9 +48,12 @@ class WarTrophyNotifier extends StateNotifier<List<WarTrophy>> {
 
   /// 戦利品を追加。Supabase連携時は裏で非同期保存。
   void addTrophy(WarTrophy trophy) {
+    // 既存トロフィーの置き換えか判定（先にチェック）
+    final existingIndex = state.indexWhere((t) => t.id == trophy.id);
+    final isNew = existingIndex < 0;
+
     // 1. 即時UI反映（インメモリ）
     final updated = state.toList();
-    final existingIndex = updated.indexWhere((t) => t.id == trophy.id);
     if (existingIndex >= 0) {
       updated[existingIndex] = trophy;
     } else {
@@ -52,7 +61,16 @@ class WarTrophyNotifier extends StateNotifier<List<WarTrophy>> {
     }
     state = updated;
 
-    // 2. 裏でSupabase保存（失敗してもUIは崩さない）
+    // 2. 新規戦利品の場合のみ報酬イベント発火（replaceはスキップ）
+    if (isNew && _rewardExporter != null) {
+      _rewardExporter!.exportTrophyWritten(
+        trophyId: trophy.id,
+        userBookId: trophy.userBookId,
+        learningCount: trophy.learnings.length,
+      );
+    }
+
+    // 3. 裏でSupabase保存（失敗してもUIは崩さない）
     _syncToSupabase(trophy);
   }
 

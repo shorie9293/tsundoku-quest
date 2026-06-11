@@ -7,6 +7,10 @@ import 'package:tsundoku_quest/domain/repositories/user_book_repository.dart';
 import 'package:tsundoku_quest/domain/repositories/reading_session_repository.dart';
 import 'package:tsundoku_quest/features/bookshelf/data/user_book_repository_provider.dart';
 import 'package:tsundoku_quest/features/reading/data/reading_session_repository_provider.dart';
+import 'package:tsundoku_quest/features/shared/data/tsundoku_reward_event_exporter.dart';
+
+/// 読了ページ数マイルストーン閾値（1冊あたり）
+const _bookPagesMilestones = [50, 100, 200, 500, 1000];
 
 /// 本データの状態
 class BookDataState {
@@ -51,11 +55,15 @@ class BookDataNotifier extends StateNotifier<BookDataState> {
   final UserBookRepository? _repository;
   // ignore: unused_field — reserved for optional reading stats aggregation in fetchBooks
   final ReadingSessionRepository? _sessionRepository;
+  final TsundokuRewardEventExporter? _rewardExporter;
 
   /// [repository] が null の場合はインメモリモード、
   /// 指定時は Supabase 透過永続化モードで動作する。
-  BookDataNotifier([this._repository, this._sessionRepository])
-      : super(BookDataState(isLoading: _repository != null));
+  /// [rewardExporter] が指定された場合、本読了やページマイルストーン達成時に
+  /// イベントを共有ストレージに書き出す。
+  BookDataNotifier([this._repository, this._sessionRepository, TsundokuRewardEventExporter? rewardExporter])
+      : _rewardExporter = rewardExporter,
+        super(BookDataState(isLoading: _repository != null));
 
   // ═══════════════════════════════════════════
   //  Supabase 連携
@@ -199,6 +207,26 @@ class BookDataNotifier extends StateNotifier<BookDataState> {
     );
     updated[index] = newBook;
     state = state.copyWith(userBooks: updated);
+
+    // 報酬イベント: 読了
+    if (status == BookStatus.completed && old.status != BookStatus.completed) {
+      _rewardExporter?.exportBookCompleted(
+        bookId: old.bookId,
+        bookTitle: old.book?.title,
+      );
+    }
+
+    // 報酬イベント: ページマイルストーン（1冊あたり）
+    if (currentPage != null && currentPage > old.currentPage) {
+      for (final milestone in _bookPagesMilestones) {
+        if (old.currentPage < milestone && currentPage >= milestone) {
+          _rewardExporter?.exportPagesMilestone(
+            milestone: milestone,
+            totalPages: currentPage,
+          );
+        }
+      }
+    }
 
     // 裏でSupabase保存
     _syncUpdateToSupabase(newBook);

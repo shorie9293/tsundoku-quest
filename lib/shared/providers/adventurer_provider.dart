@@ -2,11 +2,27 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tsundoku_quest/domain/models/adventurer_stats.dart';
 import 'package:tsundoku_quest/domain/repositories/adventurer_repository.dart';
+import 'package:tsundoku_quest/features/shared/data/tsundoku_reward_event_exporter.dart';
 import 'xp_calculator.dart';
+
+/// XPマイルストーン閾値
+const _xpMilestones = [100, 500, 1000, 5000, 10000, 50000, 100000];
+
+/// 読書ページ数マイルストーン閾値
+const _pagesMilestones = [100, 500, 1000, 5000, 10000];
+
+/// 読書継続日数マイルストーン閾値
+const _streakMilestones = [7, 14, 30, 60, 100];
 
 /// 冒険者ステータスを管理するStateNotifier
 class AdventurerNotifier extends StateNotifier<AdventurerStats> {
-  AdventurerNotifier() : super(AdventurerStats.beginner());
+  final TsundokuRewardEventExporter? _rewardExporter;
+
+  /// [rewardExporter] が指定された場合、レベルアップやマイルストーン達成時に
+  /// イベントを共有ストレージに書き出す。
+  AdventurerNotifier({TsundokuRewardEventExporter? rewardExporter})
+      : _rewardExporter = rewardExporter,
+        super(AdventurerStats.beginner());
 
   /// Supabase から冒険者ステータスを読み込んで state を更新する
   void loadFromRepository(AdventurerRepository repository) {
@@ -24,7 +40,9 @@ class AdventurerNotifier extends StateNotifier<AdventurerStats> {
   // ━━━ XP操作 ━━━
 
   void addXp(int amount) {
-    final newTotalXp = _computeTotalXpFromLevel(state.level, state.xp) + amount;
+    final oldLevel = state.level;
+    final oldTotalXp = _computeTotalXpFromLevel(state.level, state.xp);
+    final newTotalXp = oldTotalXp + amount;
     final levelResult = calculateLevel(newTotalXp);
     state = AdventurerStats(
       level: levelResult.level,
@@ -39,6 +57,24 @@ class AdventurerNotifier extends StateNotifier<AdventurerStats> {
       longestStreak: state.longestStreak,
       readingDates: state.readingDates,
     );
+
+    // レベルアップ検知
+    if (levelResult.level > oldLevel) {
+      _rewardExporter?.exportLevelUp(
+        newLevel: levelResult.level,
+        title: levelResult.title,
+      );
+    }
+
+    // XPマイルストーン検知
+    for (final milestone in _xpMilestones) {
+      if (oldTotalXp < milestone && newTotalXp >= milestone) {
+        _rewardExporter?.exportXpMilestone(
+          milestone: milestone,
+          totalXp: newTotalXp,
+        );
+      }
+    }
   }
 
   /// 現在のレベルとXPから総XPを逆算
@@ -59,20 +95,40 @@ class AdventurerNotifier extends StateNotifier<AdventurerStats> {
   // ━━━ 読書統計 ━━━
 
   void updateReadingStats({required int minutes, required int pages}) {
+    final oldTotalPages = state.totalPagesRead;
+    final newTotalPages = oldTotalPages + pages;
     state = _copyWith(
       totalReadingMinutes: state.totalReadingMinutes + minutes,
-      totalPagesRead: state.totalPagesRead + pages,
+      totalPagesRead: newTotalPages,
     );
+
+    // 読書ページ数マイルストーン検知
+    for (final milestone in _pagesMilestones) {
+      if (oldTotalPages < milestone && newTotalPages >= milestone) {
+        _rewardExporter?.exportPagesMilestone(
+          milestone: milestone,
+          totalPages: newTotalPages,
+        );
+      }
+    }
   }
 
   // ━━━ ストリーク ━━━
 
   void updateStreak({required int current, required int longest}) {
+    final oldStreak = state.currentStreak;
     state = _copyWith(
       currentStreak: current,
       longestStreak:
           longest > state.longestStreak ? longest : state.longestStreak,
     );
+
+    // 読書継続日数マイルストーン検知
+    for (final milestone in _streakMilestones) {
+      if (oldStreak < milestone && current >= milestone) {
+        _rewardExporter?.exportReadingStreak(streak: milestone);
+      }
+    }
   }
 
   AdventurerStats _copyWith({

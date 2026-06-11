@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tsundoku_quest/features/shared/data/tsundoku_reward_event_exporter.dart';
 import '../domain/daily_mission.dart';
 
 /// デイリーミッション状態
@@ -26,7 +27,13 @@ class DailyMissionNotifier extends StateNotifier<DailyMissionState> {
   static const _prefsKey = 'daily_missions_state';
   static const _prefsKeyDate = 'daily_missions_date';
 
-  DailyMissionNotifier() : super(DailyMissionState(missions: [], date: DateTime.fromMillisecondsSinceEpoch(0))) {
+  final TsundokuRewardEventExporter? _rewardExporter;
+  bool _dailyMissionCompleteEmitted = false;
+
+  DailyMissionNotifier({TsundokuRewardEventExporter? rewardExporter})
+      : _rewardExporter = rewardExporter,
+        super(DailyMissionState(
+            missions: [], date: DateTime.fromMillisecondsSinceEpoch(0))) {
     _loadOrGenerate();
   }
 
@@ -52,6 +59,7 @@ class DailyMissionNotifier extends StateNotifier<DailyMissionState> {
               .map((e) => DailyMission.fromJson(e as Map<String, dynamic>))
               .toList();
           state = DailyMissionState(missions: missions, date: todayDate);
+          _dailyMissionCompleteEmitted = missions.every((m) => m.isCompleted);
           return;
         }
       }
@@ -59,9 +67,10 @@ class DailyMissionNotifier extends StateNotifier<DailyMissionState> {
       debugPrint('⚠️ [DailyMission] 読み込み失敗: $e');
     }
 
-    // 新規生成
+    // 新規生成（日付が変わったらフラグリセット）
     final missions = DailyMission.generateDailyMissions(todayDate);
     state = DailyMissionState(missions: missions, date: todayDate);
+    _dailyMissionCompleteEmitted = false;
     await _save();
   }
 
@@ -75,6 +84,20 @@ class DailyMissionNotifier extends StateNotifier<DailyMissionState> {
     } catch (e) {
       debugPrint('⚠️ [DailyMission] 保存失敗: $e');
     }
+  }
+
+  /// 全ミッション達成時に報酬イベントを発火
+  void _emitDailyMissionCompleteIfNeeded() {
+    if (_rewardExporter == null) return;
+    if (_dailyMissionCompleteEmitted) return;
+    if (!state.allCompleted) return;
+
+    _dailyMissionCompleteEmitted = true;
+    _rewardExporter!.exportDailyMissionComplete(
+      date: state.date.toIso8601String().substring(0, 10),
+      completedCount: state.completedCount,
+      totalCount: state.totalCount,
+    );
   }
 
   /// 読書時間（分）の進捗を加算
@@ -106,6 +129,7 @@ class DailyMissionNotifier extends StateNotifier<DailyMissionState> {
     if (totalXpReward > 0) {
       state = DailyMissionState(missions: updatedMissions, date: state.date);
       await _save();
+      _emitDailyMissionCompleteIfNeeded();
     }
     return totalXpReward;
   }
@@ -138,6 +162,7 @@ class DailyMissionNotifier extends StateNotifier<DailyMissionState> {
     if (totalXpReward > 0) {
       state = DailyMissionState(missions: updatedMissions, date: state.date);
       await _save();
+      _emitDailyMissionCompleteIfNeeded();
     }
     return totalXpReward;
   }
@@ -170,6 +195,7 @@ class DailyMissionNotifier extends StateNotifier<DailyMissionState> {
     if (totalXpReward > 0) {
       state = DailyMissionState(missions: updatedMissions, date: state.date);
       await _save();
+      _emitDailyMissionCompleteIfNeeded();
     }
     return totalXpReward;
   }
