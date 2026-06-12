@@ -8,6 +8,7 @@ import 'package:tsundoku_quest/domain/repositories/reading_session_repository.da
 import 'package:tsundoku_quest/features/bookshelf/data/user_book_repository_provider.dart';
 import 'package:tsundoku_quest/features/reading/data/reading_session_repository_provider.dart';
 import 'package:tsundoku_quest/features/shared/data/tsundoku_reward_event_exporter.dart';
+import 'package:tsundoku_quest/features/shared/data/tsundoku_book_event_exporter.dart';
 
 /// 読了ページ数マイルストーン閾値（1冊あたり）
 const _bookPagesMilestones = [50, 100, 200, 500, 1000];
@@ -56,13 +57,17 @@ class BookDataNotifier extends StateNotifier<BookDataState> {
   // ignore: unused_field — reserved for optional reading stats aggregation in fetchBooks
   final ReadingSessionRepository? _sessionRepository;
   final TsundokuRewardEventExporter? _rewardExporter;
+  final TsundokuBookEventExporter? _bookEventExporter;
 
   /// [repository] が null の場合はインメモリモード、
   /// 指定時は Supabase 透過永続化モードで動作する。
   /// [rewardExporter] が指定された場合、本読了やページマイルストーン達成時に
   /// イベントを共有ストレージに書き出す。
-  BookDataNotifier([this._repository, this._sessionRepository, TsundokuRewardEventExporter? rewardExporter])
+  /// [bookEventExporter] が指定された場合、蔵書追加時に book_added イベントを
+  /// 共有ストレージに書き出す（kozuchi アプリ連携用）。
+  BookDataNotifier([this._repository, this._sessionRepository, TsundokuRewardEventExporter? rewardExporter, TsundokuBookEventExporter? bookEventExporter])
       : _rewardExporter = rewardExporter,
+        _bookEventExporter = bookEventExporter,
         super(BookDataState(isLoading: _repository != null));
 
   // ═══════════════════════════════════════════
@@ -171,6 +176,15 @@ class BookDataNotifier extends StateNotifier<BookDataState> {
 
     // 2. 裏でSupabase保存（失敗してもUIは崩さない）
     _syncAddToSupabase(userBook);
+
+    // 3. 蔵書追加イベントを共有ストレージに書き出し（kozuchi連携）
+    _bookEventExporter?.exportBookAdded(
+      bookTitle: userBook.book?.title ?? '不明',
+      bookAuthor: userBook.book?.authors.isNotEmpty == true
+          ? userBook.book!.authors.first
+          : null,
+      timestamp: DateTime.now().toUtc().toIso8601String(),
+    );
   }
 
   /// 蔵書を更新。Supabase連携時は裏で非同期保存。
@@ -291,5 +305,10 @@ final bookDataProvider =
   } catch (_) {
     // Supabase未初期化（テスト環境）→ リポジトリなしで動作
   }
-  return BookDataNotifier(repository, sessionRepository);
+  return BookDataNotifier(
+    repository,
+    sessionRepository,
+    null, // rewardExporter — 必要に応じて注入
+    const TsundokuBookEventExporter(), // kozuchi 連携用
+  );
 });
