@@ -81,6 +81,31 @@ class DungeonBackground extends StatelessWidget {
     }
   }
 
+  // 画面タイプごとの背景画像カラーフィルター
+  // ColorFiltered + BlendMode.srcATop で既存画像に色味の上塗りを適用
+  ColorFilter _getColorFilter() {
+    switch (screenType) {
+      case ScreenType.bookshelf:
+        // 暖色セピア
+        return const ColorFilter.mode(Color(0x38D4A574), BlendMode.srcATop);
+      case ScreenType.explore:
+        // 緑がかり
+        return const ColorFilter.mode(Color(0x386B8F5A), BlendMode.srcATop);
+      case ScreenType.history:
+        // モノクロ寄り
+        return const ColorFilter.mode(Color(0x38969290), BlendMode.srcATop);
+      case ScreenType.recommendation:
+        // 紫
+        return const ColorFilter.mode(Color(0x388B6FC4), BlendMode.srcATop);
+      case ScreenType.reading:
+        // 青
+        return const ColorFilter.mode(Color(0x385A7DBF), BlendMode.srcATop);
+      case ScreenType.auth:
+        // 赤
+        return const ColorFilter.mode(Color(0x38BF6B5A), BlendMode.srcATop);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final gradientColors = _getGradientColors();
@@ -90,11 +115,15 @@ class DungeonBackground extends StatelessWidget {
       children: [
         // ━━━ Layer 0: ダンジョン背景画像 ━━━
         // ComfyUI SD 1.5 で生成した和風ダンジョン背景
-        Image.asset(
-          'assets/images/dungeon_bg.png',
-          fit: BoxFit.cover,
-          width: double.infinity,
-          height: double.infinity,
+        // 画面タイプに応じた色調フィルターを適用
+        ColorFiltered(
+          colorFilter: _getColorFilter(),
+          child: Image.asset(
+            'assets/images/dungeon_bg.png',
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: double.infinity,
+          ),
         ),
         // ━━━ Layer 0.5: 暗色オーバーレイ（白文字の可読性確保）━━━
         Container(color: Colors.black.withValues(alpha: 0.10)),
