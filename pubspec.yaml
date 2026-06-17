@@ -81,6 +81,7 @@ flutter:
   assets:
     - assets/images/dungeon_bg.png
     - assets/icon.png
+    - assets/sprites/
 
 flutter_launcher_icons:
   android: true
