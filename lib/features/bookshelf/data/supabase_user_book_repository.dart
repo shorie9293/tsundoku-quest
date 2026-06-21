@@ -82,13 +82,33 @@ class SupabaseUserBookRepository implements UserBookRepository {
       if (userBook.book != null) {
         final bookData = _bookToSupabase(userBook.book!);
         bookData.remove('id'); // SupabaseにUUID自動生成させる
-        final bookResult = await _client
-            .from('books')
-            .upsert(bookData)
-            .select('id')
-            .maybeSingle();
-        if (bookResult != null) {
-          bookId = bookResult['id'] as String;
+        
+        // 空文字は UNIQUE 制約違反を防ぐため null に変換
+        if (bookData['isbn13'] == '') bookData['isbn13'] = null;
+        if (bookData['isbn10'] == '') bookData['isbn10'] = null;
+        
+        final isbn13 = bookData['isbn13'] as String?;
+        Map<String, dynamic>? existingBook;
+        
+        if (isbn13 != null && isbn13.isNotEmpty) {
+          existingBook = await _client
+              .from('books')
+              .select('id')
+              .eq('isbn13', isbn13)
+              .maybeSingle();
+        }
+        
+        if (existingBook != null) {
+          bookId = existingBook['id'] as String;
+        } else {
+          final bookResult = await _client
+              .from('books')
+              .insert(bookData)
+              .select('id')
+              .maybeSingle();
+          if (bookResult != null) {
+            bookId = bookResult['id'] as String;
+          }
         }
       }
 
