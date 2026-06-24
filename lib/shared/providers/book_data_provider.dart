@@ -9,6 +9,7 @@ import 'package:tsundoku_quest/features/bookshelf/data/user_book_repository_prov
 import 'package:tsundoku_quest/features/reading/data/reading_session_repository_provider.dart';
 import 'package:tsundoku_quest/features/shared/data/tsundoku_reward_event_exporter.dart';
 import 'package:tsundoku_quest/features/shared/data/tsundoku_book_event_exporter.dart';
+import 'package:tsundoku_quest/features/shared/data/tsundoku_book_completion_exporter.dart';
 
 /// 読了ページ数マイルストーン閾値（1冊あたり）
 const _bookPagesMilestones = [50, 100, 200, 500, 1000];
@@ -58,6 +59,7 @@ class BookDataNotifier extends StateNotifier<BookDataState> {
   final ReadingSessionRepository? _sessionRepository;
   final TsundokuRewardEventExporter? _rewardExporter;
   final TsundokuBookEventExporter? _bookEventExporter;
+  final TsundokuBookCompletionExporter? _completionExporter;
 
   /// [repository] が null の場合はインメモリモード、
   /// 指定時は Supabase 透過永続化モードで動作する。
@@ -65,9 +67,11 @@ class BookDataNotifier extends StateNotifier<BookDataState> {
   /// イベントを共有ストレージに書き出す。
   /// [bookEventExporter] が指定された場合、蔵書追加時に book_added イベントを
   /// 共有ストレージに書き出す（kozuchi アプリ連携用）。
-  BookDataNotifier([this._repository, this._sessionRepository, TsundokuRewardEventExporter? rewardExporter, TsundokuBookEventExporter? bookEventExporter])
+  /// [completionExporter] が指定された場合、読了時に専用ファイルへの書き出しを行う（kozuchi金運バフ用）。
+  BookDataNotifier([this._repository, this._sessionRepository, TsundokuRewardEventExporter? rewardExporter, TsundokuBookEventExporter? bookEventExporter, TsundokuBookCompletionExporter? completionExporter])
       : _rewardExporter = rewardExporter,
         _bookEventExporter = bookEventExporter,
+        _completionExporter = completionExporter,
         super(BookDataState(isLoading: _repository != null));
 
   // ═══════════════════════════════════════════
@@ -228,6 +232,12 @@ class BookDataNotifier extends StateNotifier<BookDataState> {
         bookId: old.bookId,
         bookTitle: old.book?.title,
       );
+      // Kozuchi金運バフ用: 専用ファイルにも読了イベントを書き出す
+      _completionExporter?.exportBookCompleted(
+        bookId: old.bookId,
+        bookTitle: old.book?.title,
+        timestamp: DateTime.now().toUtc().toIso8601String(),
+      );
     }
 
     // 報酬イベント: ページマイルストーン（1冊あたり）
@@ -309,6 +319,7 @@ final bookDataProvider =
     repository,
     sessionRepository,
     null, // rewardExporter — 必要に応じて注入
-    const TsundokuBookEventExporter(), // kozuchi 連携用
+    const TsundokuBookEventExporter(), // kozuchi 連携用（蔵書追加）
+    const TsundokuBookCompletionExporter(), // kozuchi 連携用（読了→金運バフ）
   );
 });
