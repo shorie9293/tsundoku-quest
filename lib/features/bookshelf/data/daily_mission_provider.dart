@@ -93,7 +93,7 @@ class DailyMissionNotifier extends StateNotifier<DailyMissionState> {
     if (!state.allCompleted) return;
 
     _dailyMissionCompleteEmitted = true;
-    _rewardExporter!.exportDailyMissionComplete(
+    _rewardExporter.exportDailyMissionComplete(
       date: state.date.toIso8601String().substring(0, 10),
       completedCount: state.completedCount,
       totalCount: state.totalCount,

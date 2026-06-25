@@ -63,7 +63,7 @@ class WarTrophyNotifier extends StateNotifier<List<WarTrophy>> {
 
     // 2. 新規戦利品の場合のみ報酬イベント発火（replaceはスキップ）
     if (isNew && _rewardExporter != null) {
-      _rewardExporter!.exportTrophyWritten(
+      _rewardExporter.exportTrophyWritten(
         trophyId: trophy.id,
         userBookId: trophy.userBookId,
         learningCount: trophy.learnings.length,
