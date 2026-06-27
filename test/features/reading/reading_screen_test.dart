@@ -3,11 +3,81 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tsundoku_quest/app_router.dart';
+import 'package:tsundoku_quest/domain/repositories/reading_session_repository.dart';
 import 'package:tsundoku_quest/features/reading/presentation/reading_screen.dart';
 import 'package:tsundoku_quest/core/testing/widget_keys.dart';
+import 'package:tsundoku_quest/domain/models/reading_session.dart';
 import 'package:tsundoku_quest/domain/models/user_book.dart';
 import 'package:tsundoku_quest/domain/models/book.dart';
 import 'package:tsundoku_quest/shared/providers/book_data_provider.dart';
+import 'package:tsundoku_quest/features/reading/data/reading_session_repository_provider.dart';
+
+/// テスト用モック ReadingSessionRepository
+class _MockReadingSessionRepository implements ReadingSessionRepository {
+  bool endSessionCalled = false;
+  int? lastDurationMinutes;
+  String? lastSessionId;
+  int? lastEndPage;
+  bool startSessionCalled = false;
+
+  @override
+  Future<ReadingSession> startSession(String userBookId, int startPage) async {
+    startSessionCalled = true;
+    return ReadingSession(
+      id: 'mock-session-1',
+      userBookId: userBookId,
+      startedAt: DateTime.now().toUtc().toIso8601String(),
+      startPage: startPage,
+      createdAt: DateTime.now().toUtc().toIso8601String(),
+    );
+  }
+
+  @override
+  Future<ReadingSession> endSession(
+      String sessionId, int endPage, int durationMinutes) async {
+    endSessionCalled = true;
+    lastSessionId = sessionId;
+    lastEndPage = endPage;
+    lastDurationMinutes = durationMinutes;
+    return ReadingSession(
+      id: sessionId,
+      userBookId: 'test',
+      startedAt: DateTime.now().toUtc().toIso8601String(),
+      startPage: 0,
+      endPage: endPage,
+      durationMinutes: durationMinutes,
+      createdAt: DateTime.now().toUtc().toIso8601String(),
+    );
+  }
+
+  @override
+  Future<List<ReadingSession>> getByUserBook(String userBookId) async => [];
+
+  @override
+  Future<List<ReadingSession>> getRecentSessions({int limit = 10}) async => [];
+
+  @override
+  Future<List<String>> getAllReadingDates() async => [];
+
+  @override
+  Future<int> getTotalReadingMinutes(String userBookId) async => 0;
+
+  @override
+  Future<int> getTotalReadingMinutesAll() async => 0;
+
+  @override
+  Future<int> getTotalPagesReadAll() async => 0;
+
+  @override
+  Future<List<int>> getWeeklyReadingMinutes() async =>
+      [0, 0, 0, 0, 0, 0, 0];
+
+  @override
+  Future<int> getCurrentStreak() async => 0;
+
+  @override
+  Future<int> getLongestStreak() async => 0;
+}
 
 Widget testReadingScreenWithContainer({
   String? id,
@@ -359,6 +429,63 @@ void main() {
 
       // Timer should be paused, show start button again
       expect(find.text('▶ 開始'), findsOneWidget);
+    });
+
+    testWidgets(
+        '_saveSessionProgress should call endSession on Supabase when paused',
+        (tester) async {
+      SharedPreferences.setMockInitialValues({});
+
+      final mockRepo = _MockReadingSessionRepository();
+      final container = ProviderContainer(
+        overrides: [
+          readingSessionRepositoryProvider.overrideWithValue(mockRepo),
+        ],
+      );
+
+      const book = Book(
+        id: 'b1',
+        title: 'Test Book',
+        authors: ['Author'],
+        source: BookSource.manual,
+        createdAt: '2026-01-01T00:00:00Z',
+      );
+      const userBook = UserBook(
+        id: 'test-id',
+        userId: 'u1',
+        bookId: 'b1',
+        book: book,
+        status: BookStatus.reading,
+        medium: BookMedium.physical,
+        totalReadingMinutes: 30,
+        createdAt: '2026-01-01T00:00:00Z',
+      );
+      container.read(bookDataProvider.notifier).addUserBook(userBook);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            theme: ThemeData.dark(),
+            home: const ReadingScreen(id: 'test-id'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Start timer
+      await tester.tap(find.text('▶ 開始'));
+      await tester.pump(const Duration(seconds: 65));
+
+      // Pause timer — calls _saveSessionProgress
+      await tester.tap(find.text('⏸ 一時停止'));
+      await tester.pump();
+
+      // Verify endSession was called
+      expect(mockRepo.endSessionCalled, isTrue);
+      expect(mockRepo.lastDurationMinutes, greaterThanOrEqualTo(1));
+
+      container.dispose();
     });
   });
 }

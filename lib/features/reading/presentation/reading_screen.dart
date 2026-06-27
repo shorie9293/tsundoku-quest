@@ -152,7 +152,8 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
 
     try {
       final repo = ref.read(readingSessionRepositoryProvider);
-      await repo.endSession(sessionId, endPage, durationMinutes);
+      final totalMinutes = _elapsedSeconds ~/ 60;
+      await repo.endSession(sessionId, endPage, totalMinutes);
     } catch (e) {
       debugPrint('⚠️ [ReadingScreen] セッション終了失敗（Supabase未接続/オフライン）: $e');
     }
@@ -226,6 +227,20 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
       ref.read(adventurerProvider.notifier).addReadingDate(today);
     } catch (e) {
       debugPrint('⚠️ [ReadingScreen] 統計更新失敗: $e');
+    }
+
+    // Supabaseのreading_sessionsに現在の累積読書時間を保存
+    if (_sessionId != null) {
+      try {
+        final totalMinutes = _elapsedSeconds ~/ 60;
+        final endPage = _pageController.text.isNotEmpty
+            ? int.tryParse(_pageController.text) ?? _book?.currentPage ?? 0
+            : _book?.currentPage ?? 0;
+        final repo = ref.read(readingSessionRepositoryProvider);
+        repo.endSession(_sessionId!, endPage, totalMinutes);
+      } catch (e) {
+        debugPrint('⚠️ [ReadingScreen] 進捗のSupabase保存失敗: $e');
+      }
     }
   }
 
