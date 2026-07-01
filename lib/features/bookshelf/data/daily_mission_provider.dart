@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tsundoku_quest/core/infrastructure/hive/box_manager.dart';
 import 'package:tsundoku_quest/features/shared/data/tsundoku_reward_event_exporter.dart';
 import '../domain/daily_mission.dart';
 
@@ -22,16 +23,25 @@ class DailyMissionState {
 
 /// デイリーミッションを管理するStateNotifier
 ///
-/// shared_preferences を使って日付を跨いだ状態を永続化する。
+/// Hive + SharedPreferences の二段階永続化:
+///   - Hive BoxManager が利用可能 → バイナリ永続化（高速）
+///   - Hive 利用不可 → SharedPreferences + JSON にフォールバック
 class DailyMissionNotifier extends StateNotifier<DailyMissionState> {
   static const _prefsKey = 'daily_missions_state';
   static const _prefsKeyDate = 'daily_missions_date';
+  static const _hiveBoxName = 'settings_box';
+  static const _hiveDateKey = 'daily_missions_date';
+  static const int _hiveMissionsKey = 100; // index key for missions list
 
   final TsundokuRewardEventExporter? _rewardExporter;
+  final BoxManagerInterface? _boxManager;
   bool _dailyMissionCompleteEmitted = false;
 
-  DailyMissionNotifier({TsundokuRewardEventExporter? rewardExporter})
+  /// [boxManager] が指定された場合は Hive 永続化、
+  /// null の場合は SharedPreferences 永続化を使用する。
+  DailyMissionNotifier({TsundokuRewardEventExporter? rewardExporter, BoxManagerInterface? boxManager})
       : _rewardExporter = rewardExporter,
+        _boxManager = boxManager,
         super(DailyMissionState(
             missions: [], date: DateTime.fromMillisecondsSinceEpoch(0))) {
     _loadOrGenerate();
@@ -42,12 +52,38 @@ class DailyMissionNotifier extends StateNotifier<DailyMissionState> {
     final today = DateTime.now();
     final todayDate = DateTime(today.year, today.month, today.day);
 
+    // Hive 読み込みを試行
+    if (_boxManager != null) {
+      try {
+        final box = await _boxManager.getBox<dynamic>(_hiveBoxName);
+        final savedDateStr = box.get(_hiveDateKey) as String?;
+
+        if (savedDateStr != null) {
+          final savedDate = DateTime.tryParse(savedDateStr);
+          if (savedDate != null &&
+              savedDate.year == todayDate.year &&
+              savedDate.month == todayDate.month &&
+              savedDate.day == todayDate.day) {
+            final savedMissions = box.get(_hiveMissionsKey);
+            if (savedMissions != null && savedMissions is List) {
+              final missions = savedMissions.cast<DailyMission>();
+              state = DailyMissionState(missions: missions, date: todayDate);
+              _dailyMissionCompleteEmitted = missions.every((m) => m.isCompleted);
+              return;
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('⚠️ [DailyMission] Hive 読み込み失敗: $e');
+      }
+    }
+
+    // SharedPreferences フォールバック
     try {
       final prefs = await SharedPreferences.getInstance();
       final savedDateStr = prefs.getString(_prefsKeyDate);
       final savedDate = savedDateStr != null ? DateTime.tryParse(savedDateStr) : null;
 
-      // 同じ日付なら復元
       if (savedDate != null &&
           savedDate.year == todayDate.year &&
           savedDate.month == todayDate.month &&
@@ -64,7 +100,7 @@ class DailyMissionNotifier extends StateNotifier<DailyMissionState> {
         }
       }
     } catch (e) {
-      debugPrint('⚠️ [DailyMission] 読み込み失敗: $e');
+      debugPrint('⚠️ [DailyMission] SharedPreferences 読み込み失敗: $e');
     }
 
     // 新規生成（日付が変わったらフラグリセット）
@@ -74,15 +110,28 @@ class DailyMissionNotifier extends StateNotifier<DailyMissionState> {
     await _save();
   }
 
-  /// shared_preferences に保存
+  /// Hive + SharedPreferences の両方に保存
   Future<void> _save() async {
+    // Hive 保存
+    if (_boxManager != null) {
+      try {
+        final box = await _boxManager.getBox<dynamic>(_hiveBoxName);
+        await box.put(_hiveDateKey, state.date.toIso8601String());
+        await box.put(_hiveMissionsKey, state.missions);
+        await box.flush();
+      } catch (e) {
+        debugPrint('⚠️ [DailyMission] Hive 保存失敗: $e');
+      }
+    }
+
+    // SharedPreferences 保存（フォールバック兼デバッグ用）
     try {
       final prefs = await SharedPreferences.getInstance();
       final missionsJson = jsonEncode(state.missions.map((m) => m.toJson()).toList());
       await prefs.setString(_prefsKey, missionsJson);
       await prefs.setString(_prefsKeyDate, state.date.toIso8601String());
     } catch (e) {
-      debugPrint('⚠️ [DailyMission] 保存失敗: $e');
+      debugPrint('⚠️ [DailyMission] SharedPreferences 保存失敗: $e');
     }
   }
 

@@ -4,9 +4,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:hive/hive.dart';
 import 'core/theme/app_theme.dart';
 import 'core/infrastructure/supabase/supabase_config.dart';
 import 'core/infrastructure/connectivity/connectivity_provider.dart';
+import 'core/infrastructure/hive/hive_initializer.dart';
+import 'core/infrastructure/hive/adapters/book_adapters.dart';
+import 'core/infrastructure/hive/adapters/reading_session_adapter.dart';
+import 'core/infrastructure/hive/adapters/daily_mission_adapters.dart';
+import 'core/infrastructure/hive/box_manager.dart';
+import 'core/infrastructure/hive/migration_service.dart';
+import 'domain/models/user_book.dart';
+import 'domain/models/reading_session.dart';
 import 'app_router.dart';
 import 'features/shared/data/adventurer_repository_provider.dart';
 import 'features/tutorial/data/tutorial_preferences.dart';
@@ -61,6 +70,28 @@ Future<void> main() async {
     return true;
   };
 
+  // ── Hive 初期化 ──
+  try {
+    await initializeHive(
+      registerAdaptersCallback: () {
+        Hive.registerAdapter(BookSourceAdapter());
+        Hive.registerAdapter(BookAdapter());
+        Hive.registerAdapter(BookStatusAdapter());
+        Hive.registerAdapter(BookMediumAdapter());
+        Hive.registerAdapter(UserBookAdapter());
+        Hive.registerAdapter(ReadingSessionAdapter());
+        Hive.registerAdapter(DailyMissionTypeAdapter());
+        Hive.registerAdapter(DailyMissionAdapter());
+      },
+    );
+    debugPrint('✅ Hive 初期化完了');
+  } catch (e) {
+    debugPrint('⚠️ Hive 初期化失敗（オフライン永続化不可）: $e');
+  }
+
+  // ── データ移行（初回起動時のみ）──
+  await _runHiveMigration();
+
   debugPrint('🚀 runApp 開始...');
   runApp(
     const ProviderScope(
@@ -68,6 +99,68 @@ Future<void> main() async {
     ),
   );
   debugPrint('🏁 runApp 完了');
+}
+
+/// 初回起動時の Hive データ移行を実行する
+///
+/// Supabase に保存された UserBook と ReadingSession を Hive に移行し、
+/// 移行完了フラグを SharedPreferences に保存する。
+/// 移行が完了している場合や Supabase が未初期化の場合は何もせず復帰する。
+Future<void> _runHiveMigration() async {
+  try {
+    final boxManager = HiveBoxManager();
+
+    final migrationService = HiveMigrationService(
+      boxManager: boxManager,
+      // Supabase から UserBook 一覧を取得し、ドメインオブジェクトに変換
+      onFetchUserBooks: () async {
+        try {
+          final client = Supabase.instance.client;
+          final response = await client
+              .from('user_books')
+              .select('*, book:books(*)')
+              .order('created_at', ascending: false);
+          return response
+              .map((json) => UserBook.fromSupabase(json))
+              .toList();
+        } catch (e) {
+          debugPrint('[HiveMigration] UserBook fetch failed: $e');
+          return [];
+        }
+      },
+      // Supabase から ReadingSession 一覧を取得し、ドメインオブジェクトに変換
+      onFetchReadingSessions: () async {
+        try {
+          final client = Supabase.instance.client;
+          final response = await client
+              .from('reading_sessions')
+              .select()
+              .order('created_at', ascending: false)
+              .limit(1000);
+          return response
+              .map((json) => ReadingSession.fromSupabase(json))
+              .toList();
+        } catch (e) {
+          debugPrint('[HiveMigration] ReadingSession fetch failed: $e');
+          return [];
+        }
+      },
+    );
+
+    final result = await migrationService.migrate();
+    debugPrint(
+      '[HiveMigration] 結果: '
+      'completed=${result.completed}, skipped=${result.skipped}, '
+      'books=${result.booksMigrated}, sessions=${result.sessionsMigrated}, '
+      'tutorial=${result.tutorialMigrated}',
+    );
+    if (result.error != null) {
+      debugPrint('[HiveMigration] エラー: ${result.error}');
+    }
+  } catch (e) {
+    // 移行失敗はアプリ起動を妨げない
+    debugPrint('[HiveMigration] 移行全体が失敗: $e');
+  }
 }
 
 class TsundokuQuestApp extends ConsumerStatefulWidget {
