@@ -32,6 +32,9 @@ class BoxNames {
   /// チュートリアル表示状態
   static const String tutorial = 'tutorial_box';
 
+  /// 戦利品データ（WarTrophy）
+  static const String warTrophies = 'war_trophies_box';
+
   /// 全 Box 名のリスト（openAllBoxes 用）
   static const List<String> all = [
     adventurer,
@@ -39,6 +42,7 @@ class BoxNames {
     readingSessions,
     settings,
     tutorial,
+    warTrophies,
   ];
 }
 
