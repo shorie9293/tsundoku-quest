@@ -11,6 +11,8 @@ import 'package:tsundoku_quest/domain/models/user_book.dart';
 import 'package:tsundoku_quest/domain/models/book.dart';
 import 'package:tsundoku_quest/shared/providers/book_data_provider.dart';
 import 'package:tsundoku_quest/features/reading/data/reading_session_repository_provider.dart';
+import 'package:hive/hive.dart';
+import 'dart:io';
 
 /// テスト用モック ReadingSessionRepository
 class _MockReadingSessionRepository implements ReadingSessionRepository {
@@ -114,8 +116,20 @@ Widget testReadingScreen({String? id}) {
   );
 }
 
+void _initTestHive() {
+  final tempDir = Directory.systemTemp.createTempSync('hive_test_');
+  Hive.init(tempDir.path);
+}
+
 void main() {
   // SharedPreferences のテスト用モック初期化
+  setUpAll(() {
+    _initTestHive();
+  });
+  tearDownAll(() async {
+    await Hive.close();
+  });
+
   SharedPreferences.setMockInitialValues({});
 
   group('ReadingScreen', () {

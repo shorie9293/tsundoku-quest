@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tsundoku_quest/features/bookshelf/presentation/widgets/daily_quest.dart';
 import 'package:tsundoku_quest/features/bookshelf/domain/daily_mission.dart';
+import 'package:hive/hive.dart';
+import 'dart:io';
 
 Widget createTestWidget({
   required bool hasBooks,
@@ -22,7 +24,20 @@ Widget createTestWidget({
   );
 }
 
+
+void _initTestHive() {
+  final tempDir = Directory.systemTemp.createTempSync('hive_test_');
+  Hive.init(tempDir.path);
+}
+
 void main() {
+  setUpAll(() {
+    _initTestHive();
+  });
+  tearDownAll(() async {
+    await Hive.close();
+  });
+
   // SharedPreferences のテスト用モック初期化
   SharedPreferences.setMockInitialValues({});
 

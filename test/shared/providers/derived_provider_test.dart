@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tsundoku_quest/domain/models/user_book.dart';
 import 'package:tsundoku_quest/shared/providers/book_data_provider.dart';
 import 'package:tsundoku_quest/shared/providers/derived_provider.dart';
+import 'package:hive/hive.dart';
+import 'dart:io';
 
 BookDataNotifier _setupNotifierWithBooks() {
   final notifier = BookDataNotifier();
@@ -49,7 +51,20 @@ BookDataNotifier _setupNotifierWithBooks() {
   return notifier;
 }
 
+
+void _initTestHive() {
+  final tempDir = Directory.systemTemp.createTempSync('hive_test_');
+  Hive.init(tempDir.path);
+}
+
 void main() {
+  setUpAll(() {
+    _initTestHive();
+  });
+  tearDownAll(() async {
+    await Hive.close();
+  });
+
   group('userBooksByStatusProvider', () {
     test('should filter tsundoku books', () {
       final container = ProviderContainer();

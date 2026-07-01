@@ -1,3 +1,5 @@
+import 'package:hive/hive.dart';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -41,7 +43,20 @@ Widget testExploreScreenWithRouter({ProviderContainer? container}) {
   return ProviderScope(child: app);
 }
 
+
+void _initTestHive() {
+  final tempDir = Directory.systemTemp.createTempSync('hive_test_');
+  Hive.init(tempDir.path);
+}
+
 void main() {
+  setUpAll(() {
+    _initTestHive();
+  });
+  tearDownAll(() async {
+    await Hive.close();
+  });
+
   group('ExploreScreen', () {
     testWidgets('should display app bar', (tester) async {
       await tester.pumpWidget(testExploreScreen());

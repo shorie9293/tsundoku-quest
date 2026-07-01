@@ -7,6 +7,8 @@ import 'package:tsundoku_quest/features/auth/presentation/auth_provider.dart';
 import 'package:tsundoku_quest/features/auth/presentation/signup_screen.dart';
 import 'package:tsundoku_quest/core/testing/widget_keys.dart';
 import 'package:takamagahara_ui/takamagahara_ui.dart' hide AppKeys;
+import 'package:hive/hive.dart';
+import 'dart:io';
 
 class MockSignupAuthRepository implements AuthRepository {
   @override
@@ -52,7 +54,20 @@ Widget createSignupTestApp() {
   );
 }
 
+
+void _initTestHive() {
+  final tempDir = Directory.systemTemp.createTempSync('hive_test_');
+  Hive.init(tempDir.path);
+}
+
 void main() {
+  setUpAll(() {
+    _initTestHive();
+  });
+  tearDownAll(() async {
+    await Hive.close();
+  });
+
   group('SignupScreen', () {
     testWidgets('should display email and password fields', (tester) async {
       await tester.pumpWidget(createSignupTestApp());

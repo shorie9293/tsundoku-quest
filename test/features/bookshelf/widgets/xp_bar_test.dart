@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tsundoku_quest/features/bookshelf/presentation/widgets/xp_bar.dart';
 import 'package:tsundoku_quest/core/testing/widget_keys.dart';
+import 'package:hive/hive.dart';
+import 'dart:io';
 
 Widget testXpBar(
     {int level = 1,
@@ -24,7 +26,20 @@ Widget testXpBar(
   );
 }
 
+
+void _initTestHive() {
+  final tempDir = Directory.systemTemp.createTempSync('hive_test_');
+  Hive.init(tempDir.path);
+}
+
 void main() {
+  setUpAll(() {
+    _initTestHive();
+  });
+  tearDownAll(() async {
+    await Hive.close();
+  });
+
   group('XpBar', () {
     testWidgets('should display level and title', (tester) async {
       await tester.pumpWidget(testXpBar(level: 5, title: 'Book Explorer'));

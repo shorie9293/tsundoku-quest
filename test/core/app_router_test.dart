@@ -4,8 +4,23 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tsundoku_quest/app_router.dart';
 import 'package:tsundoku_quest/core/testing/widget_keys.dart';
+import 'package:hive/hive.dart';
+import 'dart:io';
+
+
+void _initTestHive() {
+  final tempDir = Directory.systemTemp.createTempSync('hive_test_');
+  Hive.init(tempDir.path);
+}
 
 void main() {
+  setUpAll(() {
+    _initTestHive();
+  });
+  tearDownAll(() async {
+    await Hive.close();
+  });
+
   // SharedPreferences のテスト用モック初期化（reading_screen_test の修正パターンと同様）
   SharedPreferences.setMockInitialValues({});
 

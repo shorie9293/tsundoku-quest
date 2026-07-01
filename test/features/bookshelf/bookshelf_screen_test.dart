@@ -1,3 +1,5 @@
+import 'package:hive/hive.dart';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -51,7 +53,20 @@ UserBook _testUserBook(String id, BookStatus status, {Book? book}) =>
       createdAt: '2026-01-01T00:00:00Z',
     );
 
+
+void _initTestHive() {
+  final tempDir = Directory.systemTemp.createTempSync('hive_test_');
+  Hive.init(tempDir.path);
+}
+
 void main() {
+  setUpAll(() {
+    _initTestHive();
+  });
+  tearDownAll(() async {
+    await Hive.close();
+  });
+
   // DailyQuest が内部で SharedPreferences を使うため mock 初期化
   SharedPreferences.setMockInitialValues({});
 

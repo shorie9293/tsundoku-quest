@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tsundoku_quest/features/history/presentation/widgets/reading_calendar_widget.dart';
 import 'package:tsundoku_quest/shared/providers/adventurer_provider.dart';
+import 'package:hive/hive.dart';
+import 'dart:io';
 
 /// テスト用ヘルパー: ReadingCalendarWidget を Provider 付きでラップ
 Widget testReadingCalendar({List<String> readingDates = const []}) {
@@ -27,7 +29,20 @@ Widget testReadingCalendar({List<String> readingDates = const []}) {
   );
 }
 
+
+void _initTestHive() {
+  final tempDir = Directory.systemTemp.createTempSync('hive_test_');
+  Hive.init(tempDir.path);
+}
+
 void main() {
+  setUpAll(() {
+    _initTestHive();
+  });
+  tearDownAll(() async {
+    await Hive.close();
+  });
+
   group('ReadingCalendarWidget', () {
     testWidgets('should display 30 day cells', (tester) async {
       await tester.pumpWidget(testReadingCalendar());

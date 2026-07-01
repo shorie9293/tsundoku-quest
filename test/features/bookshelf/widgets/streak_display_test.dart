@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tsundoku_quest/features/bookshelf/presentation/widgets/streak_display.dart';
 import 'package:tsundoku_quest/shared/providers/adventurer_provider.dart';
+import 'package:hive/hive.dart';
+import 'dart:io';
 
 Widget testStreak(int streak) => ProviderScope(
       overrides: [
@@ -17,7 +19,20 @@ Widget testStreak(int streak) => ProviderScope(
       ),
     );
 
+
+void _initTestHive() {
+  final tempDir = Directory.systemTemp.createTempSync('hive_test_');
+  Hive.init(tempDir.path);
+}
+
 void main() {
+  setUpAll(() {
+    _initTestHive();
+  });
+  tearDownAll(() async {
+    await Hive.close();
+  });
+
   group('StreakDisplay', () {
     testWidgets('should show streak count with fire emoji', (tester) async {
       await tester.pumpWidget(testStreak(7));

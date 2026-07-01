@@ -4,13 +4,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tsundoku_quest/app_router.dart';
+import 'package:hive/hive.dart';
+import 'dart:io';
 
 /// CI(headless)環境ではPageView+GoRouterの二重pumpWidgetで
 /// リソース不足(SIGTERM)が発生するため、試験2のみskip。
 final _isHeadless = Platform.environment['CI'] == 'true' ||
     Platform.environment['DISPLAY'] == null;
 
+
+void _initTestHive() {
+  final tempDir = Directory.systemTemp.createTempSync('hive_test_');
+  Hive.init(tempDir.path);
+}
+
 void main() {
+  setUpAll(() {
+    _initTestHive();
+  });
+  tearDownAll(() async {
+    await Hive.close();
+  });
+
   /// Creates a test app with ProviderScope + fresh router per test.
   Widget testApp() {
     return ProviderScope(

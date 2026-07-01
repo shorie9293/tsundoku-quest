@@ -2,8 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tsundoku_quest/features/history/presentation/widgets/weekly_chart_widget.dart';
+import 'package:hive/hive.dart';
+import 'dart:io';
+
+
+void _initTestHive() {
+  final tempDir = Directory.systemTemp.createTempSync('hive_test_');
+  Hive.init(tempDir.path);
+}
 
 void main() {
+  setUpAll(() {
+    _initTestHive();
+  });
+  tearDownAll(() async {
+    await Hive.close();
+  });
+
   group('WeeklyChartWidget', () {
     testWidgets('should display title', (tester) async {
       await tester.pumpWidget(

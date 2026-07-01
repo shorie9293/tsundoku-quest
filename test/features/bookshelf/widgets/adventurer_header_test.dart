@@ -5,6 +5,8 @@ import 'package:tsundoku_quest/domain/models/adventurer_stats.dart';
 import 'package:tsundoku_quest/features/bookshelf/presentation/widgets/adventurer_header.dart';
 import 'package:tsundoku_quest/shared/providers/adventurer_provider.dart';
 import 'package:tsundoku_quest/core/testing/widget_keys.dart';
+import 'package:hive/hive.dart';
+import 'dart:io';
 
 Widget testHeader({
   int level = 3,
@@ -42,7 +44,20 @@ Widget testHeader({
   );
 }
 
+
+void _initTestHive() {
+  final tempDir = Directory.systemTemp.createTempSync('hive_test_');
+  Hive.init(tempDir.path);
+}
+
 void main() {
+  setUpAll(() {
+    _initTestHive();
+  });
+  tearDownAll(() async {
+    await Hive.close();
+  });
+
   group('AdventurerHeader', () {
     testWidgets('should display XpBar inside', (tester) async {
       await tester.pumpWidget(testHeader());

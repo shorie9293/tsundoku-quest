@@ -7,6 +7,8 @@ import 'package:tsundoku_quest/domain/models/book.dart';
 import 'package:tsundoku_quest/domain/models/user_book.dart';
 import 'package:tsundoku_quest/shared/providers/book_data_provider.dart';
 import 'package:tsundoku_quest/features/bookshelf/presentation/widgets/edit_book_modal.dart';
+import 'package:hive/hive.dart';
+import 'dart:io';
 
 /// テスト用のMockBookDataNotifier — updateUserBook の呼出しを記録
 class MockBookDataNotifier extends BookDataNotifier {
@@ -84,7 +86,20 @@ UserBook _testUserBook({
       createdAt: '2026-01-01T00:00:00Z',
     );
 
+
+void _initTestHive() {
+  final tempDir = Directory.systemTemp.createTempSync('hive_test_');
+  Hive.init(tempDir.path);
+}
+
 void main() {
+  setUpAll(() {
+    _initTestHive();
+  });
+  tearDownAll(() async {
+    await Hive.close();
+  });
+
   group('EditBookModal', () {
     late MockBookDataNotifier mockNotifier;
 
