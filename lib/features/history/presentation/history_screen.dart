@@ -6,6 +6,7 @@ import '../../../../core/widgets/dungeon_background.dart';
 import '../../../../shared/providers/adventurer_provider.dart';
 import '../../../../shared/providers/derived_provider.dart';
 import '../data/weekly_reading_provider.dart';
+import '../data/reading_notes_provider.dart';
 import 'widgets/reading_calendar_widget.dart';
 import 'widgets/weekly_chart_widget.dart';
 
@@ -156,6 +157,10 @@ class HistoryScreen extends ConsumerWidget {
             ),
           ],
           const SizedBox(height: 32),
+
+          // Reading notes section
+          const _ReadingNotesSection(),
+          const SizedBox(height: 32),
         ],
       ),
       ),
@@ -215,6 +220,181 @@ class _StatRow extends StatelessWidget {
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: AppTheme.textPrimary)),
+        ],
+      ),
+    );
+  }
+}
+
+/// 読書感想・メモセクション
+class _ReadingNotesSection extends ConsumerWidget {
+  const _ReadingNotesSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final notes = ref.watch(readingNotesProvider);
+
+    return Container(
+      key: AppKeys.readingNotesSection,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.cardBackground,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('📝 読書感想・メモ',
+              style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.textPrimary)),
+          const SizedBox(height: 12),
+          if (notes.isEmpty || notes.every((n) => !n.hasContent))
+            const _EmptyNotesPlaceholder()
+          else
+            ListView.builder(
+              key: AppKeys.readingNotesList,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: notes.length,
+              itemBuilder: (context, index) {
+                final note = notes[index];
+                return _NoteCard(note: note);
+              },
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 感想がない場合のプレースホルダ
+class _EmptyNotesPlaceholder extends StatelessWidget {
+  const _EmptyNotesPlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: AppKeys.readingNotesEmpty,
+      padding: const EdgeInsets.symmetric(vertical: 24),
+      child: Center(
+        child: Column(
+          children: [
+            const Text('✍️',
+                style: const TextStyle(fontSize: 32)),
+            const SizedBox(height: 8),
+            const Text('感想を書いてみよう',
+                style: TextStyle(
+                    fontSize: 14,
+                    color: AppTheme.textSecondary)),
+            const SizedBox(height: 4),
+            const Text(
+              '読了時に学びを記録すると、ここに表示されます',
+              style: TextStyle(
+                  fontSize: 12,
+                  color: AppTheme.textSecondary),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 個別の感想カード
+class _NoteCard extends StatelessWidget {
+  final ReadingNoteItem note;
+  const _NoteCard({required this.note});
+
+  @override
+  Widget build(BuildContext context) {
+    final title = note.bookTitle ?? '不明な本';
+    final date = note.createdAt.length >= 10
+        ? note.createdAt.substring(0, 10)
+        : note.createdAt;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppTheme.cardBackground,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppTheme.border.withAlpha(100)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(title,
+                    style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.textPrimary)),
+              ),
+              Text(date,
+                  style: const TextStyle(
+                      fontSize: 11,
+                      color: AppTheme.textSecondary)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ...note.learnings
+              .where((l) => l.isNotEmpty)
+              .map((learning) => Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('💡 ',
+                            style: TextStyle(fontSize: 12)),
+                        Expanded(
+                          child: Text(learning,
+                              style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppTheme.textPrimary)),
+                        ),
+                      ],
+                    ),
+                  )),
+          if (note.action.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('🎯 ',
+                    style: TextStyle(fontSize: 12)),
+                Expanded(
+                  child: Text(note.action,
+                      style: const TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.textPrimary)),
+                ),
+              ],
+            ),
+          ],
+          if (note.favoriteQuote != null &&
+              note.favoriteQuote!.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('📜 ',
+                    style: const TextStyle(fontSize: 12)),
+                Expanded(
+                  child: Text('"${note.favoriteQuote}"',
+                      style: const TextStyle(
+                          fontSize: 12,
+                          fontStyle: FontStyle.italic,
+                          color: AppTheme.textSecondary)),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );

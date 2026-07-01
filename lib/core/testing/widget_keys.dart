@@ -61,6 +61,9 @@ class AppKeys {
   static const Key readingCalendar = Key('widget_reading_calendar');
   static const Key genreDistribution = Key('section_genre_distribution');
   static const Key badgeCollection = Key('section_badge_collection');
+  static const Key readingNotesSection = Key('section_reading_notes');
+  static const Key readingNotesList = Key('list_reading_notes');
+  static const Key readingNotesEmpty = Key('txt_reading_notes_empty');
 
   // ━━━ メインタブバー ━━━
   static const Key mainTabBar = Key('tab_main');
