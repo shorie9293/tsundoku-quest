@@ -1,11 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/infrastructure/supabase/supabase_client_provider.dart';
-import '../../../domain/repositories/user_book_repository.dart';
-import 'supabase_user_book_repository.dart';
+import 'package:tsundoku_quest/core/infrastructure/hive/box_manager_provider.dart';
+import 'package:tsundoku_quest/domain/repositories/user_book_repository.dart';
+import 'hive_user_book_repository.dart';
 
 /// UserBookRepository の Riverpod Provider
-/// SupabaseClient を注入して SupabaseUserBookRepository を生成する
+/// Hive ローカル永続化をプライマリ、Supabase はバックグラウンド同期（別途）
 final userBookRepositoryProvider = Provider<UserBookRepository>((ref) {
-  final client = ref.watch(supabaseClientProvider);
-  return SupabaseUserBookRepository(client);
+  final boxManager = ref.watch(hiveBoxManagerProvider);
+  return HiveUserBookRepository(boxManager);
 });
