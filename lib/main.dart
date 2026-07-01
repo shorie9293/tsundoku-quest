@@ -83,7 +83,7 @@ Future<void> main() async {
         Hive.registerAdapter(ReadingSessionAdapter());
         Hive.registerAdapter(DailyMissionTypeAdapter());
         Hive.registerAdapter(DailyMissionAdapter());
-       Hive.registerAdapter(WarTrophyAdapter());
+        Hive.registerAdapter(WarTrophyAdapter());
       },
     );
     debugPrint('✅ Hive 初期化完了');
