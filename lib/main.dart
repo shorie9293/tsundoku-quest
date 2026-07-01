@@ -12,6 +12,7 @@ import 'core/infrastructure/hive/hive_initializer.dart';
 import 'core/infrastructure/hive/adapters/book_adapters.dart';
 import 'core/infrastructure/hive/adapters/reading_session_adapter.dart';
 import 'core/infrastructure/hive/adapters/daily_mission_adapters.dart';
+import 'core/infrastructure/hive/adapters/war_trophy_adapter.dart';
 import 'core/infrastructure/hive/box_manager.dart';
 import 'core/infrastructure/hive/migration_service.dart';
 import 'domain/models/user_book.dart';
@@ -82,6 +83,7 @@ Future<void> main() async {
         Hive.registerAdapter(ReadingSessionAdapter());
         Hive.registerAdapter(DailyMissionTypeAdapter());
         Hive.registerAdapter(DailyMissionAdapter());
+       Hive.registerAdapter(WarTrophyAdapter());
       },
     );
     debugPrint('✅ Hive 初期化完了');
