@@ -4,6 +4,7 @@ import '../../bookshelf/data/supabase_adventurer_repository.dart';
 import '../../reading/data/reading_session_repository_provider.dart';
 import '../../bookshelf/data/user_book_repository_provider.dart';
 
+// Hive-backed repositories (UserBook + ReadingSession) で Offline-First 対応済み
 /// AdventurerRepository の Riverpod Provider
 final adventurerRepositoryProvider = Provider<AdventurerRepository>((ref) {
   final sessionRepo = ref.watch(readingSessionRepositoryProvider);
