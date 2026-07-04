@@ -62,7 +62,13 @@ jobs:
           echo "${{ secrets.KEY_PROPERTIES_TSUNDOKU }}" > android/key.properties
 
       - name: 🔨 Build App Bundle
-        run: flutter build appbundle --release
+        run: |
+          flutter build appbundle --release \
+            --dart-define=SUPABASE_URL="${{ secrets.SUPABASE_URL }}" \
+            --dart-define=SUPABASE_ANON_KEY="${{ secrets.SUPABASE_ANON_KEY }}" \
+            --dart-define=RAKUTEN_APP_ID="${{ secrets.RAKUTEN_APP_ID }}" \
+            --dart-define=RAKUTEN_ACCESS_KEY="${{ secrets.RAKUTEN_ACCESS_KEY }}" \
+            --dart-define=GOOGLE_BOOKS_API_KEY="${{ secrets.GOOGLE_BOOKS_API_KEY }}"
 
       - name: 💎 Setup Ruby
         uses: ruby/setup-ruby@v1
