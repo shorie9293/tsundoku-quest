@@ -3,8 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/testing/widget_keys.dart';
 import '../../../../core/widgets/dungeon_background.dart';
+import '../../../../domain/models/user_book.dart';
 import '../../../../shared/providers/adventurer_provider.dart';
 import '../../../../shared/providers/derived_provider.dart';
+import '../../../../shared/providers/book_data_provider.dart';
+import '../../bookshelf/presentation/book_list_screen.dart';
 import '../data/weekly_reading_provider.dart';
 import '../data/reading_notes_provider.dart';
 import 'widgets/reading_calendar_widget.dart';
@@ -39,11 +42,16 @@ class HistoryScreen extends ConsumerWidget {
               _StatCard(
                   icon: '📚',
                   label: '登録数',
-                  value: '${adventurer.totalBooksRegistered}'),
+                  value: '${adventurer.totalBooksRegistered}',
+                  onTap: () => _showBookList(context, ref, '登録本一覧', null),
+              ),
               _StatCard(
                   icon: '✅',
                   label: '読了数',
-                  value: '${adventurer.totalBooksCompleted}'),
+                  value: '${adventurer.totalBooksCompleted}',
+                  onTap: () => _showBookList(
+                      context, ref, '討伐済み一覧', BookStatus.completed),
+              ),
               _StatCard(
                   icon: '⏱',
                   label: '読書時間',
@@ -168,14 +176,34 @@ class HistoryScreen extends ConsumerWidget {
   }
 }
 
+/// 統計カードタップ時の本一覧表示
+void _showBookList(BuildContext context, WidgetRef ref, String title,
+    BookStatus? filter) {
+  final userBooks = ref.read(bookDataProvider).userBooks;
+  final filtered = filter != null
+      ? userBooks.where((ub) => ub.status == filter).toList()
+      : userBooks.toList();
+
+  Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (_) => BookListScreen(title: title, books: filtered),
+    ),
+  );
+}
+
 class _StatCard extends StatelessWidget {
   final String icon, label, value;
-  const _StatCard(
-      {required this.icon, required this.label, required this.value});
+  final VoidCallback? onTap;
+  const _StatCard({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final card = Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppTheme.cardBackground,
@@ -198,6 +226,13 @@ class _StatCard extends StatelessWidget {
         ],
       ),
     );
+    if (onTap != null) {
+      return GestureDetector(
+        onTap: onTap,
+        child: card,
+      );
+    }
+    return card;
   }
 }
 
