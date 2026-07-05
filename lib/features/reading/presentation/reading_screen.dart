@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/testing/widget_keys.dart';
+import '../../../../core/constants/reading_tips.dart';
 import '../../../../core/widgets/dungeon_background.dart';
 import '../../../../shared/providers/book_data_provider.dart';
 import '../../../../shared/providers/adventurer_provider.dart';
@@ -48,13 +49,36 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
   static const _prefsKeyStartTime = 'reading_session_start_time';
   static const _prefsKeyBookId = 'reading_session_book_id';
   static const _prefsKeyElapsedSeconds = 'reading_session_elapsed_seconds';
+  int _currentTipIndex = 0;
+  Timer? _tipTimer;
 
   @override
   void initState() {
     super.initState();
+    _currentTipIndex = randomTipIndex();
+    _startTipRotation();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _startSession();
     });
+  }
+
+  void _startTipRotation() {
+    _tipTimer?.cancel();
+    _tipTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (mounted) {
+        setState(() {
+          _currentTipIndex = nextTipIndex(_currentTipIndex);
+        });
+      }
+    });
+  }
+
+  void _rotateTip() {
+    _tipTimer?.cancel();
+    setState(() {
+      _currentTipIndex = nextTipIndex(_currentTipIndex);
+    });
+    _startTipRotation();
   }
 
   Future<void> _startSession() async {
@@ -472,6 +496,7 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
   @override
   void dispose() {
     _timer?.cancel();
+    _tipTimer?.cancel();
     try {
       _endSessionIfNeeded();
     } catch (_) {
@@ -606,6 +631,39 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
                 onPressed: _toggleTimer,
                 child: Text(_isRunning ? '⏸ 一時停止' : '▶ 開始',
                     style: const TextStyle(fontSize: 16)),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Reading Tip Card
+          GestureDetector(
+            onTap: _rotateTip,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: AppTheme.accent.withAlpha(15),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: AppTheme.accent.withAlpha(40),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Text('💡', style: TextStyle(fontSize: 16)),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      readingTips[_currentTipIndex],
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppTheme.textSecondary,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
