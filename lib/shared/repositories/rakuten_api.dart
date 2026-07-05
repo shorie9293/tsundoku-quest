@@ -34,7 +34,13 @@ class RakutenApi {
     });
 
     try {
-      final response = await _client.get(uri);
+      final response = await _client.get(
+        uri,
+        headers: {
+          'Referer': 'http://localhost:3000',
+          'Origin': 'http://localhost:3000',
+        },
+      );
       if (response.statusCode != 200) return [];
 
       final body =
@@ -64,7 +70,13 @@ class RakutenApi {
     });
 
     try {
-      final response = await _client.get(uri);
+      final response = await _client.get(
+        uri,
+        headers: {
+          'Referer': 'http://localhost:3000',
+          'Origin': 'http://localhost:3000',
+        },
+      );
       if (response.statusCode != 200) return null;
 
       final body =
