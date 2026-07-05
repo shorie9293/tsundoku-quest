@@ -101,18 +101,40 @@ class BookCard extends StatelessWidget {
           ),
           child: Row(
             children: [
-              // Cover placeholder
-              Container(
-                width: 48,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: AppTheme.accent.withAlpha(30),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: const Center(
-                  child: Icon(Icons.menu_book,
-                      color: AppTheme.textSecondary, size: 24),
-                ),
+              // Cover image or placeholder
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: book.book?.coverImageUrl != null
+                    ? Image.network(
+                        book.book!.coverImageUrl!,
+                        width: 48,
+                        height: 64,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          width: 48,
+                          height: 64,
+                          decoration: BoxDecoration(
+                            color: AppTheme.accent.withAlpha(30),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Center(
+                            child: Icon(Icons.menu_book,
+                                color: AppTheme.textSecondary, size: 24),
+                          ),
+                        ),
+                      )
+                    : Container(
+                        width: 48,
+                        height: 64,
+                        decoration: BoxDecoration(
+                          color: AppTheme.accent.withAlpha(30),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Center(
+                          child: Icon(Icons.menu_book,
+                              color: AppTheme.textSecondary, size: 24),
+                        ),
+                      ),
               ),
               const SizedBox(width: 12),
               Expanded(

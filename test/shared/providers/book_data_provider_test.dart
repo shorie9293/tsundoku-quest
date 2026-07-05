@@ -5,8 +5,26 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tsundoku_quest/domain/models/book.dart';
 import 'package:tsundoku_quest/domain/models/user_book.dart';
 import 'package:tsundoku_quest/domain/models/war_trophy.dart';
+import 'package:tsundoku_quest/domain/repositories/user_book_repository.dart';
 import 'package:tsundoku_quest/shared/providers/book_data_provider.dart';
 import 'package:tsundoku_quest/features/shared/data/tsundoku_book_event_exporter.dart';
+
+/// Mock repository that simulates Supabase returning empty data
+/// (race condition: INSERT hasn't completed yet)
+class _MockEmptyRepo implements UserBookRepository {
+  @override
+  Future<List<UserBook>> getMyBooks() async => [];
+  @override
+  Future<List<UserBook>> getByStatus(BookStatus status) async => [];
+  @override
+  Future<UserBook?> getById(String id) async => null;
+  @override
+  Future<UserBook> addBook(UserBook userBook) async => userBook;
+  @override
+  Future<UserBook> updateBook(UserBook userBook) async => userBook;
+  @override
+  Future<void> deleteBook(String id) async {}
+}
 
 Book _testBook(String id) => Book(
       id: id,
@@ -266,6 +284,60 @@ void main() {
 
         // 例外が発生しないことだけ確認
         expect(() => notifier.addUserBook(userBook), returnsNormally);
+      });
+    });
+
+    group('fetchBooks race condition guard (_initialFetchDone)', () {
+      test('fetchBooks should NOT overwrite state after addUserBook '
+          '(race condition: Supabase not yet saved)', () async {
+        // With a real Supabase connection, the INSERT in addUserBook is async
+        // and may not complete before fetchBooks runs. This test simulates that.
+        final notifier = BookDataNotifier(_MockEmptyRepo());
+
+        // User adds a book → in-memory state updated immediately
+        notifier.addUserBook(_testUserBook('ub-1', BookStatus.tsundoku));
+        expect(notifier.state.userBooks.length, 1);
+
+        // User navigates to BookshelfScreen → initState calls fetchBooks()
+        // Without the guard, fetchBooks would return [] and overwrite state
+        // (because Supabase INSERT hasn't completed yet)
+        await notifier.fetchBooks();
+
+        // With the _initialFetchDone guard: state must be preserved
+        expect(notifier.state.userBooks.length, 1,
+            reason: 'fetchBooks must not overwrite in-memory data '
+                'set by addUserBook before Supabase sync completes');
+        expect(notifier.state.userBooks[0].id, 'ub-1');
+      });
+
+      test('fetchBooks should work normally when addUserBook was NOT called first',
+          () async {
+        // Normal app startup: no addUserBook called, fetchBooks should fetch
+        final notifier = BookDataNotifier(_MockEmptyRepo());
+
+        await notifier.fetchBooks();
+
+        // Supabase returned empty → state should be empty
+        expect(notifier.state.userBooks, isEmpty);
+        expect(notifier.state.isLoading, false);
+      });
+
+      test('addUserBook after initial fetch sets guard for subsequent fetches',
+          () async {
+        final notifier = BookDataNotifier(_MockEmptyRepo());
+
+        // Initial fetch (app startup)
+        await notifier.fetchBooks();
+        expect(notifier.state.userBooks, isEmpty);
+
+        // User adds a book
+        notifier.addUserBook(_testUserBook('ub-1', BookStatus.tsundoku));
+        expect(notifier.state.userBooks.length, 1);
+
+        // User navigates away and back → fetchBooks should NOT overwrite
+        await notifier.fetchBooks();
+        expect(notifier.state.userBooks.length, 1,
+            reason: 'fetchBooks after addUserBook must not overwrite');
       });
     });
   });
