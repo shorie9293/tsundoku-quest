@@ -15,6 +15,7 @@ import '../../../../domain/models/war_trophy.dart';
 import '../../bookshelf/data/daily_mission_provider.dart';
 import '../data/reading_session_repository_provider.dart';
 import 'package:takamagahara_ui/takamagahara_ui.dart' hide AppKeys;
+import 'widgets/completion_effect.dart';
 
 /// 読書中画面
 class ReadingScreen extends ConsumerStatefulWidget {
@@ -449,7 +450,16 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
           status: BookStatus.completed,
           completedAt: DateTime.now().toUtc().toIso8601String(),
         );
-    if (mounted) context.go('/');
+    if (mounted) {
+      // 討伐完了演出を表示 → 演出完了後に書庫画面へ自動遷移
+      CompletionEffectOverlay.show(
+        context,
+        xpGained: completionXp,
+        onComplete: () {
+          if (mounted) context.go('/');
+        },
+      );
+    }
   }
 
   String get _formattedTime {
