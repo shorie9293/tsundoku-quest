@@ -30,6 +30,7 @@ class RakutenApi {
       'applicationId': _appId,
       'accessKey': _accessKey,
       'keyword': query,
+      'booksGenreId': '000',
       'hits': '10',
     });
 
@@ -37,8 +38,8 @@ class RakutenApi {
       final response = await _client.get(
         uri,
         headers: {
-          'Referer': 'http://localhost:3000',
-          'Origin': 'http://localhost:3000',
+          'Referer': 'https://tsundoquest.netlify.app',
+          'Origin': 'https://tsundoquest.netlify.app',
         },
       );
       if (response.statusCode != 200) return [];
@@ -73,8 +74,8 @@ class RakutenApi {
       final response = await _client.get(
         uri,
         headers: {
-          'Referer': 'http://localhost:3000',
-          'Origin': 'http://localhost:3000',
+          'Referer': 'https://tsundoquest.netlify.app',
+          'Origin': 'https://tsundoquest.netlify.app',
         },
       );
       if (response.statusCode != 200) return null;
