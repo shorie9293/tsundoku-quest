@@ -109,6 +109,10 @@ class AppKeys {
   static const Key tutorialLorePage4 = Key('page_tutorial_lore_4');
   static const Key tutorialOperationPage = Key('page_tutorial_operation');
 
+  // ━━━ 本一覧（統計タップ遷移先） ━━━
+  static const Key bookListScreen = Key('screen_book_list');
+  static const Key bookListListView = Key('list_book_list');
+
   // ━━━ 汎用 ━━━
   static const Key backButton = Key('btn_back');
   static const Key closeButton = Key('btn_close');
