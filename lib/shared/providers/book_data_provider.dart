@@ -61,6 +61,11 @@ class BookDataNotifier extends StateNotifier<BookDataState> {
   final TsundokuBookEventExporter? _bookEventExporter;
   final TsundokuBookCompletionExporter? _completionExporter;
 
+  /// addUserBook 後に fetchBooks がインメモリデータを上書きするのを防ぐガード。
+  /// addUserBook() で true に設定され、以降の fetchBooks() は
+  /// state.userBooks が空でない限り早期リターンする。
+  bool _initialFetchDone = false;
+
   /// [repository] が null の場合はインメモリモード、
   /// 指定時は Supabase 透過永続化モードで動作する。
   /// [rewardExporter] が指定された場合、本読了やページマイルストーン達成時に
@@ -80,6 +85,13 @@ class BookDataNotifier extends StateNotifier<BookDataState> {
 
   /// Supabase から蔵書一覧を取得して state を更新する
   Future<void> fetchBooks() async {
+    // ガード: addUserBook() が既にインメモリ状態を構築済みなら Supabase 取得をスキップ
+    // （レースコンディション防止: 非同期の Supabase INSERT が完了していない状態で
+    //   fetchBooks() が空データを返すと、インメモリのユーザーデータが上書き消失する）
+    if (_initialFetchDone && state.userBooks.isNotEmpty) {
+      debugPrint('📦 [BookData] fetchBooks: 既に初期データあり→スキップ');
+      return;
+    }
     if (_repository == null) {
       debugPrint('📦 [BookData] fetchBooks: リポジトリなし');
       return;
@@ -177,6 +189,9 @@ class BookDataNotifier extends StateNotifier<BookDataState> {
       updated.add(userBook);
     }
     state = state.copyWith(userBooks: updated);
+
+    // ガード: 初回の手動追加以降、fetchBooks() による上書きを防止
+    _initialFetchDone = true;
 
     // 2. 裏でSupabase保存（失敗してもUIは崩さない）
     _syncAddToSupabase(userBook);

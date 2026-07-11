@@ -392,6 +392,66 @@ void main() {
     });
   });
 
+  group('BookCard cover image display', () {
+    testWidgets('should show cover image when coverImageUrl is set',
+        (tester) async {
+      const book = Book(
+        id: 'b-cover',
+        title: '表紙ありの本',
+        authors: ['著者'],
+        source: BookSource.manual,
+        createdAt: '2026-01-01T00:00:00Z',
+        coverImageUrl: 'https://example.com/cover.jpg',
+      );
+      const userBook = UserBook(
+        id: 'ub-cover',
+        userId: 'user-1',
+        bookId: 'book-b-cover',
+        book: book,
+        status: BookStatus.tsundoku,
+        medium: BookMedium.physical,
+        createdAt: '2026-01-01T00:00:00Z',
+      );
+
+      await tester.pumpWidget(MaterialApp(
+        theme: ThemeData.dark(),
+        home: Scaffold(
+          body: BookCard(
+            book: userBook,
+            onTap: () {},
+            onEdit: () {},
+          ),
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      // Image.network should be present when coverImageUrl is set
+      expect(find.byType(Image), findsAtLeastNWidgets(1));
+    });
+
+    testWidgets('should show placeholder icon when coverImageUrl is null',
+        (tester) async {
+      final book = _testBook('b-no-cover');
+      final userBook = _testUserBook('ub-no-cover', BookStatus.tsundoku,
+          book: book);
+
+      await tester.pumpWidget(MaterialApp(
+        theme: ThemeData.dark(),
+        home: Scaffold(
+          body: BookCard(
+            book: userBook,
+            onTap: () {},
+            onEdit: () {},
+          ),
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      // Placeholder icon should be shown when coverImageUrl is null
+      expect(find.byIcon(Icons.menu_book), findsOneWidget);
+    });
+  });
+
   group('Completed book detail modal', () {
     testWidgets('tapping completed book should show detail bottom sheet',
         (tester) async {
