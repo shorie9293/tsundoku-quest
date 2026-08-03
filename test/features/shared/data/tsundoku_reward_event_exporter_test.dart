@@ -5,8 +5,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tsundoku_quest/features/shared/data/tsundoku_reward_event_exporter.dart';
 
 /// テスト用の一時JSONLファイルパスを生成
+/// （Flutterテストランナーの flutter_tools.* 一時ファイルと競合して
+///  P5(flutter_test_listener削除エラー)を誘発しないよう、独立サブディレクトリを使用）
 String _testFilePath(String suffix) =>
-    '${Directory.systemTemp.path}/test_reward_events_$suffix.jsonl';
+    '${_testTempDir.path}/test_reward_events_$suffix.jsonl';
+
+/// テスト専用の独立一時ディレクトリ（setUpAllで生成）
+late final Directory _testTempDir;
 
 /// ファイルからJSONL行を読み取り、Mapのリストとして返す
 Future<List<Map<String, dynamic>>> _readJsonlLines(String filePath) async {
@@ -23,6 +28,20 @@ Future<List<Map<String, dynamic>>> _readJsonlLines(String filePath) async {
 void main() {
   late String filePath;
   late TsundokuRewardEventExporter exporter;
+
+  setUpAll(() {
+    _testTempDir = Directory.systemTemp.createTempSync('reward_exporter_test_');
+  });
+
+  tearDownAll(() async {
+    try {
+      if (await _testTempDir.exists()) {
+        await _testTempDir.delete(recursive: true);
+      }
+    } catch (_) {
+      // Cleanup best-effort
+    }
+  });
 
   setUp(() {
     filePath = _testFilePath('default');
@@ -300,7 +319,7 @@ void main() {
 
     test('should create parent directories automatically', () async {
       final nestedPath =
-          '${Directory.systemTemp.path}/nested/deep/dir/events.jsonl';
+          '${_testTempDir.path}/nested/deep/dir/events.jsonl';
       final nestedExporter = TsundokuRewardEventExporter(
         filePath: nestedPath,
         userId: 'u1',
