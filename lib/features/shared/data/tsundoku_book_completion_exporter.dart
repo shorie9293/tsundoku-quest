@@ -23,21 +23,31 @@ class TsundokuBookCompletionExporter {
   /// [bookId] 読了した本のID
   /// [bookTitle] 読了した本のタイトル（任意）
   /// [timestamp] 読了日時（ISO8601文字列）
+  ///
+  /// 共有ストレージ書き込みはベストエフォート。失敗しても読了の
+  /// 本処理を妨げないよう例外は握りつぶす（テスト環境等で /data が
+  /// 書けない場合に単体テストを壊さないための防御）。
   Future<void> exportBookCompleted({
     required String bookId,
     String? bookTitle,
     required String timestamp,
   }) async {
-    final file = File(filePath);
-    await file.parent.create(recursive: true);
+    try {
+      final file = File(filePath);
+      await file.parent.create(recursive: true);
 
-    final json = {
-      'event': 'book_completed',
-      'bookId': bookId,
-      'bookTitle': bookTitle ?? '',
-      'timestamp': timestamp,
-    };
+      final json = {
+        'event': 'book_completed',
+        'bookId': bookId,
+        'bookTitle': bookTitle ?? '',
+        'timestamp': timestamp,
+      };
 
-    await file.writeAsString(jsonEncode(json));
+      await file.writeAsString(jsonEncode(json));
+    } catch (e) {
+      // 共有ストレージ書込はオプション機能。失敗は握りつぶす（ログのみ）。
+      // ignore: avoid_print
+      print('TsundokuBookCompletionExporter: 書き込み失敗（無視）: $e');
+    }
   }
 }
