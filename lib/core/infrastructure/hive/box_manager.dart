@@ -35,6 +35,9 @@ class BoxNames {
   /// 戦利品データ（WarTrophy）
   static const String warTrophies = 'war_trophies_box';
 
+  /// 読書リマインダー設定（単一オブジェクト、index 0 保存）
+  static const String reminder = 'reminder_box';
+
   /// 全 Box 名のリスト（openAllBoxes 用）
   static const List<String> all = [
     adventurer,
@@ -43,6 +46,7 @@ class BoxNames {
     settings,
     tutorial,
     warTrophies,
+    reminder,
   ];
 }
 

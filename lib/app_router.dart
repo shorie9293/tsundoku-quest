@@ -12,6 +12,7 @@ import 'features/auth/presentation/signup_screen.dart';
 import 'features/recommendation/presentation/recommendation_screen.dart';
 import 'features/tutorial/presentation/tutorial_screen.dart';
 import 'features/tutorial/data/tutorial_preferences.dart';
+import 'features/reminders/presentation/reminder_settings_screen.dart';
 
 /// アプリ全体のルーティング設定
 ///
@@ -87,6 +88,10 @@ class AppRouter {
               },
             );
           },
+        ),
+        GoRoute(
+          path: '/reminder-settings',
+          builder: (context, state) => const ReminderSettingsScreen(),
         ),
       ],
     );

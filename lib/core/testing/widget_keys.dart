@@ -113,6 +113,13 @@ class AppKeys {
   static const Key bookListScreen = Key('screen_book_list');
   static const Key bookListListView = Key('list_book_list');
 
+  // ━━━ 読書リマインダー ━━━
+  static const Key reminderSettingsScreen = Key('screen_reminder_settings');
+  static const Key reminderSettingsButton = Key('btn_reminder_settings');
+  static const Key reminderEnabledSwitch = Key('switch_reminder_enabled');
+  static const Key reminderTimeTile = Key('tile_reminder_time');
+  static const Key reminderTimeText = Key('txt_reminder_time');
+
   // ━━━ 汎用 ━━━
   static const Key backButton = Key('btn_back');
   static const Key closeButton = Key('btn_close');

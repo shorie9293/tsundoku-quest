@@ -13,6 +13,7 @@ import 'core/infrastructure/hive/adapters/book_adapters.dart';
 import 'core/infrastructure/hive/adapters/reading_session_adapter.dart';
 import 'core/infrastructure/hive/adapters/daily_mission_adapters.dart';
 import 'core/infrastructure/hive/adapters/war_trophy_adapter.dart';
+import 'core/infrastructure/hive/adapters/reading_reminder_adapter.dart';
 import 'core/infrastructure/hive/box_manager.dart';
 import 'core/infrastructure/hive/migration_service.dart';
 import 'domain/models/user_book.dart';
@@ -20,6 +21,7 @@ import 'domain/models/reading_session.dart';
 import 'app_router.dart';
 import 'features/shared/data/adventurer_repository_provider.dart';
 import 'features/tutorial/data/tutorial_preferences.dart';
+import 'features/reminders/data/reminder_providers.dart';
 import 'shared/providers/adventurer_provider.dart';
 import 'package:takamagahara_ui/takamagahara_ui.dart';
 
@@ -84,6 +86,7 @@ Future<void> main() async {
         Hive.registerAdapter(DailyMissionTypeAdapter());
         Hive.registerAdapter(DailyMissionAdapter());
         Hive.registerAdapter(WarTrophyAdapter());
+        Hive.registerAdapter(ReadingReminderAdapter());
       },
     );
     debugPrint('✅ Hive 初期化完了');
@@ -240,7 +243,27 @@ class _AppStartupInitializerState
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadAdventurerStatus();
       _checkTutorial();
+      _initReminder();
     });
+  }
+
+  /// 読書リマインダーを初期化する
+  ///
+  /// 通知プラグインを初期化し、保存済み設定を読み込んで毎日の通知を
+  /// スケジュールする。失敗してもアプリ動作は妨げない。
+  void _initReminder() {
+    try {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        try {
+          await ref.read(localNotificationSchedulerProvider).initialize();
+          await ref.read(reminderSettingsProvider.notifier).load();
+        } catch (e) {
+          debugPrint('⚠️ リマインダー初期化失敗: $e');
+        }
+      });
+    } catch (e) {
+      debugPrint('⚠️ リマインダー初期化失敗: $e');
+    }
   }
 
   /// Supabase から冒険者ステータスを読み込む

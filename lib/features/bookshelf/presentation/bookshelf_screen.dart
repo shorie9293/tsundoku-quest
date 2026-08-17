@@ -90,6 +90,14 @@ class _BookshelfScreenState extends ConsumerState<BookshelfScreen> {
       key: AppKeys.bookshelfScreen,
       appBar: AppBar(
         title: const Text('📚 書庫'),
+        actions: [
+          IconButton(
+            key: AppKeys.reminderSettingsButton,
+            icon: const Icon(Icons.notifications_active_outlined),
+            tooltip: '読書リマインダー',
+            onPressed: () => context.push('/reminder-settings'),
+          ),
+        ],
       ),
       body: DungeonBackground(screenType: ScreenType.bookshelf,
         child: ListView(
