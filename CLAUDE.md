@@ -13,7 +13,7 @@
 - **Local Storage**: Hive (`hive_flutter: ^1.1.0`) + SharedPreferences
 - **Barcode**: mobile_scanner (`mobile_scanner: ^6.0.0`)
 - **Monorepo Packages**: takamagahara_core, takamagahara_ui (`../../packages/`)
-- **Current Version**: 1.0.4+42
+- **Current Version**: 1.0.4+43
 
 ## Project Structure
 
