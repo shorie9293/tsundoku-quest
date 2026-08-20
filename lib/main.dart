@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -24,10 +25,24 @@ import 'features/tutorial/data/tutorial_preferences.dart';
 import 'features/reminders/data/reminder_providers.dart';
 import 'shared/providers/adventurer_provider.dart';
 import 'package:takamagahara_ui/takamagahara_ui.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 
 Future<void> main() async {
   debugPrint('🔵 main() 開始');
   WidgetsFlutterBinding.ensureInitialized();
+
+  // ━━━ Firebase 運用監視基盤（Crashlytics クラッシュ検知 + Analytics KPI計測）━━━
+  try {
+    await Firebase.initializeApp();
+    // Analytics: セッション開始を記録し DAU/定着率のKPI計測を有効化
+    unawaited(FirebaseAnalytics.instance.logAppOpen());
+    debugPrint('✅ Firebase 初期化完了');
+  } catch (e) {
+    // テスト環境や Firebase 未設定時はアプリ起動を妨げず継続する
+    debugPrint('⚠️ Firebase初期化失敗（アプリは継続）: $e');
+  }
 
   const supabaseUrl = SupabaseConfig.url;
   const supabaseKey = SupabaseConfig.anonKey;
@@ -64,6 +79,12 @@ Future<void> main() async {
 
   // ② Flutterフレームワーク内の非同期エラー
   FlutterError.onError = (FlutterErrorDetails details) {
+    // クラッシュ検知: 致命的エラーを Crashlytics へ送信（未初期化時はスキップ）
+    try {
+      FirebaseCrashlytics.instance.recordFlutterFatalError(details);
+    } catch (e) {
+      // Firebase 未初期化（テスト環境等）はスキップ
+    }
     FlutterError.presentError(details);
   };
 
