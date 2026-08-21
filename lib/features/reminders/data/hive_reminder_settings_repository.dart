@@ -25,7 +25,7 @@ class HiveReminderSettingsRepository implements ReminderSettingsRepository {
   Future<ReadingReminderSettings> load() async {
     try {
       final box = await _getBox();
-      return BoxHelper.loadSingle(box) ?? const ReadingReminderSettings();
+      return await BoxHelper.loadSingle(box) ?? const ReadingReminderSettings();
     } catch (e) {
       debugPrint('[ReminderRepo] load failed: $e');
       return const ReadingReminderSettings();
