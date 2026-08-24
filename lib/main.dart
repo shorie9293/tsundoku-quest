@@ -28,6 +28,11 @@ import 'package:takamagahara_ui/takamagahara_ui.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:app_links/app_links.dart';
+import 'core/infrastructure/deep_link_service.dart';
+
+/// アプリ完全終了状態から起動した場合の初期ディープリンクを保持
+Uri? _pendingInitialDeepLink;
 
 Future<void> main() async {
   debugPrint('🔵 main() 開始');
@@ -119,6 +124,21 @@ Future<void> main() async {
   await _runHiveMigration();
 
   debugPrint('🚀 runApp 開始...');
+  // ━━━ アプリ間送客用ディープリンク受信基盤 ━━━
+  // app://cross-reward?source=<送客元>&reward=<報酬タイプ>
+  final appLinks = AppLinks();
+
+  // 完全終了状態からディープリンクで起動した場合の初期リンクを取得
+  try {
+    _pendingInitialDeepLink = await appLinks.getInitialLink();
+  } catch (e) {
+    // ignore: avoid_print
+    print('[main] Error getting initial deep link: $e');
+  }
+
+  // バックグラウンド→フォアグラウンド復帰時のリンクをリッスン
+  appLinks.uriLinkStream.listen(_handleDeepLink);
+
   runApp(
     const ProviderScope(
       child: TsundokuQuestApp(),
@@ -189,6 +209,22 @@ Future<void> _runHiveMigration() async {
   }
 }
 
+/// ディープリンクURLを解析し、該当導線に引き渡す。
+///
+/// 対応URL形式:
+///   app://cross-reward?source=<送客元>&reward=<報酬タイプ>
+void _handleDeepLink(Uri uri) {
+  // ignore: avoid_print
+  print('[main] Deep link received: $uri');
+
+  final link = DeepLinkService.parse(uri);
+  if (link == null) return;
+
+  // 送客元現世と報酬タイプを記録（受信基盤の具現化）。
+  // 報酬付与は既存の報酬サービス等が担うため、ここでは受信を確認する。
+  debugPrint('[main] Cross reward: source=${link.source}, reward=${link.reward}');
+}
+
 class TsundokuQuestApp extends ConsumerStatefulWidget {
   const TsundokuQuestApp({super.key});
 
@@ -197,9 +233,13 @@ class TsundokuQuestApp extends ConsumerStatefulWidget {
 }
 
 class _TsundokuQuestAppState extends ConsumerState<TsundokuQuestApp> {
+  bool _firstFrameHandled = false;
+
   @override
   void initState() {
     super.initState();
+    // 初回フレーム後に保留中のディープリンクを処理
+    WidgetsBinding.instance.addPostFrameCallback(_onFirstFrame);
     // 接続状態の変化を監視し、オンライン復帰時に自動リトライ
     ref.listenManual(isOnlineProvider, (prev, next) {
       if (prev == false && next == true) {
@@ -221,6 +261,22 @@ class _TsundokuQuestAppState extends ConsumerState<TsundokuQuestApp> {
         debugPrint('📡 [App] オフライン状態を検知');
       }
     });
+  }
+
+  /// 初回フレーム描画後に保留中のディープリンクを処理する。
+  ///
+  /// アプリ完全終了状態からディープリンクで起動された場合、
+  /// [main()] 内ではまだ Navigator が存在しないため、
+  /// 初回フレームまで遅延させる必要がある。
+  void _onFirstFrame(Duration _) {
+    if (_firstFrameHandled) return;
+    _firstFrameHandled = true;
+
+    final pendingLink = _pendingInitialDeepLink;
+    _pendingInitialDeepLink = null;
+    if (pendingLink != null) {
+      _handleDeepLink(pendingLink);
+    }
   }
 
   void _retryLoadAdventurer() {
