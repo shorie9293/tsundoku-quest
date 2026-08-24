@@ -13,6 +13,7 @@ class DeepLinkService {
 
   static const String _scheme = 'app';
   static const String _host = 'cross-reward';
+  static const String _openHost = 'open';
 
   /// アプリ間送客用URIを生成する。
   ///
@@ -48,6 +49,12 @@ class DeepLinkService {
 
   /// [uri] がアプリ間送客用ディープリンクかどうかを判定する。
   static bool isCrossRewardLink(Uri uri) => parse(uri) != null;
+
+  /// [uri] が送客元アプリからのホーム起動導線（`app://open`）かどうかを判定する。
+  ///
+  /// rpg-task 等の送客元アプリが tsundoku-quest を開くために発行する。
+  static bool isAppOpenLink(Uri uri) =>
+      uri.scheme == _scheme && uri.host == _openHost;
 }
 
 /// アプリ間送客用ディープリンクの解析結果。

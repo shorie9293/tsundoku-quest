@@ -192,4 +192,33 @@ void main() {
       );
     });
   });
+
+  group('DeepLinkService.isAppOpenLink', () {
+    test('returns true for app://open', () {
+      expect(
+        DeepLinkService.isAppOpenLink(Uri.parse('app://open')),
+        isTrue,
+      );
+    });
+
+    test('returns false for cross-reward host', () {
+      expect(
+        DeepLinkService.isAppOpenLink(
+          Uri.parse('app://cross-reward?source=tsundoku-quest&reward=daily_mission'),
+        ),
+        isFalse,
+      );
+    });
+
+    test('returns false for non-app scheme', () {
+      expect(DeepLinkService.isAppOpenLink(Uri.parse('https://open')), isFalse);
+    });
+
+    test('returns false for app scheme with different host', () {
+      expect(
+        DeepLinkService.isAppOpenLink(Uri.parse('app://weekly-report')),
+        isFalse,
+      );
+    });
+  });
 }

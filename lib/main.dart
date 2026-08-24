@@ -213,9 +213,17 @@ Future<void> _runHiveMigration() async {
 ///
 /// 対応URL形式:
 ///   app://cross-reward?source=<送客元>&reward=<報酬タイプ>
+///   app://open                       （送客元アプリからのホーム起動導線）
 void _handleDeepLink(Uri uri) {
   // ignore: avoid_print
   print('[main] Deep link received: $uri');
+
+  // 送客元アプリからのホーム起動導線（app://open）。
+  // 起動先はホーム（'/'）のため、単に受信を確認してホーム表示へそのまま進む。
+  if (DeepLinkService.isAppOpenLink(uri)) {
+    debugPrint('[main] Open app from sender (app://open)');
+    return;
+  }
 
   final link = DeepLinkService.parse(uri);
   if (link == null) return;

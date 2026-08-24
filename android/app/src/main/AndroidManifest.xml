@@ -35,6 +35,13 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="app" android:host="cross-reward"/>
             </intent-filter>
+            <!-- Deep link: app://open（送客元アプリからのホーム起動導線） -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="app" android:host="open"/>
+            </intent-filter>
         </activity>
         <meta-data
             android:name="flutterEmbedding"
