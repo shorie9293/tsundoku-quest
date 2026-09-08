@@ -130,7 +130,26 @@ class SupabaseUserBookRepository implements UserBookRepository {
     }
   }
 
+  /// publishedDate を Supabase DATE 列に安全な形式へ正規化する。
+  ///
+  /// Google Books API の publishedDate は "2020"（年のみ）や "2020-05"（年月）、
+  /// "May 2020" のような形式を返すことがあり、PostgreSQL の DATE 列は
+  /// これらを拒否する（22007）。不完全な日付は null に落とし、
+  /// books INSERT が失敗して user_books 登録ごと消失する禍津を防ぐ。
+  @visibleForTesting
+  static String? normalizePublishedDate(String? raw) {
+    if (raw == null) return null;
+    final s = raw.trim();
+    if (s.isEmpty) return null;
+    final regex = RegExp(r'^\d{4}-\d{2}-\d{2}$');
+    return regex.hasMatch(s) ? s : null;
+  }
+
   /// BookをSupabaseのスネークケース形式に変換
+  @visibleForTesting
+  Map<String, dynamic> bookToSupabaseForTest(Book book) =>
+      _bookToSupabase(book);
+
   Map<String, dynamic> _bookToSupabase(Book book) {
     return {
       'id': book.id,
@@ -139,7 +158,7 @@ class SupabaseUserBookRepository implements UserBookRepository {
       'title': book.title,
       'authors': book.authors,
       'publisher': book.publisher,
-      'published_date': book.publishedDate,
+      'published_date': normalizePublishedDate(book.publishedDate),
       'description': book.description,
       'page_count': book.pageCount,
       'cover_image_url': book.coverImageUrl,
