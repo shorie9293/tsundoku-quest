@@ -42,7 +42,9 @@ android {
         applicationId = "com.shorie.tsundoku"
         // firebase_analytics 12.x は minSdk 23 を要求するため flutter の既定(21)から引き上げ
         minSdkVersion = 23
-        targetSdk = flutter.targetSdkVersion
+        // Google Play の targetSdk 要件(35+)を満たすため明示指定
+        // （Flutter 3.27.x の flutter.targetSdkVersion は 34 で Play 拒否される）
+        targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
