@@ -40,7 +40,8 @@ android {
 
     defaultConfig {
         applicationId = "com.shorie.tsundoku"
-        minSdkVersion = flutter.minSdkVersion
+        // firebase_analytics 12.x は minSdk 23 を要求するため flutter の既定(21)から引き上げ
+        minSdkVersion = 23
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
