@@ -12,6 +12,7 @@ import '../../../domain/models/user_book.dart';
 import '../../../shared/providers/book_data_provider.dart';
 import '../../../shared/providers/book_search_service_provider.dart';
 import '../../../shared/repositories/book_search_service.dart';
+import 'widgets/book_confirm_modal.dart';
 import 'widgets/search_results_widget.dart';
 
 /// 探索画面（本の登録）
@@ -121,7 +122,12 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
       final service = ref.read(bookSearchServiceProvider);
       final book = await service.lookupByIsbn(rawValue);
       if (book != null && mounted) {
-        _addBook(book);
+        // 二段階導線: 書誌情報を確認してから登録する
+        await BookConfirmModal.show(
+          context,
+          book: book,
+          onConfirm: _addBook,
+        );
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('📚 本が見つかりませんでした')),

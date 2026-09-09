@@ -37,6 +37,9 @@ class AppKeys {
   static const Key manualAuthorField = Key('txt_manual_author');
   static const Key manualIsbnField = Key('txt_manual_isbn');
   static const Key manualSubmit = Key('btn_manual_submit');
+  static const Key bookConfirmModal = Key('dlg_book_confirm');
+  static const Key bookConfirmSubmit = Key('btn_book_confirm_submit');
+  static const Key bookConfirmCancel = Key('btn_book_confirm_cancel');
 
   // ━━━ 読書中 ━━━
   static const Key readingScreen = Key('screen_reading');
