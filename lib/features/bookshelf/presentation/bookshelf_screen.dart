@@ -97,6 +97,11 @@ class _BookshelfScreenState extends ConsumerState<BookshelfScreen> {
             tooltip: '読書リマインダー',
             onPressed: () => context.push('/reminder-settings'),
           ),
+          IconButton(
+            icon: const Icon(Icons.collections_bookmark),
+            tooltip: '自作棚',
+            onPressed: () => context.push('/shelves'),
+          ),
         ],
       ),
       body: DungeonBackground(screenType: ScreenType.bookshelf,

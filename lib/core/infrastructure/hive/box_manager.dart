@@ -38,6 +38,9 @@ class BoxNames {
   /// 読書リマインダー設定（単一オブジェクト、index 0 保存）
   static const String reminder = 'reminder_box';
 
+  /// 自作棚（JSON 文字列のコレクション: shelfId → BookShelf json）
+  static const String shelves = 'shelves_box';
+
   /// 全 Box 名のリスト（openAllBoxes 用）
   static const List<String> all = [
     adventurer,
@@ -47,6 +50,7 @@ class BoxNames {
     tutorial,
     warTrophies,
     reminder,
+    shelves,
   ];
 }
 
