@@ -5,6 +5,10 @@ abstract class ReadingSessionRepository {
   /// 特定の蔵書に関連する全セッションを取得
   Future<List<ReadingSession>> getByUserBook(String userBookId);
 
+  /// 完成済みセッションデータ（startedAt/endedAt/duration を保持したまま）を
+  /// データストアへ登録する。オフライン退避セッションの同期に使用する。
+  Future<ReadingSession> createSession(ReadingSession session);
+
   /// 読書セッションを開始
   Future<ReadingSession> startSession(String userBookId, int startPage);
 
