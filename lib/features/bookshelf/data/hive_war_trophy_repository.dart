@@ -51,6 +51,21 @@ class HiveWarTrophyRepository implements WarTrophyRepository {
     return trophy;
   }
 
+  @override
+  Future<void> deleteTrophiesByUserBook(String userBookId) async {
+    try {
+      final box = await _getBox();
+      final targets = box.values
+          .where((t) => t.userBookId == userBookId)
+          .map((t) => t.id)
+          .toList();
+      await box.deleteAll(targets);
+      await box.flush();
+    } catch (e) {
+      debugPrint('[HiveWarTrophyRepo] deleteTrophiesByUserBook failed: $e');
+    }
+  }
+
   /// Close the underlying box
   Future<void> close() async {
     if (_box != null && _box!.isOpen) {

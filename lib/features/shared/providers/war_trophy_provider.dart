@@ -74,6 +74,23 @@ class WarTrophyNotifier extends StateNotifier<List<WarTrophy>> {
     _syncToSupabase(trophy);
   }
 
+  /// 指定した本に紐づく戦利品を全件削除（本削除時の後片付け）。
+  /// state から即時除去し、裏でリポジトリ（Hive/Supabase）にも削除を伝播する。
+  Future<void> removeTrophiesByUserBook(String userBookId) async {
+    // 1. 即時UI反映（インメモリ）
+    state =
+        state.where((t) => t.userBookId != userBookId).toList();
+
+    // 2. 裏でリポジトリ削除（失敗してもUIは崩さない）
+    if (_repository != null) {
+      try {
+        await _repository.deleteTrophiesByUserBook(userBookId);
+      } catch (e) {
+        debugPrint('🏆 [WarTrophy] 削除同期失敗: $e');
+      }
+    }
+  }
+
   /// 戦利品をIDで取得（インメモリ検索）
   WarTrophy? getTrophy(String id) {
     try {
