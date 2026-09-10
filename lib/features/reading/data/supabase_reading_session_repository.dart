@@ -24,6 +24,16 @@ class SupabaseReadingSessionRepository implements ReadingSessionRepository {
   }
 
   @override
+  Future<ReadingSession> createSession(ReadingSession session) async {
+    final response = await _client
+        .from('reading_sessions')
+        .insert(session.toSupabase())
+        .select()
+        .single();
+    return ReadingSession.fromSupabase(response);
+  }
+
+  @override
   Future<ReadingSession> endSession(
     String sessionId,
     int endPage,

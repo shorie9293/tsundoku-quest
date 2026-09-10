@@ -107,6 +107,14 @@ class HiveReadingSessionRepository implements ReadingSessionRepository {
   }
 
   @override
+  Future<ReadingSession> createSession(ReadingSession session) async {
+    final box = await _getBox();
+    await box.put(session.id, session);
+    await box.flush();
+    return session;
+  }
+
+  @override
   Future<ReadingSession> endSession(
     String sessionId,
     int endPage,

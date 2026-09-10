@@ -53,6 +53,11 @@ class _MockReadingSessionRepository implements ReadingSessionRepository {
   }
 
   @override
+  Future<ReadingSession> createSession(ReadingSession session) async {
+    return session;
+  }
+
+  @override
   Future<List<ReadingSession>> getByUserBook(String userBookId) async => [];
 
   @override

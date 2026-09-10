@@ -22,6 +22,8 @@ import 'domain/models/user_book.dart';
 import 'domain/models/reading_session.dart';
 import 'app_router.dart';
 import 'features/shared/data/adventurer_repository_provider.dart';
+import 'features/reading/data/reading_session_repository_provider.dart';
+import 'features/reading/data/fallback_reading_session_repository.dart';
 import 'features/tutorial/data/tutorial_preferences.dart';
 import 'features/reminders/data/reminder_providers.dart';
 import 'shared/providers/adventurer_provider.dart';
@@ -275,6 +277,15 @@ class _TsundokuQuestAppState extends ConsumerState<TsundokuQuestApp> {
         });
         // Supabase から冒険者ステータスを再取得
         _retryLoadAdventurer();
+        // オフライン中にローカル退避した読書セッションを Supabase へ同期
+        try {
+          final repo = ref.read(readingSessionRepositoryProvider);
+          if (repo is FallbackReadingSessionRepository) {
+            repo.syncLocalSessionsToRemote();
+          }
+        } catch (e) {
+          debugPrint('⚠️ 読書セッション同期失敗: $e');
+        }
       } else if (next == false) {
         // オフライン検知（ログのみ）
         debugPrint('📡 [App] オフライン状態を検知');
@@ -339,6 +350,7 @@ class _AppStartupInitializerState
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadAdventurerStatus();
       _loadStartupData();
+      _syncOfflineReadingSessions();
       _checkTutorial();
       _initReminder();
     });
@@ -377,6 +389,20 @@ class _AppStartupInitializerState
   Future<void> _loadStartupData() async {
     final container = ProviderScope.containerOf(context, listen: false);
     await loadStartupData(container);
+  }
+
+  /// 起動時にオフライン中にローカル退避した読書セッションを同期する。
+  /// （接続リスナーは offline→online 遷移しか拾わないため、
+  ///  アプリ停止中に溜まった未同期セッションは起動時の同期で回収する）
+  Future<void> _syncOfflineReadingSessions() async {
+    try {
+      final repo = ref.read(readingSessionRepositoryProvider);
+      if (repo is FallbackReadingSessionRepository) {
+        await repo.syncLocalSessionsToRemote();
+      }
+    } catch (e) {
+      debugPrint('⚠️ 起動時読書セッション同期失敗: $e');
+    }
   }
 
   /// 初回起動時にチュートリアル画面を表示
