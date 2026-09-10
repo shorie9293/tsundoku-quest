@@ -46,6 +46,14 @@ class SupabaseWarTrophyRepository implements WarTrophyRepository {
     return _fromSupabase(response);
   }
 
+  @override
+  Future<void> deleteTrophiesByUserBook(String userBookId) async {
+    await _client
+        .from('war_trophies')
+        .delete()
+        .eq('user_book_id', userBookId);
+  }
+
   /// SupabaseのスネークケースJSON → WarTrophy
   WarTrophy _fromSupabase(Map<String, dynamic> json) {
     return WarTrophy(

@@ -10,4 +10,7 @@ abstract class WarTrophyRepository {
 
   /// 戦利品を更新
   Future<WarTrophy> updateTrophy(WarTrophy trophy);
+
+  /// 指定した本（userBookId）に紐づく戦利品を全件削除
+  Future<void> deleteTrophiesByUserBook(String userBookId);
 }

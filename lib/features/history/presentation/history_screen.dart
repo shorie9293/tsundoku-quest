@@ -42,13 +42,13 @@ class HistoryScreen extends ConsumerWidget {
               _StatCard(
                   icon: '📚',
                   label: '登録数',
-                  value: '${adventurer.totalBooksRegistered}',
+                  value: '${stats.totalBooks}',
                   onTap: () => _showBookList(context, ref, '登録本一覧', null),
               ),
               _StatCard(
                   icon: '✅',
                   label: '読了数',
-                  value: '${adventurer.totalBooksCompleted}',
+                  value: '${stats.completedCount}',
                   onTap: () => _showBookList(
                       context, ref, '討伐済み一覧', BookStatus.completed),
               ),

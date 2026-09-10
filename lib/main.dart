@@ -25,6 +25,7 @@ import 'features/shared/data/adventurer_repository_provider.dart';
 import 'features/tutorial/data/tutorial_preferences.dart';
 import 'features/reminders/data/reminder_providers.dart';
 import 'shared/providers/adventurer_provider.dart';
+import 'shared/providers/startup_loader.dart';
 import 'package:takamagahara_ui/takamagahara_ui.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -337,6 +338,7 @@ class _AppStartupInitializerState
     // 初回フレーム描画後に初期化処理を実行
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadAdventurerStatus();
+      _loadStartupData();
       _checkTutorial();
       _initReminder();
     });
@@ -369,6 +371,12 @@ class _AppStartupInitializerState
     } catch (e) {
       debugPrint('⚠️ 冒険者ステータスの初期ロード失敗: $e');
     }
+  }
+
+  /// 起動時に戦利品（読書感想）等の表示データをロードする
+  Future<void> _loadStartupData() async {
+    final container = ProviderScope.containerOf(context, listen: false);
+    await loadStartupData(container);
   }
 
   /// 初回起動時にチュートリアル画面を表示

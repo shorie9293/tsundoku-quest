@@ -10,6 +10,7 @@ import 'package:tsundoku_quest/features/reading/data/reading_session_repository_
 import 'package:tsundoku_quest/features/shared/data/tsundoku_reward_event_exporter.dart';
 import 'package:tsundoku_quest/features/shared/data/tsundoku_book_event_exporter.dart';
 import 'package:tsundoku_quest/features/shared/data/tsundoku_book_completion_exporter.dart';
+import 'package:tsundoku_quest/features/shared/providers/war_trophy_provider.dart';
 
 /// 読了ページ数マイルストーン閾値（1冊あたり）
 const _bookPagesMilestones = [50, 100, 200, 500, 1000];
@@ -60,6 +61,15 @@ class BookDataNotifier extends StateNotifier<BookDataState> {
   final TsundokuRewardEventExporter? _rewardExporter;
   final TsundokuBookEventExporter? _bookEventExporter;
   final TsundokuBookCompletionExporter? _completionExporter;
+
+  /// 本削除時に紐づく戦利品を削除するコールバック（warTrophyProvider 連携用）。
+  /// Riverpod の循環参照を避けるため provider 側から注入する。
+  void Function(String userBookId)? _trophyCleanup;
+
+  /// 戦利品クリーンアップコールバックを設定する（provider 構築時に一度だけ呼ぶ）。
+  // ignore: avoid_setters_without_getters
+  set trophyCleanup(void Function(String userBookId)? callback) =>
+      _trophyCleanup = callback;
 
   /// addUserBook 後に fetchBooks がインメモリデータを上書きするのを防ぐガード。
   /// addUserBook() で true に設定され、以降の fetchBooks() は
@@ -276,6 +286,9 @@ class BookDataNotifier extends StateNotifier<BookDataState> {
     final updated = state.userBooks.where((ub) => ub.id != id).toList();
     state = state.copyWith(userBooks: updated);
 
+    // 紐づく戦利品（読書感想）も後片付け（足跡画面の「不明な本」残存防止）
+    _trophyCleanup?.call(id);
+
     // 裏でSupabase削除
     _syncDeleteFromSupabase(id);
   }
@@ -336,5 +349,14 @@ final bookDataProvider =
     null, // rewardExporter — 必要に応じて注入
     const TsundokuBookEventExporter(), // kozuchi 連携用（蔵書追加）
     const TsundokuBookCompletionExporter(), // kozuchi 連携用（読了→金運バフ）
-  );
+  )..trophyCleanup = (userBookId) {
+      // 本削除時に紐づく戦利品（読書感想）も削除する
+      try {
+        ref
+            .read(warTrophyProvider.notifier)
+            .removeTrophiesByUserBook(userBookId);
+      } catch (_) {
+        // テスト環境等でリポジトリがない場合は何もしない
+      }
+    };
 });
