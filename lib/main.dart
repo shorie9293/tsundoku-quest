@@ -17,6 +17,7 @@ import 'core/infrastructure/hive/adapters/war_trophy_adapter.dart';
 import 'core/infrastructure/hive/adapters/reading_reminder_adapter.dart';
 import 'core/infrastructure/hive/box_manager.dart';
 import 'core/infrastructure/hive/migration_service.dart';
+import 'core/infrastructure/relink/device_identity_service.dart';
 import 'domain/models/user_book.dart';
 import 'domain/models/reading_session.dart';
 import 'app_router.dart';
@@ -67,6 +68,10 @@ Future<void> main() async {
       } catch (e) {
         debugPrint('⚠️ 匿名サインイン失敗（オフラインモード継続）: $e');
       }
+
+      // デバイス秘密鍵による蔵書再リンク（セッション喪失対策）
+      // 失敗しても起動は妨げない
+      await DeviceIdentityService().relinkOnStartup();
     } catch (e) {
       debugPrint('⚠️ Supabase初期化失敗（オフラインモード）: $e');
     }
