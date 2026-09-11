@@ -17,7 +17,6 @@ import 'core/infrastructure/hive/adapters/war_trophy_adapter.dart';
 import 'core/infrastructure/hive/adapters/reading_reminder_adapter.dart';
 import 'core/infrastructure/hive/box_manager.dart';
 import 'core/infrastructure/hive/migration_service.dart';
-import 'core/infrastructure/relink/device_identity_service.dart';
 import 'domain/models/user_book.dart';
 import 'domain/models/reading_session.dart';
 import 'app_router.dart';
@@ -60,21 +59,9 @@ Future<void> main() async {
     try {
       await Supabase.initialize(url: supabaseUrl, anonKey: supabaseKey);
       debugPrint('✅ Supabase 初期化完了');
-
-      // ゲストファースト：匿名サインインを自動実行
-      try {
-        final session = Supabase.instance.client.auth.currentSession;
-        if (session == null) {
-          await Supabase.instance.client.auth.signInAnonymously();
-          debugPrint('✅ 匿名サインイン完了');
-        }
-      } catch (e) {
-        debugPrint('⚠️ 匿名サインイン失敗（オフラインモード継続）: $e');
-      }
-
-      // デバイス秘密鍵による蔵書再リンク（セッション喪失対策）
-      // 失敗しても起動は妨げない
-      await DeviceIdentityService().relinkOnStartup();
+      // 認証は Google ネイティブ認証（google_sign_in 7.x）に一本化。
+      // 未ログイン時は GoRouter redirect が /login へ導くため、
+      // ここでの匿名サインインは行わない（匿名認証廃止）。
     } catch (e) {
       debugPrint('⚠️ Supabase初期化失敗（オフラインモード）: $e');
     }

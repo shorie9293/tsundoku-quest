@@ -86,6 +86,7 @@ class AppKeys {
   static const Key authSubmitButton = Key('btn_auth_submit');
   static const Key authErrorText = Key('txt_auth_error');
   static const Key authBackButton = Key('btn_auth_back');
+  static const Key authGoogleSignInButton = Key('btn_google_signin');
 
   // ━━━ 今日のおすすめ ━━━
   static const Key recommendationSection = Key('section_recommendation');

@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/widgets/app_scaffold.dart';
 import 'features/bookshelf/presentation/bookshelf_screen.dart';
 import 'features/explore/presentation/explore_screen.dart';
 import 'features/reading/presentation/reading_screen.dart';
 import 'features/history/presentation/history_screen.dart';
-import 'features/auth/presentation/auth_screen.dart';
 import 'features/auth/presentation/login_screen.dart';
-import 'features/auth/presentation/signup_screen.dart';
 import 'features/recommendation/presentation/recommendation_screen.dart';
 import 'features/tutorial/presentation/tutorial_screen.dart';
 import 'features/tutorial/data/tutorial_preferences.dart';
@@ -19,7 +18,11 @@ import 'features/shelves/presentation/shelf_management_screen.dart';
 ///
 /// Next.jsのページルーティング＋TabBarをgo_router + BottomNavigationBarに移植。
 /// ShellRouteで共通のAppScaffold（BottomNavigationBar付き）を提供し、
-/// 4つのタブ画面を子ルートとして定義する。
+/// 3つのタブ画面を子ルートとして定義する。
+///
+/// 認証ゲート: 未ログイン時は /login へ強制リダイレクトする
+/// （Google認証ゲート — 匿名認証廃止）。ログイン済みで /login への
+/// 直行は '/' へ戻す。
 class AppRouter {
   AppRouter._();
 
@@ -27,10 +30,33 @@ class AppRouter {
   ///
   /// Use [createRouter] in tests to get a fresh router per test
   /// (avoids cross-test state contamination from the singleton).
-  static GoRouter createRouter() {
+  /// [isSignedIn] を差し替えることで認証ガードを試練から制御できる
+  /// （既定は Supabase のセッション状態）。
+  static GoRouter createRouter({bool Function()? isSignedIn}) {
+    bool signedIn() {
+      final check = isSignedIn;
+      if (check != null) return check();
+      try {
+        return Supabase.instance.client.auth.currentUser != null;
+      } catch (_) {
+        return false;
+      }
+    }
+
     return GoRouter(
       initialLocation: '/',
+      redirect: (context, state) {
+        final loggedIn = signedIn();
+        final loggingIn = state.matchedLocation == '/login';
+        if (!loggedIn && !loggingIn) return '/login';
+        if (loggedIn && loggingIn) return '/';
+        return null;
+      },
       routes: [
+        GoRoute(
+          path: '/login',
+          builder: (context, state) => const LoginScreen(),
+        ),
         ShellRoute(
           builder: (context, state, child) => AppScaffold(child: child),
           routes: [
@@ -53,20 +79,6 @@ class AppRouter {
           path: '/reading',
           builder: (context, state) =>
               ReadingScreen(id: state.uri.queryParameters['id']),
-        ),
-        GoRoute(
-          path: '/auth',
-          builder: (context, state) => const AuthScreen(),
-          routes: [
-            GoRoute(
-              path: 'login',
-              builder: (context, state) => const LoginScreen(),
-            ),
-            GoRoute(
-              path: 'signup',
-              builder: (context, state) => const SignupScreen(),
-            ),
-          ],
         ),
         GoRoute(
           path: '/recommendations',

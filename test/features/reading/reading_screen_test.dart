@@ -281,7 +281,7 @@ void main() {
     });
 
     testWidgets('close button should pop the screen', (tester) async {
-      final router = AppRouter.createRouter();
+      final router = AppRouter.createRouter(isSignedIn: () => true);
       final container = ProviderContainer();
 
       // Seed a user book in the provider

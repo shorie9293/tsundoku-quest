@@ -28,7 +28,7 @@ void main() {
   Widget testApp() {
     return ProviderScope(
       child: MaterialApp.router(
-        routerConfig: AppRouter.createRouter(),
+        routerConfig: AppRouter.createRouter(isSignedIn: () => true),
       ),
     );
   }
@@ -58,7 +58,7 @@ void main() {
 
     testWidgets('should navigate to /reading route directly', (tester) async {
       // /reading is now outside ShellRoute — test via direct navigation
-      final router = AppRouter.createRouter();
+      final router = AppRouter.createRouter(isSignedIn: () => true);
 
       await tester.pumpWidget(ProviderScope(
         child: MaterialApp.router(
@@ -193,7 +193,7 @@ void main() {
   group('AppRouter - Tutorial Route', () {
     testWidgets('should display tutorial screen at /tutorial',
         (tester) async {
-      final router = AppRouter.createRouter();
+      final router = AppRouter.createRouter(isSignedIn: () => true);
 
       await tester.pumpWidget(ProviderScope(
         child: MaterialApp.router(
@@ -212,7 +212,7 @@ void main() {
     });
 
     testWidgets('should show tutorial page indicator', (tester) async {
-      final router = AppRouter.createRouter();
+      final router = AppRouter.createRouter(isSignedIn: () => true);
 
       await tester.pumpWidget(ProviderScope(
         child: MaterialApp.router(
@@ -229,7 +229,7 @@ void main() {
     });
 
     testWidgets('should show start button on tutorial screen', (tester) async {
-      final router = AppRouter.createRouter();
+      final router = AppRouter.createRouter(isSignedIn: () => true);
 
       await tester.pumpWidget(ProviderScope(
         child: MaterialApp.router(

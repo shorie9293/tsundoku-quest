@@ -30,7 +30,7 @@ void main() {
   Widget testApp() {
     return ProviderScope(
       child: MaterialApp.router(
-        routerConfig: AppRouter.createRouter(),
+        routerConfig: AppRouter.createRouter(isSignedIn: () => true),
       ),
     );
   }
@@ -46,7 +46,7 @@ void main() {
         expect(find.text('📚 書庫'), findsWidgets);
 
         // Simulate what happens when a page-internal button calls context.go('/explore')
-        final router = AppRouter.createRouter();
+        final router = AppRouter.createRouter(isSignedIn: () => true);
         await tester.pumpWidget(
           ProviderScope(
             child: MaterialApp.router(
@@ -75,7 +75,7 @@ void main() {
         await tester.pumpAndSettle();
 
         // Navigate to explore
-        final router = AppRouter.createRouter();
+        final router = AppRouter.createRouter(isSignedIn: () => true);
         await tester.pumpWidget(
           ProviderScope(
             child: MaterialApp.router(
