@@ -124,6 +124,16 @@ class AppKeys {
   static const Key reminderTimeTile = Key('tile_reminder_time');
   static const Key reminderTimeText = Key('txt_reminder_time');
 
+  // ━━━ 読書統計ダッシュボード ━━━
+  static const Key readingStatisticsMonthlyChart =
+      Key('chart_reading_statistics_monthly');
+  static const Key readingStatisticsYearlyRows =
+      Key('rows_reading_statistics_yearly');
+  static const Key readingStatisticsShelfRows =
+      Key('rows_reading_statistics_shelf');
+  static const Key readingStatisticsDashboard =
+      Key('section_reading_statistics_dashboard');
+
   // ━━━ 汎用 ━━━
   static const Key backButton = Key('btn_back');
   static const Key closeButton = Key('btn_close');

@@ -11,6 +11,7 @@ import '../../bookshelf/presentation/book_list_screen.dart';
 import '../data/weekly_reading_provider.dart';
 import '../data/reading_notes_provider.dart';
 import 'widgets/reading_calendar_widget.dart';
+import 'widgets/reading_statistics_dashboard.dart';
 import 'widgets/weekly_chart_widget.dart';
 
 /// 足跡画面（統計）
@@ -118,6 +119,10 @@ class HistoryScreen extends ConsumerWidget {
               ],
             ),
           ),
+          const SizedBox(height: 24),
+
+          // Monthly/yearly/shelf statistics dashboard
+          const ReadingStatisticsDashboard(),
           const SizedBox(height: 24),
 
           // Reading calendar
