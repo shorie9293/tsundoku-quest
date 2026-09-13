@@ -134,6 +134,14 @@ class AppKeys {
   static const Key readingStatisticsDashboard =
       Key('section_reading_statistics_dashboard');
 
+  // ━━━ 読書目標 ━━━
+  static const Key readingGoalCard = Key('card_reading_goal');
+  static const Key readingGoalScreen = Key('screen_reading_goal');
+  static const Key readingGoalMonthlyField = Key('field_reading_goal_monthly');
+  static const Key readingGoalYearlyField = Key('field_reading_goal_yearly');
+  static const Key readingGoalSaveButton = Key('btn_reading_goal_save');
+  static const Key readingGoalClearButton = Key('btn_reading_goal_clear');
+
   // ━━━ 汎用 ━━━
   static const Key backButton = Key('btn_back');
   static const Key closeButton = Key('btn_close');

@@ -41,6 +41,9 @@ class BoxNames {
   /// 自作棚（JSON 文字列のコレクション: shelfId → BookShelf json）
   static const String shelves = 'shelves_box';
 
+  /// 読書目標（単一オブジェクト、'goal' キーに JSON 文字列保存）
+  static const String readingGoal = 'reading_goal_box';
+
   /// 全 Box 名のリスト（openAllBoxes 用）
   static const List<String> all = [
     adventurer,
@@ -51,6 +54,7 @@ class BoxNames {
     warTrophies,
     reminder,
     shelves,
+    readingGoal,
   ];
 }
 

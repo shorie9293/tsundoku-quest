@@ -8,6 +8,7 @@ import '../../../../shared/providers/adventurer_provider.dart';
 import '../../../../shared/providers/derived_provider.dart';
 import '../../../../shared/providers/book_data_provider.dart';
 import '../../bookshelf/presentation/book_list_screen.dart';
+import '../../goals/presentation/reading_goal_screen.dart';
 import '../data/weekly_reading_provider.dart';
 import '../data/reading_notes_provider.dart';
 import 'widgets/reading_calendar_widget.dart';
@@ -71,6 +72,10 @@ class HistoryScreen extends ConsumerWidget {
                   value: '${(stats.completionRate * 100).toStringAsFixed(0)}%'),
             ],
           ),
+          const SizedBox(height: 24),
+
+          // Reading goal progress
+          const ReadingGoalCard(),
           const SizedBox(height: 24),
 
           // Level info
