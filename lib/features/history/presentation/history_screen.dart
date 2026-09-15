@@ -7,6 +7,10 @@ import '../../../../domain/models/user_book.dart';
 import '../../../../shared/providers/adventurer_provider.dart';
 import '../../../../shared/providers/derived_provider.dart';
 import '../../../../shared/providers/book_data_provider.dart';
+import '../../share_card/domain/share_card_data.dart';
+import '../../share_card/domain/share_card_service.dart';
+import '../../share_card/presentation/share_card_screen.dart';
+import '../../shelves/data/shelf_controller.dart';
 import '../../bookshelf/presentation/book_list_screen.dart';
 import '../../goals/presentation/reading_goal_screen.dart';
 import '../data/weekly_reading_provider.dart';
@@ -26,7 +30,17 @@ class HistoryScreen extends ConsumerWidget {
 
     return Scaffold(
       key: AppKeys.historyScreen,
-      appBar: AppBar(title: const Text('📊 足跡')),
+      appBar: AppBar(
+        title: const Text('📊 足跡'),
+        actions: [
+          IconButton(
+            key: AppKeys.historyShareButton,
+            icon: const Icon(Icons.ios_share),
+            tooltip: '読了カードを共有',
+            onPressed: () => _openShareCard(context, ref),
+          ),
+        ],
+      ),
       body: DungeonBackground(screenType: ScreenType.history,
         child: ListView(
         padding: const EdgeInsets.all(16),
@@ -184,6 +198,20 @@ class HistoryScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// 読了シェアカード画面への遷移（押下時にのみ Provider を read する）
+void _openShareCard(BuildContext context, WidgetRef ref) {
+  final books = ref.read(bookDataProvider).userBooks;
+  final shelves = ref.read(shelfControllerProvider);
+  final List<ShareCardData> candidates = ShareCardService.recent(
+    books: books,
+    shelves: shelves,
+    limit: 20,
+  );
+  Navigator.of(context).push(
+    MaterialPageRoute(builder: (_) => ShareCardScreen(candidates: candidates)),
+  );
 }
 
 /// 統計カードタップ時の本一覧表示

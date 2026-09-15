@@ -67,6 +67,21 @@ class AppKeys {
   static const Key readingNotesSection = Key('section_reading_notes');
   static const Key readingNotesList = Key('list_reading_notes');
   static const Key readingNotesEmpty = Key('txt_reading_notes_empty');
+  static const Key historyShareButton = Key('btn_history_share');
+
+  // ━━━ シェアカード ━━━
+  static const Key shareCardScreen = Key('screen_share_card');
+  static const Key shareCardPreview = Key('view_share_card_preview');
+  static const Key shareCardTitle = Key('txt_share_card_title');
+  static const Key shareCardAuthor = Key('txt_share_card_author');
+  static const Key shareCardDate = Key('txt_share_card_date');
+  static const Key shareCardPages = Key('txt_share_card_pages');
+  static const Key shareCardRating = Key('txt_share_card_rating');
+  static const Key shareCardShelves = Key('chips_share_card_shelves');
+  static const Key shareCardEmpty = Key('txt_share_card_empty');
+  static const Key shareCardCandidate = Key('selector_share_card_candidate');
+  static const Key shareCardShareButton = Key('btn_share_card_share');
+  static const Key shareCardCopyButton = Key('btn_share_card_copy');
 
   // ━━━ メインタブバー ━━━
   static const Key mainTabBar = Key('tab_main');
