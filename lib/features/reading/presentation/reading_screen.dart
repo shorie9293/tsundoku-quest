@@ -15,6 +15,9 @@ import '../../../../domain/models/user_book.dart';
 import '../../../../domain/models/war_trophy.dart';
 import '../../bookshelf/data/daily_mission_provider.dart';
 import '../data/reading_session_repository_provider.dart';
+import '../../history/data/reading_forecast_service.dart';
+import '../../history/presentation/widgets/reading_forecast_card.dart';
+import '../../../../domain/models/reading_session.dart';
 import 'package:takamagahara_ui/takamagahara_ui.dart' hide AppKeys;
 import 'widgets/completion_effect.dart';
 
@@ -51,15 +54,29 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
   static const _prefsKeyElapsedSeconds = 'reading_session_elapsed_seconds';
   int _currentTipIndex = 0;
   Timer? _tipTimer;
+  Future<List<ReadingSession>>? _forecastSessions;
 
   @override
   void initState() {
     super.initState();
     _currentTipIndex = randomTipIndex();
     _startTipRotation();
+    _loadForecastSessions();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _startSession();
     });
+  }
+
+  /// 読了予測用にセッション履歴を読み込む（Hive/Supabase どちらでも失敗時は空）。
+  void _loadForecastSessions() {
+    final id = widget.id;
+    if (id == null) return;
+    try {
+      final repo = ref.read(readingSessionRepositoryProvider);
+      _forecastSessions = repo.getByUserBook(id).catchError((_) => <ReadingSession>[]);
+    } catch (_) {
+      _forecastSessions = Future.value(const <ReadingSession>[]);
+    }
   }
 
   void _startTipRotation() {
@@ -668,6 +685,30 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
             ),
           ),
           const SizedBox(height: 24),
+
+          const SizedBox(height: 12),
+
+          // Reading Forecast (#60)
+          FutureBuilder<List<ReadingSession>>(
+            future: _forecastSessions,
+            builder: (context, snapshot) {
+              final sessions = snapshot.data;
+              if (sessions == null) return const SizedBox.shrink();
+              final forecastData = ReadingForecastService.forecast(
+                userBook: book,
+                sessions: sessions,
+                now: DateTime.now(),
+              );
+              // ペース不明（セッション履歴ゼロ等）のときは予測カードを出さない。
+              if (forecastData == null || forecastData.isUnknown) {
+                return const SizedBox.shrink();
+              }
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: ReadingForecastCard(forecast: forecastData),
+              );
+            },
+          ),
 
           // Page progress
           Row(

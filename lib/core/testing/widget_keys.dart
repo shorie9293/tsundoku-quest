@@ -162,4 +162,9 @@ class AppKeys {
   static const Key closeButton = Key('btn_close');
   static const Key confirmDialog = Key('dlg_confirm');
   static const Key errorBoundary = Key('widget_error_boundary');
+
+  // ━━━ 読了予測 ━━━
+  static const Key readingForecastCard = Key('card_reading_forecast');
+  static const Key readingForecastLabel = Key('txt_reading_forecast');
+  static const Key readingForecastPace = Key('txt_reading_pace');
 }
