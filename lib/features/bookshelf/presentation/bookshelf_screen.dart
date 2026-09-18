@@ -92,6 +92,12 @@ class _BookshelfScreenState extends ConsumerState<BookshelfScreen> {
         title: const Text('📚 書庫'),
         actions: [
           IconButton(
+            key: AppKeys.librarySearchButton,
+            icon: const Icon(Icons.search),
+            tooltip: '蔵書を検索',
+            onPressed: () => context.push('/library-search'),
+          ),
+          IconButton(
             key: AppKeys.reminderSettingsButton,
             icon: const Icon(Icons.notifications_active_outlined),
             tooltip: '読書リマインダー',

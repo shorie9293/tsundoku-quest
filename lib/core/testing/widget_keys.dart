@@ -22,6 +22,19 @@ class AppKeys {
   static const Key bookCardProgress = Key('bar_book_progress');
   static const Key bookEditModal = Key('dlg_edit_book');
 
+  // ━━━ 蔵書検索 ━━━
+  static const Key librarySearchButton = Key('btn_library_search');
+  static const Key librarySearchScreen = Key('screen_library_search');
+  static const Key librarySearchField = Key('txt_library_search');
+  static const Key librarySearchClearButton = Key('btn_library_search_clear');
+  static const Key libraryStatusFilterChips = Key('chips_library_status_filter');
+  static const Key libraryShelfFilterChips = Key('chips_library_shelf_filter');
+  static const Key librarySortButton = Key('btn_library_sort');
+  static const Key libraryResultCount = Key('txt_library_result_count');
+  static const Key libraryResultList = Key('list_library_results');
+  static const Key libraryEmptyState = Key('view_library_empty');
+  static const Key libraryResetButton = Key('btn_library_reset');
+
   // ━━━ 探索（本の登録） ━━━
   static const Key exploreScreen = Key('screen_explore');
   static const Key searchTab = Key('tab_search');

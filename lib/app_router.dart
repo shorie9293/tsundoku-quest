@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/widgets/app_scaffold.dart';
 import 'features/bookshelf/presentation/bookshelf_screen.dart';
+import 'features/bookshelf/presentation/library_search_screen.dart';
 import 'features/explore/presentation/explore_screen.dart';
 import 'features/reading/presentation/reading_screen.dart';
 import 'features/history/presentation/history_screen.dart';
@@ -109,6 +110,10 @@ class AppRouter {
         GoRoute(
           path: '/shelves',
           builder: (context, state) => const ShelfManagementScreen(),
+        ),
+        GoRoute(
+          path: '/library-search',
+          builder: (context, state) => const LibrarySearchScreen(),
         ),
       ],
     );
