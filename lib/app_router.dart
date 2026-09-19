@@ -13,6 +13,7 @@ import 'features/recommendation/presentation/recommendation_screen.dart';
 import 'features/tutorial/presentation/tutorial_screen.dart';
 import 'features/tutorial/data/tutorial_preferences.dart';
 import 'features/reminders/presentation/reminder_settings_screen.dart';
+import 'features/settings/presentation/text_scale_settings_screen.dart';
 import 'features/shelves/presentation/shelf_management_screen.dart';
 
 /// アプリ全体のルーティング設定
@@ -106,6 +107,10 @@ class AppRouter {
         GoRoute(
           path: '/reminder-settings',
           builder: (context, state) => const ReminderSettingsScreen(),
+        ),
+        GoRoute(
+          path: '/settings/text-scale',
+          builder: (context, state) => const TextScaleSettingsScreen(),
         ),
         GoRoute(
           path: '/shelves',

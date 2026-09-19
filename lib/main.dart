@@ -25,6 +25,7 @@ import 'features/reading/data/reading_session_repository_provider.dart';
 import 'features/reading/data/fallback_reading_session_repository.dart';
 import 'features/tutorial/data/tutorial_preferences.dart';
 import 'features/reminders/data/reminder_providers.dart';
+import 'features/settings/data/text_scale_provider.dart';
 import 'shared/providers/adventurer_provider.dart';
 import 'shared/providers/startup_loader.dart';
 import 'package:takamagahara_ui/takamagahara_ui.dart';
@@ -248,6 +249,14 @@ class _TsundokuQuestAppState extends ConsumerState<TsundokuQuestApp> {
     super.initState();
     // 初回フレーム後に保留中のディープリンクを処理
     WidgetsBinding.instance.addPostFrameCallback(_onFirstFrame);
+    // 保存済みの文字サイズ設定を読み込む（失敗しても起動を妨げない）
+    try {
+      unawaited(
+        ref.read(textScaleProvider.notifier).load().catchError((_) {}),
+      );
+    } catch (e) {
+      debugPrint('⚠️ 文字サイズ設定の読み込み失敗: $e');
+    }
     // 接続状態の変化を監視し、オンライン復帰時に自動リトライ
     ref.listenManual(isOnlineProvider, (prev, next) {
       if (prev == false && next == true) {
@@ -307,13 +316,20 @@ class _TsundokuQuestAppState extends ConsumerState<TsundokuQuestApp> {
 
   @override
   Widget build(BuildContext context) {
+    // アプリ全体の文字スケール（アクセシビリティ設定）
+    final textScale = ref.watch(textScaleProvider);
     return MaterialApp.router(
       title: 'ツンドクエスト',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
       routerConfig: AppRouter.router,
       builder: (context, child) {
-        return _AppStartupInitializer(child: child!);
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            textScaler: TextScaler.linear(textScale),
+          ),
+          child: _AppStartupInitializer(child: child!),
+        );
       },
     );
   }
