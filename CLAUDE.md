@@ -13,7 +13,7 @@
 - **Local Storage**: Hive (`hive_flutter: ^1.1.0`) + SharedPreferences
 - **Barcode**: mobile_scanner (`mobile_scanner: ^6.0.0`)
 - **Monorepo Packages**: takamagahara_core, takamagahara_ui (`../../packages/`)
-- **Current Version**: 1.0.6+45
+- **Current Version**: 1.1.4+79
 
 ## Project Structure
 
@@ -73,5 +73,5 @@ All must pass before deployment.
 ## Pitfalls
 
 - **analyze warning = CI failure**: `--no-fatal-infos` only suppresses `info`, not `warning`. Always run `flutter analyze --no-fatal-infos` before pushing.
-- **Monorepo packages**: CI clones packages from `shorie9293/takamagahara` repo. Locally they're at `../../packages/`.
+- **Monorepo packages**: CI clones packages from `shorie9293/takamagahara-packages` repo. Locally they're at `../../packages/`.
 - **Hive in tests**: Widget tests using Hive may need `TestWidgetsFlutterBinding.ensureInitialized()` in `main()`.
