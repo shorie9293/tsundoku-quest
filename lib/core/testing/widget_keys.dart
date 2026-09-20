@@ -175,6 +175,9 @@ class AppKeys {
   static const Key textScaleSettingsScreen = Key('screen_text_scale_settings');
   static Key textScaleOption(double scale) => Key('text_scale_opt_$scale');
 
+  // ━━━ バックアップ ━━━
+  static const Key backupSettingsButton = Key('btn_backup_settings');
+
   // ━━━ 汎用 ━━━
   static const Key backButton = Key('btn_back');
   static const Key closeButton = Key('btn_close');

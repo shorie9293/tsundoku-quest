@@ -110,6 +110,12 @@ class _BookshelfScreenState extends ConsumerState<BookshelfScreen> {
             onPressed: () => context.push('/settings/text-scale'),
           ),
           IconButton(
+            key: AppKeys.backupSettingsButton,
+            icon: const Icon(Icons.cloud_upload_outlined),
+            tooltip: 'バックアップ',
+            onPressed: () => context.push('/settings/backup'),
+          ),
+          IconButton(
             icon: const Icon(Icons.collections_bookmark),
             tooltip: '自作棚',
             onPressed: () => context.push('/shelves'),
