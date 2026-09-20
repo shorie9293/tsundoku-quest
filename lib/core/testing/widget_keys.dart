@@ -178,6 +178,14 @@ class AppKeys {
   // ━━━ バックアップ ━━━
   static const Key backupSettingsButton = Key('btn_backup_settings');
 
+  // ━━━ 読書キュー ━━━
+  static const Key readingQueueButton = Key('btn_reading_queue');
+  static const Key readingQueueScreen = Key('screen_reading_queue');
+  static const Key readingQueueNextCard = Key('card_reading_queue_next');
+  static const Key readingQueueList = Key('list_reading_queue');
+  static const Key readingQueueAddButton = Key('btn_reading_queue_add');
+  static const Key readingQueueEmpty = Key('txt_reading_queue_empty');
+
   // ━━━ 汎用 ━━━
   static const Key backButton = Key('btn_back');
   static const Key closeButton = Key('btn_close');

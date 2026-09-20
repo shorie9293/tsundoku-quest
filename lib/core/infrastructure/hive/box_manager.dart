@@ -44,6 +44,9 @@ class BoxNames {
   /// 読書目標（単一オブジェクト、'goal' キーに JSON 文字列保存）
   static const String readingGoal = 'reading_goal_box';
 
+  /// 「次に読む」読書キュー（キー=userBookId に JSON 文字列保存）
+  static const String readingQueue = 'reading_queue_box';
+
   /// 全 Box 名のリスト（openAllBoxes 用）
   static const List<String> all = [
     adventurer,
@@ -55,6 +58,7 @@ class BoxNames {
     reminder,
     shelves,
     readingGoal,
+    readingQueue,
   ];
 }
 
