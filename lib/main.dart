@@ -26,6 +26,7 @@ import 'features/reading/data/fallback_reading_session_repository.dart';
 import 'features/tutorial/data/tutorial_preferences.dart';
 import 'features/reminders/data/reminder_providers.dart';
 import 'features/settings/data/text_scale_provider.dart';
+import 'features/settings/data/theme_mode_provider.dart';
 import 'shared/providers/adventurer_provider.dart';
 import 'shared/providers/startup_loader.dart';
 import 'package:takamagahara_ui/takamagahara_ui.dart';
@@ -257,6 +258,14 @@ class _TsundokuQuestAppState extends ConsumerState<TsundokuQuestApp> {
     } catch (e) {
       debugPrint('⚠️ 文字サイズ設定の読み込み失敗: $e');
     }
+    // 保存済みのテーマモード設定を読み込む（失敗しても起動を妨げない）
+    try {
+      unawaited(
+        ref.read(themeModeProvider.notifier).load().catchError((_) {}),
+      );
+    } catch (e) {
+      debugPrint('⚠️ テーマモード設定の読み込み失敗: $e');
+    }
     // 接続状態の変化を監視し、オンライン復帰時に自動リトライ
     ref.listenManual(isOnlineProvider, (prev, next) {
       if (prev == false && next == true) {
@@ -318,10 +327,14 @@ class _TsundokuQuestAppState extends ConsumerState<TsundokuQuestApp> {
   Widget build(BuildContext context) {
     // アプリ全体の文字スケール（アクセシビリティ設定）
     final textScale = ref.watch(textScaleProvider);
+    // アプリ全体のテーマモード（ライト/ダーク/システム）
+    final themeMode = ref.watch(themeModeProvider);
     return MaterialApp.router(
       title: 'ツンドクエスト',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.darkTheme,
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: themeMode.toThemeMode(),
       routerConfig: AppRouter.router,
       builder: (context, child) {
         return MediaQuery(

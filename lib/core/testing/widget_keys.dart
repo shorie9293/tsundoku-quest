@@ -196,4 +196,9 @@ class AppKeys {
   static const Key readingForecastCard = Key('card_reading_forecast');
   static const Key readingForecastLabel = Key('txt_reading_forecast');
   static const Key readingForecastPace = Key('txt_reading_pace');
+
+  // ━━━ テーマ設定 ━━━
+  static const Key themeModeScreen = Key('screen_theme_mode_settings');
+  static const Key themeModeEntry = Key('btn_theme_mode_settings');
+  static Key themeModeOption(String key) => Key('btn_theme_mode_$key');
 }
