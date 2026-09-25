@@ -16,6 +16,7 @@ import '../../goals/presentation/reading_goal_screen.dart';
 import '../data/weekly_reading_provider.dart';
 import '../data/reading_notes_provider.dart';
 import 'widgets/reading_calendar_widget.dart';
+import 'widgets/reading_habit_heatmap.dart';
 import 'widgets/reading_statistics_dashboard.dart';
 import 'widgets/weekly_chart_widget.dart';
 
@@ -142,6 +143,7 @@ class HistoryScreen extends ConsumerWidget {
 
           // Monthly/yearly/shelf statistics dashboard
           const ReadingStatisticsDashboard(),
+          const ReadingHabitHeatmap(),
           const SizedBox(height: 24),
 
           // Reading calendar

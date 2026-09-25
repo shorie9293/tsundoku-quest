@@ -201,4 +201,13 @@ class AppKeys {
   static const Key themeModeScreen = Key('screen_theme_mode_settings');
   static const Key themeModeEntry = Key('btn_theme_mode_settings');
   static Key themeModeOption(String key) => Key('btn_theme_mode_$key');
+
+  // ━━━ 読書習慣ヒートマップ ━━━
+  static const Key readingHabitHeatmap = Key('widget_reading_habit_heatmap');
+  static const Key readingHabitGrid = Key('grid_reading_habit');
+  static const Key readingHabitLegend = Key('widget_reading_habit_legend');
+  static const Key readingHabitEmpty = Key('txt_reading_habit_empty');
+  static const Key readingHabitBusiest = Key('txt_reading_habit_busiest');
+  static Key readingHabitCell(int weekday, int slot) =>
+      Key('cell_reading_habit_${weekday}_$slot');
 }
