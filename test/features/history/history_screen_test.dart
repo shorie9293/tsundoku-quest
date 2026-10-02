@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tsundoku_quest/features/history/presentation/history_screen.dart';
+import 'package:tsundoku_quest/features/history/presentation/reading_note_search_screen.dart';
 import 'package:tsundoku_quest/core/testing/widget_keys.dart';
 import 'package:tsundoku_quest/domain/models/book.dart';
 import 'package:tsundoku_quest/domain/models/user_book.dart';
@@ -85,6 +86,20 @@ void main() {
         scrollable: find.byType(Scrollable).first,
       );
       expect(find.byKey(AppKeys.readingNotesSection), findsOneWidget);
+    });
+
+    testWidgets('感想検索ボタンで検索画面に遷移する', (tester) async {
+      await tester.pumpWidget(testHistoryScreen());
+      await tester.scrollUntilVisible(
+        find.byKey(AppKeys.readingNoteSearchButton),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.byKey(AppKeys.readingNoteSearchButton), findsOneWidget);
+      await tester.tap(find.byKey(AppKeys.readingNoteSearchButton));
+      await tester.pumpAndSettle();
+      expect(find.byKey(AppKeys.readingNoteSearchScreen), findsOneWidget);
+      expect(find.byType(ReadingNoteSearchScreen), findsOneWidget);
     });
 
     testWidgets('should display empty CTA when no notes exist', (tester) async {

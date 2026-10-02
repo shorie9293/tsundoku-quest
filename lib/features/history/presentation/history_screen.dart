@@ -17,6 +17,7 @@ import '../data/weekly_reading_provider.dart';
 import '../data/reading_notes_provider.dart';
 import 'widgets/reading_calendar_widget.dart';
 import 'widgets/reading_habit_heatmap.dart';
+import 'reading_note_search_screen.dart';
 import 'widgets/reading_statistics_dashboard.dart';
 import 'widgets/weekly_chart_widget.dart';
 
@@ -320,11 +321,24 @@ class _ReadingNotesSection extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('📝 読書感想・メモ',
-              style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.textPrimary)),
+          Row(
+            children: [
+              const Expanded(
+                child: Text('📝 読書感想・メモ',
+                    style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textPrimary)),
+              ),
+              IconButton(
+                key: AppKeys.readingNoteSearchButton,
+                icon: const Icon(Icons.search),
+                tooltip: '感想を検索',
+                onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => const ReadingNoteSearchScreen())),
+              ),
+            ],
+          ),
           const SizedBox(height: 12),
           if (notes.isEmpty || notes.every((n) => !n.hasContent))
             const _EmptyNotesPlaceholder()

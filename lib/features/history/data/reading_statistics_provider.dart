@@ -4,12 +4,20 @@ import 'package:tsundoku_quest/shared/providers/book_data_provider.dart';
 
 import 'reading_statistics_service.dart';
 
+/// 現在時刻を注入するためのProvider
+///
+/// 試練を実時計に依存させない（決定論化）ために、集計系Providerは
+/// `DateTime.now()` を直読みせずこのProvider経由で時刻を得る。
+final statisticsClockProvider = Provider<DateTime Function()>(
+  (ref) => DateTime.now,
+);
+
 /// 月別読書統計（直近12ヶ月）を提供するProvider
 final monthlyReadingStatsProvider = Provider<List<MonthlyBucket>>((ref) {
   final books = ref.watch(bookDataProvider).userBooks;
   return ReadingStatisticsService.monthlyCompletions(
     books: books,
-    now: DateTime.now(),
+    now: ref.watch(statisticsClockProvider)(),
     months: 12,
   );
 });
@@ -19,7 +27,7 @@ final monthlyReadingSummaryProvider = Provider<MonthlySummary>((ref) {
   final books = ref.watch(bookDataProvider).userBooks;
   return ReadingStatisticsService.summarizeMonthly(
     books: books,
-    now: DateTime.now(),
+    now: ref.watch(statisticsClockProvider)(),
     months: 12,
   );
 });
@@ -29,7 +37,7 @@ final yearlyReadingStatsProvider = Provider<List<YearlyBucket>>((ref) {
   final books = ref.watch(bookDataProvider).userBooks;
   return ReadingStatisticsService.yearlyCompletions(
     books: books,
-    now: DateTime.now(),
+    now: ref.watch(statisticsClockProvider)(),
     years: 3,
   );
 });

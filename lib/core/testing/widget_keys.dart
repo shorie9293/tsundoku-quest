@@ -210,4 +210,17 @@ class AppKeys {
   static const Key readingHabitBusiest = Key('txt_reading_habit_busiest');
   static Key readingHabitCell(int weekday, int slot) =>
       Key('cell_reading_habit_${weekday}_$slot');
+
+  // ━━━ 読書感想検索 ━━━
+  static const Key readingNoteSearchButton = Key('btn_reading_note_search');
+  static const Key readingNoteSearchScreen = Key('screen_reading_note_search');
+  static const Key readingNoteSearchField = Key('field_reading_note_search');
+  static const Key readingNoteSearchClear = Key('btn_reading_note_search_clear');
+  static const Key readingNoteSortMenu = Key('menu_reading_note_sort');
+  static const Key readingNoteBookChips = Key('chips_reading_note_books');
+  static const Key readingNoteContentChips = Key('chips_reading_note_content');
+  static const Key readingNoteReset = Key('btn_reading_note_reset');
+  static const Key readingNoteResultLabel = Key('txt_reading_note_result_count');
+  static const Key readingNoteList = Key('list_reading_note_search');
+  static const Key readingNoteEmpty = Key('txt_reading_note_search_empty');
 }

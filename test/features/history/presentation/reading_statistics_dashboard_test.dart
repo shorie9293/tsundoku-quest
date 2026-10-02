@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tsundoku_quest/domain/models/book.dart';
 import 'package:tsundoku_quest/domain/models/user_book.dart';
+import 'package:tsundoku_quest/features/history/data/reading_statistics_provider.dart';
 import 'package:tsundoku_quest/features/history/presentation/widgets/reading_statistics_dashboard.dart';
 import 'package:tsundoku_quest/shared/providers/book_data_provider.dart';
 
@@ -41,10 +42,15 @@ class _FakeBookData extends BookDataNotifier {
       );
 }
 
-Widget _wrap(List<UserBook> books) {
+/// 試練は実時計に依存させない。now を注入して決定論化する。
+Widget _wrap(List<UserBook> books, {DateTime? now}) {
   return ProviderScope(
     overrides: [
       bookDataProvider.overrideWith((ref) => _FakeBookData(books)),
+      // 「今月」判定を固定（注入しなければ暦が進むたびに赤化する時限爆弾）
+      statisticsClockProvider.overrideWithValue(
+        () => now ?? DateTime(2026, 9, 15),
+      ),
     ],
     child: MaterialApp(
       home: Scaffold(
@@ -77,5 +83,16 @@ void main() {
     await tester.pumpWidget(_wrap(const []));
     await tester.pumpAndSettle();
     expect(find.text('🗂 棚別の蔵書'), findsNothing);
+  });
+
+  testWidgets('時計注入により現在月が変われる（実時計非依存の回帰試練）', (tester) async {
+    final books = [
+      _ub(id: 'a', completedAt: '2026-09-05T10:00:00Z', pages: 200),
+    ];
+    // 現在月を10月に注入すると、9月の読了は「今月」に数えられない
+    await tester.pumpWidget(_wrap(books, now: DateTime(2026, 10, 3)));
+    await tester.pumpAndSettle();
+    expect(find.text('今月: 1冊・200ページ'), findsNothing);
+    expect(find.text('今月の読了はまだありません'), findsOneWidget);
   });
 }
