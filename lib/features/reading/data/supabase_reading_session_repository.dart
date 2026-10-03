@@ -54,6 +54,19 @@ class SupabaseReadingSessionRepository implements ReadingSessionRepository {
   }
 
   @override
+  Future<void> updateSession(ReadingSession session) async {
+    await _client
+        .from('reading_sessions')
+        .update(session.toSupabase())
+        .eq('id', session.id);
+  }
+
+  @override
+  Future<void> deleteSession(String sessionId) async {
+    await _client.from('reading_sessions').delete().eq('id', sessionId);
+  }
+
+  @override
   Future<List<ReadingSession>> getByUserBook(String userBookId) async {
     final response = await _client
         .from('reading_sessions')

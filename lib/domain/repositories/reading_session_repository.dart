@@ -22,6 +22,12 @@ abstract class ReadingSessionRepository {
   /// 最近の読書セッションを取得（直近N件）
   Future<List<ReadingSession>> getRecentSessions({int limit = 10});
 
+  /// 既存セッションを丸ごと更新する（手動修正用）
+  Future<void> updateSession(ReadingSession session);
+
+  /// セッションを削除する
+  Future<void> deleteSession(String sessionId);
+
   /// すべての読書日を重複なしで取得（並び順は降順）
   /// 各日付は "YYYY-MM-DD" 形式の文字列で返される
   Future<List<String>> getAllReadingDates();

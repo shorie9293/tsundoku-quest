@@ -51,6 +51,14 @@ class _FailingRepo implements ReadingSessionRepository {
 
   @override
   Future<int> getLongestStreak() async => 0;
+
+  @override
+  Future<void> updateSession(ReadingSession session) async =>
+      throw Exception('Supabase down');
+
+  @override
+  Future<void> deleteSession(String sessionId) async =>
+      throw Exception('Supabase down');
 }
 
 /// 正常なプライマリリポジトリ
@@ -114,6 +122,19 @@ class _WorkingRepo implements ReadingSessionRepository {
   Future<int> getCurrentStreak() async => 0;
   @override
   Future<int> getLongestStreak() async => 0;
+
+  final List<ReadingSession> updatedSessions = [];
+  final List<String> deletedSessionIds = [];
+
+  @override
+  Future<void> updateSession(ReadingSession session) async {
+    updatedSessions.add(session);
+  }
+
+  @override
+  Future<void> deleteSession(String sessionId) async {
+    deletedSessionIds.add(sessionId);
+  }
 }
 
 /// インメモリ BoxManager モック（実 Hive を起動しない）
@@ -303,6 +324,86 @@ void main() {
       expect(primary.created, hasLength(1),
           reason: '再入ガードにより1セッションは1回のみ同期されるべき');
     });
+
+    test('local: セッションの updateSession はプレフィックスを剥がしてローカルへ委譲する',
+        () async {
+      final repo = FallbackReadingSessionRepository(
+        primary: _FailingRepo(),
+        local: _HiveBackedLocalRepo(),
+        boxManager: _MockBoxManager(),
+      );
+
+      final started = await repo.startSession('ub-edit', 0);
+      final rawId = started.id.substring('local:'.length);
+      final edited = ReadingSession(
+        id: started.id,
+        userBookId: 'ub-edit',
+        startedAt: started.startedAt,
+        endedAt: DateTime.now().toUtc().toIso8601String(),
+        startPage: 5,
+        endPage: 42,
+        durationMinutes: 30,
+        createdAt: started.createdAt,
+      );
+      await repo.updateSession(edited);
+
+      final box =
+          await Hive.openBox<ReadingSession>(BoxNames.readingSessions);
+      final stored = box.get(rawId);
+      expect(stored, isNotNull,
+          reason: 'プレフィックスを剥がした元キーで保存されるべき');
+      expect(stored!.durationMinutes, 30);
+      expect(stored.endPage, 42);
+    });
+
+    test('リモートセッションの updateSession はプライマリに委譲される', () async {
+      final primary = _WorkingRepo();
+      final repo = FallbackReadingSessionRepository(
+        primary: primary,
+        local: _HiveBackedLocalRepo(),
+        boxManager: _MockBoxManager(),
+      );
+      final session = ReadingSession(
+        id: 'remote-1',
+        userBookId: 'ub',
+        startedAt: DateTime.now().toUtc().toIso8601String(),
+        startPage: 0,
+        durationMinutes: 20,
+        createdAt: DateTime.now().toUtc().toIso8601String(),
+      );
+      await repo.updateSession(session);
+
+      expect(primary.updatedSessions, hasLength(1));
+      expect(primary.updatedSessions.first.id, 'remote-1');
+    });
+
+    test('local: セッションの deleteSession はプレフィックスを剥がしてローカルで削除する',
+        () async {
+      final repo = FallbackReadingSessionRepository(
+        primary: _FailingRepo(),
+        local: _HiveBackedLocalRepo(),
+        boxManager: _MockBoxManager(),
+      );
+      final started = await repo.startSession('ub-del', 0);
+      final rawId = started.id.substring('local:'.length);
+      await repo.deleteSession(started.id);
+
+      final box =
+          await Hive.openBox<ReadingSession>(BoxNames.readingSessions);
+      expect(box.get(rawId), isNull, reason: '元キー行が削除されるべき');
+    });
+
+    test('リモートセッションの deleteSession はプライマリに委譲される', () async {
+      final primary = _WorkingRepo();
+      final repo = FallbackReadingSessionRepository(
+        primary: primary,
+        local: _HiveBackedLocalRepo(),
+        boxManager: _MockBoxManager(),
+      );
+      await repo.deleteSession('remote-9');
+
+      expect(primary.deletedSessionIds, ['remote-9']);
+    });
   });
 }
 
@@ -420,4 +521,16 @@ class _HiveBackedLocalRepo implements ReadingSessionRepository {
 
   @override
   Future<int> getLongestStreak() async => 0;
+
+  @override
+  Future<void> updateSession(ReadingSession session) async {
+    final box = await _box;
+    await box.put(session.id, session);
+  }
+
+  @override
+  Future<void> deleteSession(String sessionId) async {
+    final box = await _box;
+    await box.delete(sessionId);
+  }
 }

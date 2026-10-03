@@ -84,6 +84,12 @@ class _MockReadingSessionRepository implements ReadingSessionRepository {
 
   @override
   Future<int> getLongestStreak() async => 0;
+
+  @override
+  Future<void> updateSession(ReadingSession session) async {}
+
+  @override
+  Future<void> deleteSession(String sessionId) async {}
 }
 
 Widget testReadingScreenWithContainer({

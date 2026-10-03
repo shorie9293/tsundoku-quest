@@ -18,6 +18,7 @@ import '../data/reading_notes_provider.dart';
 import 'widgets/reading_calendar_widget.dart';
 import 'widgets/reading_habit_heatmap.dart';
 import 'reading_note_search_screen.dart';
+import 'reading_session_log_screen.dart';
 import 'widgets/reading_statistics_dashboard.dart';
 import 'widgets/weekly_chart_widget.dart';
 
@@ -40,6 +41,16 @@ class HistoryScreen extends ConsumerWidget {
             icon: const Icon(Icons.ios_share),
             tooltip: '読了カードを共有',
             onPressed: () => _openShareCard(context, ref),
+          ),
+          IconButton(
+            key: AppKeys.readingSessionLogButton,
+            icon: const Icon(Icons.edit_note),
+            tooltip: '読書記録を編集',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => const ReadingSessionLogScreen(),
+              ),
+            ),
           ),
         ],
       ),

@@ -223,4 +223,22 @@ class AppKeys {
   static const Key readingNoteResultLabel = Key('txt_reading_note_result_count');
   static const Key readingNoteList = Key('list_reading_note_search');
   static const Key readingNoteEmpty = Key('txt_reading_note_search_empty');
+
+  // ━━━ 読書セッション記録 ━━━
+  static const Key readingSessionLogButton = Key('btn_reading_session_log');
+  static const Key readingSessionLogScreen = Key('screen_reading_session_log');
+  static const Key readingSessionLogList = Key('list_reading_session_log');
+  static const Key readingSessionLogEmpty = Key('txt_reading_session_log_empty');
+  static const Key readingSessionAddButton = Key('btn_reading_session_add');
+  static const Key readingSessionFormDialog = Key('dlg_reading_session_form');
+  static const Key readingSessionFormBook = Key('field_reading_session_book');
+  static const Key readingSessionFormDuration = Key('field_reading_session_duration');
+  static const Key readingSessionFormStartPage = Key('field_reading_session_start_page');
+  static const Key readingSessionFormEndPage = Key('field_reading_session_end_page');
+  static const Key readingSessionFormDate = Key('field_reading_session_date');
+  static const Key readingSessionFormSave = Key('btn_reading_session_form_save');
+  static const Key readingSessionFormCancel = Key('btn_reading_session_form_cancel');
+  static const Key readingSessionDeleteConfirm = Key('btn_reading_session_delete_confirm');
+  static Key readingSessionEditButton(String id) => Key('btn_reading_session_edit_$id');
+  static Key readingSessionDeleteButton(String id) => Key('btn_reading_session_delete_$id');
 }

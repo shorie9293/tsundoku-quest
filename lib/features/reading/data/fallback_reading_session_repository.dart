@@ -117,6 +117,33 @@ class FallbackReadingSessionRepository implements ReadingSessionRepository {
   }
 
   @override
+  Future<void> updateSession(ReadingSession session) async {
+    if (session.id.startsWith(_localPrefix)) {
+      final rawId = session.id.substring(_localPrefix.length);
+      final unmarked = ReadingSession(
+        id: rawId,
+        userBookId: session.userBookId,
+        startedAt: session.startedAt,
+        endedAt: session.endedAt,
+        startPage: session.startPage,
+        endPage: session.endPage,
+        durationMinutes: session.durationMinutes,
+        createdAt: session.createdAt,
+      );
+      return _local.updateSession(unmarked);
+    }
+    return _primary.updateSession(session);
+  }
+
+  @override
+  Future<void> deleteSession(String sessionId) async {
+    if (sessionId.startsWith(_localPrefix)) {
+      return _local.deleteSession(sessionId.substring(_localPrefix.length));
+    }
+    return _primary.deleteSession(sessionId);
+  }
+
+  @override
   Future<ReadingSession> createSession(ReadingSession session) async {
     return _primary.createSession(session);
   }

@@ -141,6 +141,20 @@ class HiveReadingSessionRepository implements ReadingSessionRepository {
     return updated;
   }
 
+  @override
+  Future<void> updateSession(ReadingSession session) async {
+    final box = await _getBox();
+    await box.put(session.id, session);
+    await box.flush();
+  }
+
+  @override
+  Future<void> deleteSession(String sessionId) async {
+    final box = await _getBox();
+    await box.delete(sessionId);
+    await box.flush();
+  }
+
   // ━━━ Aggregation methods ━━━
 
   @override
