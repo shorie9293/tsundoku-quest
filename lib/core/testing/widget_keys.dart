@@ -241,4 +241,19 @@ class AppKeys {
   static const Key readingSessionDeleteConfirm = Key('btn_reading_session_delete_confirm');
   static Key readingSessionEditButton(String id) => Key('btn_reading_session_edit_$id');
   static Key readingSessionDeleteButton(String id) => Key('btn_reading_session_delete_$id');
+
+  // ━━━ 日次読書目標 ━━━
+  static const Key dailyReadingGoalButton = Key('btn_daily_reading_goal');
+  static const Key dailyReadingGoalScreen = Key('screen_daily_reading_goal');
+  static const Key dailyReadingGoalTodayCard = Key('card_daily_reading_goal_today');
+  static const Key dailyReadingGoalTodayLabel = Key('txt_daily_reading_goal_today');
+  static const Key dailyReadingGoalStreakCurrent = Key('txt_daily_reading_goal_streak_current');
+  static const Key dailyReadingGoalStreakLongest = Key('txt_daily_reading_goal_streak_longest');
+  static const Key dailyReadingGoalSevenDayRow = Key('row_daily_reading_goal_seven');
+  static const Key dailyReadingGoalPresetChips = Key('chips_daily_reading_goal_preset');
+  static const Key dailyReadingGoalTargetField = Key('field_daily_reading_goal_target');
+  static const Key dailyReadingGoalSaveButton = Key('btn_daily_reading_goal_save');
+  static const Key dailyReadingGoalClearButton = Key('btn_daily_reading_goal_clear');
+  static const Key dailyReadingGoalEmpty = Key('txt_daily_reading_goal_empty');
+  static Key dailyReadingGoalChip(int min) => Key('chip_daily_reading_goal_$min');
 }

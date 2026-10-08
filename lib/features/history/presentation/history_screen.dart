@@ -13,6 +13,7 @@ import '../../share_card/presentation/share_card_screen.dart';
 import '../../shelves/data/shelf_controller.dart';
 import '../../bookshelf/presentation/book_list_screen.dart';
 import '../../goals/presentation/reading_goal_screen.dart';
+import '../../goals/presentation/daily_reading_goal_screen.dart';
 import '../data/weekly_reading_provider.dart';
 import '../data/reading_notes_provider.dart';
 import 'widgets/reading_calendar_widget.dart';
@@ -49,6 +50,16 @@ class HistoryScreen extends ConsumerWidget {
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) => const ReadingSessionLogScreen(),
+              ),
+            ),
+          ),
+          IconButton(
+            key: AppKeys.dailyReadingGoalButton,
+            icon: const Icon(Icons.flag_outlined),
+            tooltip: '読書時間の目標',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => const DailyReadingGoalScreen(),
               ),
             ),
           ),
