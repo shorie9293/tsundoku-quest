@@ -49,11 +49,14 @@ void main() {
     });
 
     test('UTC の startedAt はローカル日付へ変換される', () {
-      // 2026-10-09T20:00:00Z = JST 2026-10-10T05:00:00
+      // 実行環境のタイムゾーンに依存しない検証: UTC の瞬間から
+      // ローカル日付へ変換した期待値と一致することを確かめる
+      final utc = DateTime.utc(2026, 10, 9, 20, 0);
+      final expectedKey = DailyReadingGoalService.dateKey(utc.toLocal());
       final map = DailyReadingGoalService.minutesByDate([
         session(id: '1', startedAt: '2026-10-09T20:00:00Z', minutes: 30),
       ]);
-      expect(map['2026-10-10'], 30);
+      expect(map[expectedKey], 30);
     });
 
     test('durationMinutes が null は 0 分として日付キーを作る', () {
