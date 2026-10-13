@@ -256,4 +256,15 @@ class AppKeys {
   static const Key dailyReadingGoalClearButton = Key('btn_daily_reading_goal_clear');
   static const Key dailyReadingGoalEmpty = Key('txt_daily_reading_goal_empty');
   static Key dailyReadingGoalChip(int min) => Key('chip_daily_reading_goal_$min');
+
+  // ━━━ 実績バッジ ━━━
+  static const Key badgeCollectionButton = Key('btn_badge_collection');
+  static const Key badgeCollectionScreen = Key('screen_badge_collection');
+  static const Key badgeCollectionSummary = Key('card_badge_collection_summary');
+  static const Key badgeCollectionSummaryLabel = Key('txt_badge_collection_summary');
+  static const Key badgeCollectionEmpty = Key('txt_badge_collection_empty');
+  static Key badgeCategorySection(String category) =>
+      Key('section_badge_' + category);
+  static Key badgeRow(String id) => Key('row_badge_' + id);
+  static Key badgeEarnedMark(String id) => Key('icon_badge_earned_' + id);
 }
