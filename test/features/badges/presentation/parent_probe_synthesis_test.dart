@@ -42,7 +42,9 @@ void main() {
           bookDataProvider.overrideWith((ref) => BookDataNotifier()),
           badgeRecordRepositoryProvider.overrideWithValue(repo),
         ],
-        child: const MaterialApp(home: BadgeCollectionScreen()),
+        child: MaterialApp(
+          home: BadgeCollectionScreen(nowOverride: DateTime(2026, 10, 13, 12)),
+        ),
       ),
     );
     await tester.pump();
