@@ -186,6 +186,18 @@ class AppKeys {
   static const Key readingQueueAddButton = Key('btn_reading_queue_add');
   static const Key readingQueueEmpty = Key('txt_reading_queue_empty');
 
+  // ━━━ 積読放置本 ━━━
+  static const Key stagnantBooksButton = Key('btn_stagnant_books');
+  static const Key stagnantBooksScreen = Key('screen_stagnant_books');
+  static const Key stagnantBooksThresholdChips = Key('chips_stagnant_threshold');
+  static const Key stagnantBooksReasonChips = Key('chips_stagnant_reason');
+  static const Key stagnantBooksSearchField = Key('field_stagnant_search');
+  static const Key stagnantBooksSearchClear = Key('btn_stagnant_search_clear');
+  static const Key stagnantBooksResultCount = Key('txt_stagnant_result_count');
+  static const Key stagnantBooksList = Key('list_stagnant_books');
+  static const Key stagnantBooksEmpty = Key('txt_stagnant_empty');
+  static Key stagnantBooksRow(String id) => Key('row_stagnant_' + id);
+
   // ━━━ 汎用 ━━━
   static const Key backButton = Key('btn_back');
   static const Key closeButton = Key('btn_close');

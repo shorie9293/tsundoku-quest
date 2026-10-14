@@ -104,6 +104,12 @@ class _BookshelfScreenState extends ConsumerState<BookshelfScreen> {
             onPressed: () => context.push('/reading-queue'),
           ),
           IconButton(
+            key: AppKeys.stagnantBooksButton,
+            icon: const Icon(Icons.hourglass_bottom),
+            tooltip: '積読放置',
+            onPressed: () => context.push('/stagnant-books'),
+          ),
+          IconButton(
             key: AppKeys.reminderSettingsButton,
             icon: const Icon(Icons.notifications_active_outlined),
             tooltip: '読書リマインダー',
