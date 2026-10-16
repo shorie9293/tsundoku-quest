@@ -35,9 +35,17 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:app_links/app_links.dart';
 import 'core/infrastructure/deep_link_service.dart';
+import 'core/infrastructure/app_lock_gate.dart';
 
 /// アプリ完全終了状態から起動した場合の初期ディープリンクを保持
 Uri? _pendingInitialDeepLink;
+
+/// 全画面をアプリロックゲートで包む builder（試練からも撃てるよう公開）。
+Widget buildWithAppLockGate(BuildContext context, Widget? child) {
+  return AppLockGate(
+    unlockedBuilder: (_) => child ?? const SizedBox.shrink(),
+  );
+}
 
 Future<void> main() async {
   debugPrint('🔵 main() 開始');
@@ -341,7 +349,9 @@ class _TsundokuQuestAppState extends ConsumerState<TsundokuQuestApp> {
           data: MediaQuery.of(context).copyWith(
             textScaler: TextScaler.linear(textScale),
           ),
-          child: _AppStartupInitializer(child: child!),
+          child: _AppStartupInitializer(
+            child: buildWithAppLockGate(context, child),
+          ),
         );
       },
     );

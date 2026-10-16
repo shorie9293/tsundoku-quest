@@ -128,6 +128,12 @@ class _BookshelfScreenState extends ConsumerState<BookshelfScreen> {
             onPressed: () => context.push('/settings/theme'),
           ),
           IconButton(
+            key: AppKeys.appLockSettingsButton,
+            icon: const Icon(Icons.lock_outline),
+            tooltip: 'アプリロック',
+            onPressed: () => context.push('/settings/app-lock'),
+          ),
+          IconButton(
             key: AppKeys.backupSettingsButton,
             icon: const Icon(Icons.cloud_upload_outlined),
             tooltip: 'バックアップ',

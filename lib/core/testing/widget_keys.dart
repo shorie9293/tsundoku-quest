@@ -279,4 +279,19 @@ class AppKeys {
       Key('section_badge_' + category);
   static Key badgeRow(String id) => Key('row_badge_' + id);
   static Key badgeEarnedMark(String id) => Key('icon_badge_earned_' + id);
+
+  // ━━━ アプリロック ━━━
+  static const Key appLockGate = Key('widget_app_lock_gate');
+  static const Key appLockLockedMessage = Key('txt_app_lock_locked');
+  static const Key appLockPasscodeField = Key('field_app_lock_passcode');
+  static const Key appLockUnlockButton = Key('btn_app_lock_unlock');
+  static const Key appLockSettingsButton = Key('btn_app_lock_settings');
+  static const Key appLockSettingsScreen = Key('screen_app_lock_settings');
+  static const Key appLockNewPasscodeField =
+      Key('field_app_lock_new_passcode');
+  static const Key appLockConfirmPasscodeField =
+      Key('field_app_lock_confirm_passcode');
+  static const Key appLockEnableButton = Key('btn_app_lock_enable');
+  static const Key appLockDisableButton = Key('btn_app_lock_disable');
+  static const Key appLockErrorText = Key('txt_app_lock_error');
 }

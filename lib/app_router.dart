@@ -16,6 +16,7 @@ import 'features/tutorial/data/tutorial_preferences.dart';
 import 'features/reminders/presentation/reminder_settings_screen.dart';
 import 'features/settings/presentation/text_scale_settings_screen.dart';
 import 'features/settings/presentation/theme_mode_settings_screen.dart';
+import 'features/settings/presentation/app_lock_settings_screen.dart';
 import 'features/backup/presentation/backup_screen.dart';
 import 'features/reading_queue/presentation/reading_queue_screen.dart';
 import 'features/shelves/presentation/shelf_management_screen.dart';
@@ -119,6 +120,10 @@ class AppRouter {
         GoRoute(
           path: '/settings/theme',
           builder: (context, state) => const ThemeModeSettingsScreen(),
+        ),
+        GoRoute(
+          path: '/settings/app-lock',
+          builder: (context, state) => const AppLockSettingsScreen(),
         ),
         GoRoute(
           path: '/settings/backup',
