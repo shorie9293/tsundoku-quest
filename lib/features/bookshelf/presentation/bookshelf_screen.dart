@@ -15,6 +15,7 @@ import 'widgets/book_shelf_section.dart';
 import 'widgets/edit_book_modal.dart';
 import '../../recommendation/domain/recommendation_service.dart';
 import '../../recommendation/presentation/widgets/social_reading_section.dart';
+import '../../about/presentation/about_app_keys.dart';
 import 'widgets/completed_book_detail_modal.dart';
 
 /// 書庫画面（ホーム）
@@ -138,6 +139,12 @@ class _BookshelfScreenState extends ConsumerState<BookshelfScreen> {
             icon: const Icon(Icons.cloud_upload_outlined),
             tooltip: 'バックアップ',
             onPressed: () => context.push('/settings/backup'),
+          ),
+          IconButton(
+            key: AboutAppKeys.entryFromSettings,
+            icon: const Icon(Icons.info_outline),
+            tooltip: 'アプリについて',
+            onPressed: () => context.push('/settings/about'),
           ),
           IconButton(
             icon: const Icon(Icons.collections_bookmark),

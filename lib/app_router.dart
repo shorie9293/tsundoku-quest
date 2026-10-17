@@ -17,6 +17,7 @@ import 'features/reminders/presentation/reminder_settings_screen.dart';
 import 'features/settings/presentation/text_scale_settings_screen.dart';
 import 'features/settings/presentation/theme_mode_settings_screen.dart';
 import 'features/settings/presentation/app_lock_settings_screen.dart';
+import 'features/about/presentation/about_screen.dart';
 import 'features/backup/presentation/backup_screen.dart';
 import 'features/reading_queue/presentation/reading_queue_screen.dart';
 import 'features/shelves/presentation/shelf_management_screen.dart';
@@ -130,6 +131,10 @@ class AppRouter {
           builder: (context, state) => const BackupScreen(),
         ),
         GoRoute(
+          path: '/settings/about',
+          builder: (context, state) => const AboutScreen(),
+        ),
+        GoRoute(
           path: '/shelves',
           builder: (context, state) => const ShelfManagementScreen(),
         ),
@@ -148,6 +153,7 @@ class AppRouter {
       ],
     );
   }
+
   /// Singleton router instance for production use.
   static final GoRouter router = createRouter();
 }
