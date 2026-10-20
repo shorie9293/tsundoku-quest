@@ -52,3 +52,9 @@ app.*.map.json
 /android/upload-keystore.jks.base64
 /android/upload_certificate.pem
 supabase/.temp/
+
+# Kotlin compiler session artifacts (junk)
+/android/.kotlin/
+
+# Android build output
+/android/build/
