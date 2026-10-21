@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:tsundoku_quest/core/testing/widget_keys.dart';
 import 'package:tsundoku_quest/domain/models/reading_queue_entry.dart';
 import 'package:tsundoku_quest/domain/models/user_book.dart';
@@ -123,22 +124,28 @@ class _NextCard extends StatelessWidget {
     return Card(
       key: AppKeys.readingQueueNextCard,
       margin: const EdgeInsets.all(16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              '⚔️ 次に読む一冊',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              ub.book?.title ?? '無題の本',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-          ],
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        key: AppKeys.readingQueueStartFromCard,
+        // 読書画面へ遷移する（id は userBookId。bookId ではない）
+        onTap: () => context.push('/reading?id=${ub.id}'),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                '⚔️ 次に読む一冊',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                ub.book?.title ?? '無題の本',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -155,32 +162,37 @@ class _QueueTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = ref.read(readingQueueControllerProvider.notifier);
-    return ListTile(
-      key: ValueKey('reading_queue_item_${entry.userBookId}'),
-      leading: Text('#${entry.position}'),
-      title: Text(ub.book?.title ?? '無題の本'),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          IconButton(
-            key: ValueKey('reading_queue_up_${entry.userBookId}'),
-            icon: const Icon(Icons.arrow_upward),
-            tooltip: '前へ',
-            onPressed: () => controller.moveUp(entry.userBookId),
-          ),
-          IconButton(
-            key: ValueKey('reading_queue_down_${entry.userBookId}'),
-            icon: const Icon(Icons.arrow_downward),
-            tooltip: '後へ',
-            onPressed: () => controller.moveDown(entry.userBookId),
-          ),
-          IconButton(
-            key: ValueKey('reading_queue_remove_${entry.userBookId}'),
-            icon: const Icon(Icons.delete_outline),
-            tooltip: '削除',
-            onPressed: () => controller.dequeue(entry.userBookId),
-          ),
-        ],
+    return InkWell(
+      // 行タップでも読書画面へ（id は userBookId）
+      key: ValueKey('reading_queue_start_${entry.userBookId}'),
+      onTap: () => context.push('/reading?id=${ub.id}'),
+      child: ListTile(
+        key: ValueKey('reading_queue_item_${entry.userBookId}'),
+        leading: Text('#${entry.position}'),
+        title: Text(ub.book?.title ?? '無題の本'),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              key: ValueKey('reading_queue_up_${entry.userBookId}'),
+              icon: const Icon(Icons.arrow_upward),
+              tooltip: '前へ',
+              onPressed: () => controller.moveUp(entry.userBookId),
+            ),
+            IconButton(
+              key: ValueKey('reading_queue_down_${entry.userBookId}'),
+              icon: const Icon(Icons.arrow_downward),
+              tooltip: '後へ',
+              onPressed: () => controller.moveDown(entry.userBookId),
+            ),
+            IconButton(
+              key: ValueKey('reading_queue_remove_${entry.userBookId}'),
+              icon: const Icon(Icons.delete_outline),
+              tooltip: '削除',
+              onPressed: () => controller.dequeue(entry.userBookId),
+            ),
+          ],
+        ),
       ),
     );
   }

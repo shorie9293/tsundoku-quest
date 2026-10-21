@@ -301,4 +301,7 @@ class AppKeys {
   static const Key appLockEnableButton = Key('btn_app_lock_enable');
   static const Key appLockDisableButton = Key('btn_app_lock_disable');
   static const Key appLockErrorText = Key('txt_app_lock_error');
+
+  // ━━━ 読書キュー（読書画面への導線） ━━━
+  static const Key readingQueueStartFromCard = Key('card_reading_queue_start');
 }

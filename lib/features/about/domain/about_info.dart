@@ -66,7 +66,7 @@ class AboutInfo {
 /// version は pubspec.yaml と同期して維持すること（試練で担保）。
 const kAboutInfo = AboutInfo.constValid(
   appName: '積ん読クエスト',
-  version: '1.1.17',
+  version: '1.1.18',
   contactEmail: 'horie.shunta@gmail.com',
   privacyPolicyUrl: 'https://yoppala.in/privacy',
   tagline: '積ん読を冒険に変える読書アプリ',
