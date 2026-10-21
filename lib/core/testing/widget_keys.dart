@@ -214,6 +214,13 @@ class AppKeys {
   static const Key themeModeEntry = Key('btn_theme_mode_settings');
   static Key themeModeOption(String key) => Key('btn_theme_mode_$key');
 
+  // ━━━ 動きを減らす設定 ━━━
+  static const Key reduceMotionScreen = Key('screen_reduce_motion_settings');
+  static const Key reduceMotionEntry = Key('btn_reduce_motion_settings');
+  static const Key reduceMotionNote = Key('card_reduce_motion_note');
+  static Key reduceMotionOption(String key) =>
+      Key('btn_reduce_motion_$key');
+
   // ━━━ 読書習慣ヒートマップ ━━━
   static const Key readingHabitHeatmap = Key('widget_reading_habit_heatmap');
   static const Key readingHabitGrid = Key('grid_reading_habit');

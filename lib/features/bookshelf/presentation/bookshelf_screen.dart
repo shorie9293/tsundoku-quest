@@ -129,6 +129,12 @@ class _BookshelfScreenState extends ConsumerState<BookshelfScreen> {
             onPressed: () => context.push('/settings/theme'),
           ),
           IconButton(
+            key: AppKeys.reduceMotionEntry,
+            icon: const Icon(Icons.motion_photos_off_outlined),
+            tooltip: '動きを減らす',
+            onPressed: () => context.push('/settings/reduce-motion'),
+          ),
+          IconButton(
             key: AppKeys.appLockSettingsButton,
             icon: const Icon(Icons.lock_outline),
             tooltip: 'アプリロック',

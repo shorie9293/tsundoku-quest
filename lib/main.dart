@@ -27,6 +27,8 @@ import 'features/tutorial/data/tutorial_preferences.dart';
 import 'features/reminders/data/reminder_providers.dart';
 import 'features/settings/data/text_scale_provider.dart';
 import 'features/settings/data/theme_mode_provider.dart';
+import 'features/settings/data/reduce_motion_provider.dart';
+import 'features/settings/domain/reduce_motion_setting.dart';
 import 'shared/providers/adventurer_provider.dart';
 import 'shared/providers/startup_loader.dart';
 import 'package:takamagahara_ui/takamagahara_ui.dart';
@@ -274,6 +276,14 @@ class _TsundokuQuestAppState extends ConsumerState<TsundokuQuestApp> {
     } catch (e) {
       debugPrint('⚠️ テーマモード設定の読み込み失敗: $e');
     }
+    // 保存済みの「動きを減らす」設定を読み込む（失敗しても起動を妨げない）
+    try {
+      unawaited(
+        ref.read(reduceMotionProvider.notifier).load().catchError((_) {}),
+      );
+    } catch (e) {
+      debugPrint('⚠️ 動きを減らす設定の読み込み失敗: $e');
+    }
     // 接続状態の変化を監視し、オンライン復帰時に自動リトライ
     ref.listenManual(isOnlineProvider, (prev, next) {
       if (prev == false && next == true) {
@@ -337,6 +347,8 @@ class _TsundokuQuestAppState extends ConsumerState<TsundokuQuestApp> {
     final textScale = ref.watch(textScaleProvider);
     // アプリ全体のテーマモード（ライト/ダーク/システム）
     final themeMode = ref.watch(themeModeProvider);
+    // アプリ全体の「動きを減らす」設定（端末設定の上書き）
+    final reduceMotion = ref.watch(reduceMotionProvider);
     return MaterialApp.router(
       title: 'ツンドクエスト',
       debugShowCheckedModeBanner: false,
@@ -346,8 +358,11 @@ class _TsundokuQuestAppState extends ConsumerState<TsundokuQuestApp> {
       routerConfig: AppRouter.router,
       builder: (context, child) {
         return MediaQuery(
-          data: MediaQuery.of(context).copyWith(
-            textScaler: TextScaler.linear(textScale),
+          data: applyReduceMotion(
+            MediaQuery.of(context).copyWith(
+              textScaler: TextScaler.linear(textScale),
+            ),
+            reduceMotion,
           ),
           child: _AppStartupInitializer(
             child: buildWithAppLockGate(context, child),

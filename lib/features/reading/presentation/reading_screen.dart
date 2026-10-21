@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/testing/widget_keys.dart';
 import '../../../../core/constants/reading_tips.dart';
+import '../../../../core/haptics.dart';
 import '../../../../core/widgets/dungeon_background.dart';
 import '../../../../shared/providers/book_data_provider.dart';
 import '../../../../shared/providers/adventurer_provider.dart';
@@ -292,6 +293,7 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
   }
 
   void _toggleTimer() {
+    hapticTap();
     setState(() {
       _isRunning = !_isRunning;
       if (_isRunning) {
@@ -451,6 +453,7 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
 
   Future<void> _submitTrophy() async {
     if (widget.id == null) return;
+    hapticTap();
     await _endSessionIfNeeded();
     _clearTimerState(); // タイマー永続化状態を完全クリア
 
