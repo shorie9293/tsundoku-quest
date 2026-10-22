@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:takamagahara_ui/takamagahara_ui.dart' hide AppKeys;
 
 import 'package:tsundoku_quest/core/testing/widget_keys.dart';
 import 'package:tsundoku_quest/domain/models/reading_session.dart';
@@ -133,7 +134,11 @@ class _DailyReadingGoalScreenState
         padding: const EdgeInsets.all(16),
         children: [
           // ── 今日のカード ──
-          Card(
+          SemanticHelper.container(
+            testId: 'card_daily_goal_today',
+            label: '今日の読書時間',
+            explicitChildNodes: true,
+            child: Card(
             key: AppKeys.dailyReadingGoalTodayCard,
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -148,9 +153,13 @@ class _DailyReadingGoalScreenState
                     style: theme.textTheme.headlineSmall,
                   ),
                   const SizedBox(height: 8),
-                  LinearProgressIndicator(
-                    value: progress.todayRatio,
-                    minHeight: 8,
+                  SemanticHelper.container(
+                    testId: 'progress_daily_goal_today',
+                    label: '今日の目標進捗',
+                    child: LinearProgressIndicator(
+                      value: progress.todayRatio,
+                      minHeight: 8,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   if (progress.todayAchieved)
@@ -167,10 +176,15 @@ class _DailyReadingGoalScreenState
               ),
             ),
           ),
+          ),
           const SizedBox(height: 16),
 
           // ── ストリーク ──
-          Card(
+          SemanticHelper.container(
+            testId: 'card_daily_goal_streak',
+            label: '連続達成日数',
+            explicitChildNodes: true,
+            child: Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
@@ -200,19 +214,25 @@ class _DailyReadingGoalScreenState
               ),
             ),
           ),
+          ),
           const SizedBox(height: 16),
 
           // ── 直近7日 ──
           Text('直近7日', style: theme.textTheme.titleMedium),
           const SizedBox(height: 8),
-          Row(
-            key: AppKeys.dailyReadingGoalSevenDayRow,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              for (final day in progress.lastSevenDays)
-                _DayBar(day: day, maxMinutes: _maxPositive(progress)),
-            ],
+          SemanticHelper.container(
+            testId: 'chart_daily_goal_seven_days',
+            label: '直近7日の読書時間',
+            explicitChildNodes: true,
+            child: Row(
+              key: AppKeys.dailyReadingGoalSevenDayRow,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                for (final day in progress.lastSevenDays)
+                  _DayBar(day: day, maxMinutes: _maxPositive(progress)),
+              ],
+            ),
           ),
           const SizedBox(height: 24),
 
@@ -224,10 +244,14 @@ class _DailyReadingGoalScreenState
             spacing: 8,
             children: [
               for (final minutes in _presets)
-                ActionChip(
-                  key: AppKeys.dailyReadingGoalChip(minutes),
-                  label: Text('$minutes分'),
-                  onPressed: () => _applyPreset(minutes),
+                SemanticHelper.interactive(
+                  testId: 'btn_daily_goal_preset_$minutes',
+                  label: '$minutes分の目標を設定',
+                  child: ActionChip(
+                    key: AppKeys.dailyReadingGoalChip(minutes),
+                    label: Text('$minutes分'),
+                    onPressed: () => _applyPreset(minutes),
+                  ),
                 ),
             ],
           ),
@@ -235,13 +259,17 @@ class _DailyReadingGoalScreenState
           Row(
             children: [
               Expanded(
-                child: TextField(
-                  key: AppKeys.dailyReadingGoalTargetField,
-                  controller: _targetController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: '1日の目標（分）',
-                    border: OutlineInputBorder(),
+                child: SemanticHelper.textField(
+                  testId: 'txt_daily_goal_target',
+                  label: '1日の目標（分）',
+                  child: TextField(
+                    key: AppKeys.dailyReadingGoalTargetField,
+                    controller: _targetController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: '1日の目標（分）',
+                      border: OutlineInputBorder(),
+                    ),
                   ),
                 ),
               ),
@@ -251,18 +279,26 @@ class _DailyReadingGoalScreenState
           Row(
             children: [
               Expanded(
-                child: FilledButton(
-                  key: AppKeys.dailyReadingGoalSaveButton,
-                  onPressed: _saveFromField,
-                  child: const Text('保存'),
+                child: SemanticHelper.interactive(
+                  testId: 'btn_daily_goal_save',
+                  label: '目標を保存',
+                  child: FilledButton(
+                    key: AppKeys.dailyReadingGoalSaveButton,
+                    onPressed: _saveFromField,
+                    child: const Text('保存'),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: OutlinedButton(
-                  key: AppKeys.dailyReadingGoalClearButton,
-                  onPressed: _clear,
-                  child: const Text('解除'),
+                child: SemanticHelper.interactive(
+                  testId: 'btn_daily_goal_clear',
+                  label: '目標を解除',
+                  child: OutlinedButton(
+                    key: AppKeys.dailyReadingGoalClearButton,
+                    onPressed: _clear,
+                    child: const Text('解除'),
+                  ),
                 ),
               ),
             ],

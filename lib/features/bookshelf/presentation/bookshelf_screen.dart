@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:takamagahara_ui/takamagahara_ui.dart' hide AppKeys;
 import '../../../core/theme/app_theme.dart';
 import '../../../core/testing/widget_keys.dart';
 import '../../../core/widgets/dungeon_background.dart';
@@ -82,7 +83,12 @@ class _BookshelfScreenState extends ConsumerState<BookshelfScreen> {
           title: const Text('📚 書庫'),
         ),
         body: DungeonBackground(screenType: ScreenType.bookshelf,
-          child: _buildSkeletonLoading(),
+          child: SemanticHelper.container(
+            testId: 'sec_bookshelf_skeleton',
+            label: '読み込み中',
+            explicitChildNodes: true,
+            child: _buildSkeletonLoading(),
+          ),
         ),
       );
     }
@@ -92,75 +98,123 @@ class _BookshelfScreenState extends ConsumerState<BookshelfScreen> {
       appBar: AppBar(
         title: const Text('📚 書庫'),
         actions: [
-          IconButton(
-            key: AppKeys.librarySearchButton,
-            icon: const Icon(Icons.search),
-            tooltip: '蔵書を検索',
-            onPressed: () => context.push('/library-search'),
+          SemanticHelper.interactive(
+            testId: 'btn_bookshelf_search',
+            label: '蔵書を検索',
+            child: IconButton(
+              key: AppKeys.librarySearchButton,
+              icon: const Icon(Icons.search),
+              tooltip: '蔵書を検索',
+              onPressed: () => context.push('/library-search'),
+            ),
           ),
-          IconButton(
-            key: AppKeys.readingQueueButton,
-            icon: const Icon(Icons.format_list_numbered),
-            tooltip: '次に読む',
-            onPressed: () => context.push('/reading-queue'),
+          SemanticHelper.interactive(
+            testId: 'btn_bookshelf_reading_queue',
+            label: '次に読む',
+            child: IconButton(
+              key: AppKeys.readingQueueButton,
+              icon: const Icon(Icons.format_list_numbered),
+              tooltip: '次に読む',
+              onPressed: () => context.push('/reading-queue'),
+            ),
           ),
-          IconButton(
-            key: AppKeys.stagnantBooksButton,
-            icon: const Icon(Icons.hourglass_bottom),
-            tooltip: '積読放置',
-            onPressed: () => context.push('/stagnant-books'),
+          SemanticHelper.interactive(
+            testId: 'btn_bookshelf_stagnant_books',
+            label: '積読放置',
+            child: IconButton(
+              key: AppKeys.stagnantBooksButton,
+              icon: const Icon(Icons.hourglass_bottom),
+              tooltip: '積読放置',
+              onPressed: () => context.push('/stagnant-books'),
+            ),
           ),
-          IconButton(
-            key: AppKeys.reminderSettingsButton,
-            icon: const Icon(Icons.notifications_active_outlined),
-            tooltip: '読書リマインダー',
-            onPressed: () => context.push('/reminder-settings'),
+          SemanticHelper.interactive(
+            testId: 'btn_bookshelf_reminder_settings',
+            label: '読書リマインダー',
+            child: IconButton(
+              key: AppKeys.reminderSettingsButton,
+              icon: const Icon(Icons.notifications_active_outlined),
+              tooltip: '読書リマインダー',
+              onPressed: () => context.push('/reminder-settings'),
+            ),
           ),
-          IconButton(
-            key: AppKeys.textScaleSettingsButton,
-            icon: const Icon(Icons.format_size),
-            tooltip: '文字サイズ',
-            onPressed: () => context.push('/settings/text-scale'),
+          SemanticHelper.interactive(
+            testId: 'btn_bookshelf_text_scale',
+            label: '文字サイズ',
+            child: IconButton(
+              key: AppKeys.textScaleSettingsButton,
+              icon: const Icon(Icons.format_size),
+              tooltip: '文字サイズ',
+              onPressed: () => context.push('/settings/text-scale'),
+            ),
           ),
-          IconButton(
-            key: AppKeys.themeModeEntry,
-            icon: const Icon(Icons.brightness_6_outlined),
-            tooltip: 'テーマ設定',
-            onPressed: () => context.push('/settings/theme'),
+          SemanticHelper.interactive(
+            testId: 'btn_bookshelf_theme_mode',
+            label: 'テーマ設定',
+            child: IconButton(
+              key: AppKeys.themeModeEntry,
+              icon: const Icon(Icons.brightness_6_outlined),
+              tooltip: 'テーマ設定',
+              onPressed: () => context.push('/settings/theme'),
+            ),
           ),
-          IconButton(
-            key: AppKeys.reduceMotionEntry,
-            icon: const Icon(Icons.motion_photos_off_outlined),
-            tooltip: '動きを減らす',
-            onPressed: () => context.push('/settings/reduce-motion'),
+          SemanticHelper.interactive(
+            testId: 'btn_bookshelf_reduce_motion',
+            label: '動きを減らす',
+            child: IconButton(
+              key: AppKeys.reduceMotionEntry,
+              icon: const Icon(Icons.motion_photos_off_outlined),
+              tooltip: '動きを減らす',
+              onPressed: () => context.push('/settings/reduce-motion'),
+            ),
           ),
-          IconButton(
-            key: AppKeys.appLockSettingsButton,
-            icon: const Icon(Icons.lock_outline),
-            tooltip: 'アプリロック',
-            onPressed: () => context.push('/settings/app-lock'),
+          SemanticHelper.interactive(
+            testId: 'btn_bookshelf_app_lock',
+            label: 'アプリロック',
+            child: IconButton(
+              key: AppKeys.appLockSettingsButton,
+              icon: const Icon(Icons.lock_outline),
+              tooltip: 'アプリロック',
+              onPressed: () => context.push('/settings/app-lock'),
+            ),
           ),
-          IconButton(
-            key: AppKeys.backupSettingsButton,
-            icon: const Icon(Icons.cloud_upload_outlined),
-            tooltip: 'バックアップ',
-            onPressed: () => context.push('/settings/backup'),
+          SemanticHelper.interactive(
+            testId: 'btn_bookshelf_backup',
+            label: 'バックアップ',
+            child: IconButton(
+              key: AppKeys.backupSettingsButton,
+              icon: const Icon(Icons.cloud_upload_outlined),
+              tooltip: 'バックアップ',
+              onPressed: () => context.push('/settings/backup'),
+            ),
           ),
-          IconButton(
-            key: AboutAppKeys.entryFromSettings,
-            icon: const Icon(Icons.info_outline),
-            tooltip: 'アプリについて',
-            onPressed: () => context.push('/settings/about'),
+          SemanticHelper.interactive(
+            testId: 'btn_bookshelf_about',
+            label: 'アプリについて',
+            child: IconButton(
+              key: AboutAppKeys.entryFromSettings,
+              icon: const Icon(Icons.info_outline),
+              tooltip: 'アプリについて',
+              onPressed: () => context.push('/settings/about'),
+            ),
           ),
-          IconButton(
-            icon: const Icon(Icons.collections_bookmark),
-            tooltip: '自作棚',
-            onPressed: () => context.push('/shelves'),
+          SemanticHelper.interactive(
+            testId: 'btn_bookshelf_shelf_management',
+            label: '自作棚',
+            child: IconButton(
+              icon: const Icon(Icons.collections_bookmark),
+              tooltip: '自作棚',
+              onPressed: () => context.push('/shelves'),
+            ),
           ),
         ],
       ),
       body: DungeonBackground(screenType: ScreenType.bookshelf,
-        child: ListView(
+        child: SemanticHelper.container(
+          testId: 'list_bookshelf',
+          label: '書庫の本一覧',
+          explicitChildNodes: true,
+          child: ListView(
           children: [
           // Adventurer header (watches adventurerProvider internally)
           const AdventurerHeader(),
@@ -172,10 +226,14 @@ class _BookshelfScreenState extends ConsumerState<BookshelfScreen> {
 
           // 今日のおすすめ（ツンドク本がある場合のみ）
           if (tsundokuBooks.isNotEmpty)
-            GestureDetector(
-              onTap: () => context.push('/recommendations'),
-              child: RecommendationCard(
-                recommendation: RecommendationService.pickOne(tsundokuBooks)!,
+            SemanticHelper.interactive(
+              testId: 'btn_recommendation_card',
+              label: '今日のおすすめを見る',
+              child: GestureDetector(
+                onTap: () => context.push('/recommendations'),
+                child: RecommendationCard(
+                  recommendation: RecommendationService.pickOne(tsundokuBooks)!,
+                ),
               ),
             ),
 
@@ -183,70 +241,106 @@ class _BookshelfScreenState extends ConsumerState<BookshelfScreen> {
           if (hasBooks) const SocialReadingSection(),
 
           // Daily quest
-          DailyQuest(
-            hasBooks: hasBooks,
-            onStartQuest: _startQuest,
+          SemanticHelper.container(
+            testId: 'sec_daily_quest',
+            label: '今日のクエスト',
+            explicitChildNodes: true,
+            child: DailyQuest(
+              hasBooks: hasBooks,
+              onStartQuest: _startQuest,
+            ),
           ),
 
           // Reading section
           if (readingBooks.isNotEmpty)
-            BookShelfSection(
+            SemanticHelper.container(
+              testId: 'sec_books_reading',
+              label: '戦闘中！',
+              explicitChildNodes: true,
+              child: BookShelfSection(
               title: '戦闘中！',
               icon: Icons.menu_book,
               iconColor: AppTheme.readingColor,
               isOpen: _readingOpen,
               onToggle: () => setState(() => _readingOpen = !_readingOpen),
               children: readingBooks
-                  .map((book) => BookCard(
+                  .map((book) => SemanticHelper.container(
+                        testId: 'item_book_${book.id}',
+                        explicitChildNodes: true,
+                        child: BookCard(
                         book: book,
                         onTap: () => context.push('/reading?id=${book.id}'),
                         onEdit: () => EditBookModal.show(context, book),
                         onDelete: () =>
                             ref.read(bookDataProvider.notifier).removeUserBook(book.id),
+                      ),
                       ))
                   .toList(),
             ),
+            ),
 
           // Tsundoku section
-          BookShelfSection(
+          SemanticHelper.container(
+            testId: 'sec_books_tsundoku',
+            label: '待機中の冒険',
+            explicitChildNodes: true,
+            child: BookShelfSection(
             title: '待機中の冒険',
             icon: Icons.bookmark,
             iconColor: AppTheme.tsundokuColor,
             isOpen: _tsundokuOpen,
             onToggle: () => setState(() => _tsundokuOpen = !_tsundokuOpen),
             children: tsundokuBooks
-                .map((book) => BookCard(
+                .map((book) => SemanticHelper.container(
+                      testId: 'item_book_${book.id}',
+                      explicitChildNodes: true,
+                      child: BookCard(
                       book: book,
                       onTap: () => context.push('/reading?id=${book.id}'),
                       onEdit: () => EditBookModal.show(context, book),
                       onDelete: () =>
                           ref.read(bookDataProvider.notifier).removeUserBook(book.id),
+                    ),
                     ))
                 .toList(),
+          ),
           ),
 
           // Completed section
           if (completedBooks.isNotEmpty)
-            BookShelfSection(
+            SemanticHelper.container(
+              testId: 'sec_books_completed',
+              label: '討伐済',
+              explicitChildNodes: true,
+              child: BookShelfSection(
               title: '討伐済',
               icon: Icons.check_circle,
               iconColor: AppTheme.completedColor,
               isOpen: _completedOpen,
               onToggle: () => setState(() => _completedOpen = !_completedOpen),
               children: completedBooks
-                  .map((book) => BookCard(
+                  .map((book) => SemanticHelper.container(
+                        testId: 'item_book_${book.id}',
+                        explicitChildNodes: true,
+                        child: BookCard(
                         book: book,
                         onTap: () => _showCompletedDetail(book),
                         onEdit: () => EditBookModal.show(context, book),
                         onDelete: () =>
                             ref.read(bookDataProvider.notifier).removeUserBook(book.id),
+                      ),
                       ))
                   .toList(),
+            ),
             ),
 
           // Empty state
           if (!hasBooks)
-            Padding(
+            SemanticHelper.container(
+              testId: 'sec_bookshelf_empty',
+              label: '書庫はまだ空です',
+              explicitChildNodes: true,
+              child: Padding(
               padding: const EdgeInsets.all(32),
               child: Column(
                 children: [
@@ -267,21 +361,27 @@ class _BookshelfScreenState extends ConsumerState<BookshelfScreen> {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: () => context.go('/explore'),
-                    icon: const Text('🧭'),
-                    label: const Text('探索に出る'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.accent,
+                  SemanticHelper.interactive(
+                    testId: 'btn_empty_state_explore',
+                    label: '探索に出る',
+                    child: ElevatedButton.icon(
+                      onPressed: () => context.go('/explore'),
+                      icon: const Text('🧭'),
+                      label: const Text('探索に出る'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.accent,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
+            ),
 
           const SizedBox(height: 32),
         ],
       ),
+        ),
         ),
     );
   }

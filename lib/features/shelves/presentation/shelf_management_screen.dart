@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:takamagahara_ui/takamagahara_ui.dart' hide AppKeys;
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/dungeon_background.dart';
 import '../../../domain/models/book_shelf.dart';
@@ -64,13 +65,21 @@ class _ShelfManagementScreenState extends ConsumerState<ShelfManagementScreen> {
         title: const Text('棚を削除'),
         content: Text('「${shelf.name}」を削除しますか？\n中の本は削除されません。'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('キャンセル'),
+          SemanticHelper.interactive(
+            testId: 'btn_shelf_delete_cancel',
+            label: 'キャンセル',
+            child: TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('キャンセル'),
+            ),
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('削除', style: TextStyle(color: Colors.red)),
+          SemanticHelper.interactive(
+            testId: 'btn_shelf_delete_confirm',
+            label: '削除',
+            child: TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('削除', style: TextStyle(color: Colors.red)),
+            ),
           ),
         ],
       ),
@@ -100,36 +109,44 @@ class _ShelfManagementScreenState extends ConsumerState<ShelfManagementScreen> {
                       shrinkWrap: true,
                       children: [
                         for (final ub in books)
-                          CheckboxListTile(
+                          SemanticHelper.toggle(
+                            testId: 'tgl_shelf_book_${ub.id}',
                             value: selected.contains(ub.id),
-                            title: Text(
-                              ub.book?.title ?? '（本の情報なし）',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                            child: CheckboxListTile(
+                              value: selected.contains(ub.id),
+                              title: Text(
+                                ub.book?.title ?? '（本の情報なし）',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              dense: true,
+                              onChanged: (checked) async {
+                                final c = ref
+                                    .read(shelfControllerProvider.notifier);
+                                if (checked == true) {
+                                  selected.add(ub.id);
+                                  await c.addBook(shelf.id, ub.id);
+                                } else {
+                                  selected.remove(ub.id);
+                                  await c.removeBook(shelf.id, ub.id);
+                                }
+                                if (dialogContext.mounted) {
+                                  setDialogState(() {});
+                                }
+                              },
                             ),
-                            dense: true,
-                            onChanged: (checked) async {
-                              final c = ref
-                                  .read(shelfControllerProvider.notifier);
-                              if (checked == true) {
-                                selected.add(ub.id);
-                                await c.addBook(shelf.id, ub.id);
-                              } else {
-                                selected.remove(ub.id);
-                                await c.removeBook(shelf.id, ub.id);
-                              }
-                              if (dialogContext.mounted) {
-                                setDialogState(() {});
-                              }
-                            },
                           ),
                       ],
                     ),
             ),
             actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext),
-                child: const Text('閉じる'),
+              SemanticHelper.interactive(
+                testId: 'btn_shelf_books_close',
+                label: '閉じる',
+                child: TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('閉じる'),
+                ),
               ),
             ],
           );
@@ -148,21 +165,33 @@ class _ShelfManagementScreenState extends ConsumerState<ShelfManagementScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(title),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          maxLength: 20,
-          decoration: const InputDecoration(hintText: '例: 積ん読の山',
-              counterText: ''),
+        content: SemanticHelper.textField(
+          testId: 'txt_shelf_name',
+          label: '棚名',
+          child: TextField(
+            controller: controller,
+            autofocus: true,
+            maxLength: 20,
+            decoration: const InputDecoration(hintText: '例: 積ん読の山',
+                counterText: ''),
+          ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('キャンセル'),
+          SemanticHelper.interactive(
+            testId: 'btn_shelf_name_cancel',
+            label: 'キャンセル',
+            child: TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('キャンセル'),
+            ),
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, controller.text),
-            child: const Text('保存'),
+          SemanticHelper.interactive(
+            testId: 'btn_shelf_name_save',
+            label: '保存',
+            child: TextButton(
+              onPressed: () => Navigator.pop(context, controller.text),
+              child: const Text('保存'),
+            ),
           ),
         ],
       ),
@@ -178,18 +207,31 @@ class _ShelfManagementScreenState extends ConsumerState<ShelfManagementScreen> {
       appBar: AppBar(
         title: const Text('📚 自作棚'),
         actions: [
-          IconButton(
-            tooltip: '棚を作る',
-            icon: const Icon(Icons.add),
-            onPressed: _createShelf,
+          SemanticHelper.interactive(
+            testId: 'btn_shelf_create',
+            label: '棚を作る',
+            child: IconButton(
+              tooltip: '棚を作る',
+              icon: const Icon(Icons.add),
+              onPressed: _createShelf,
+            ),
           ),
         ],
       ),
       body: DungeonBackground(
         screenType: ScreenType.bookshelf,
         child: shelves.isEmpty
-            ? const _EmptyState()
-            : ListView(
+            ? SemanticHelper.container(
+                testId: 'sec_shelves_empty',
+                label: '自作棚はまだありません',
+                explicitChildNodes: true,
+                child: const _EmptyState(),
+              )
+            : SemanticHelper.container(
+                testId: 'list_shelves',
+                label: '自作棚の一覧',
+                explicitChildNodes: true,
+                child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
                   for (final shelf in shelves)
@@ -201,6 +243,7 @@ class _ShelfManagementScreenState extends ConsumerState<ShelfManagementScreen> {
                       onEditBooks: () => _editBooks(shelf),
                     ),
                 ],
+              ),
               ),
       ),
     );
@@ -265,7 +308,10 @@ class _ShelfCard extends StatelessWidget {
         members.where((ub) => ub.status == BookStatus.completed).length;
     final progress = members.isEmpty ? 0.0 : completed / members.length;
 
-    return Card(
+    return SemanticHelper.container(
+      testId: 'item_shelf_${shelf.id}',
+      explicitChildNodes: true,
+      child: Card(
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       color: AppTheme.cardBackground,
@@ -317,29 +363,34 @@ class _ShelfCard extends StatelessWidget {
                 ],
               ),
             ),
-            PopupMenuButton<String>(
-              tooltip: '棚の操作',
-              onSelected: (v) {
-                switch (v) {
-                  case 'edit':
-                    onEditBooks();
-                  case 'rename':
-                    onRename();
-                  case 'delete':
-                    onDelete();
-                }
-              },
-              itemBuilder: (context) => const [
-                PopupMenuItem(value: 'edit', child: Text('本を入れる/外す')),
-                PopupMenuItem(value: 'rename', child: Text('棚名を変更')),
-                PopupMenuItem(
-                    value: 'delete',
-                    child: Text('削除', style: TextStyle(color: Colors.red))),
-              ],
+            SemanticHelper.interactive(
+              testId: 'btn_shelf_menu_${shelf.id}',
+              label: '棚の操作',
+              child: PopupMenuButton<String>(
+                tooltip: '棚の操作',
+                onSelected: (v) {
+                  switch (v) {
+                    case 'edit':
+                      onEditBooks();
+                    case 'rename':
+                      onRename();
+                    case 'delete':
+                      onDelete();
+                  }
+                },
+                itemBuilder: (context) => const [
+                  PopupMenuItem(value: 'edit', child: Text('本を入れる/外す')),
+                  PopupMenuItem(value: 'rename', child: Text('棚名を変更')),
+                  PopupMenuItem(
+                      value: 'delete',
+                      child: Text('削除', style: TextStyle(color: Colors.red))),
+                ],
+              ),
             ),
           ],
         ),
       ),
+    ),
     );
   }
 }

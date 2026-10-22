@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:takamagahara_ui/takamagahara_ui.dart' hide AppKeys;
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/testing/widget_keys.dart';
 import '../../../../core/widgets/dungeon_background.dart';
@@ -38,39 +39,55 @@ class HistoryScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('📊 足跡'),
         actions: [
-          IconButton(
-            key: AppKeys.historyShareButton,
-            icon: const Icon(Icons.ios_share),
-            tooltip: '読了カードを共有',
-            onPressed: () => _openShareCard(context, ref),
+          SemanticHelper.interactive(
+            testId: 'btn_history_share_card',
+            label: '読了カードを共有',
+            child: IconButton(
+              key: AppKeys.historyShareButton,
+              icon: const Icon(Icons.ios_share),
+              tooltip: '読了カードを共有',
+              onPressed: () => _openShareCard(context, ref),
+            ),
           ),
-          IconButton(
-            key: AppKeys.readingSessionLogButton,
-            icon: const Icon(Icons.edit_note),
-            tooltip: '読書記録を編集',
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => const ReadingSessionLogScreen(),
+          SemanticHelper.interactive(
+            testId: 'btn_history_session_log',
+            label: '読書記録を編集',
+            child: IconButton(
+              key: AppKeys.readingSessionLogButton,
+              icon: const Icon(Icons.edit_note),
+              tooltip: '読書記録を編集',
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const ReadingSessionLogScreen(),
+                ),
               ),
             ),
           ),
-          IconButton(
-            key: AppKeys.dailyReadingGoalButton,
-            icon: const Icon(Icons.flag_outlined),
-            tooltip: '読書時間の目標',
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => const DailyReadingGoalScreen(),
+          SemanticHelper.interactive(
+            testId: 'btn_history_daily_goal',
+            label: '読書時間の目標',
+            child: IconButton(
+              key: AppKeys.dailyReadingGoalButton,
+              icon: const Icon(Icons.flag_outlined),
+              tooltip: '読書時間の目標',
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const DailyReadingGoalScreen(),
+                ),
               ),
             ),
           ),
-          IconButton(
-            key: AppKeys.badgeCollectionButton,
-            icon: const Icon(Icons.emoji_events_outlined),
-            tooltip: '実績バッジ',
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => const BadgeCollectionScreen(),
+          SemanticHelper.interactive(
+            testId: 'btn_history_badges',
+            label: '実績バッジ',
+            child: IconButton(
+              key: AppKeys.badgeCollectionButton,
+              icon: const Icon(Icons.emoji_events_outlined),
+              tooltip: '実績バッジ',
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const BadgeCollectionScreen(),
+                ),
               ),
             ),
           ),
@@ -91,12 +108,14 @@ class HistoryScreen extends ConsumerWidget {
             childAspectRatio: 1.6,
             children: [
               _StatCard(
+                  testId: 'btn_history_stat_books',
                   icon: '📚',
                   label: '登録数',
                   value: '${stats.totalBooks}',
                   onTap: () => _showBookList(context, ref, '登録本一覧', null),
               ),
               _StatCard(
+                  testId: 'btn_history_stat_completed',
                   icon: '✅',
                   label: '読了数',
                   value: '${stats.completedCount}',
@@ -104,18 +123,22 @@ class HistoryScreen extends ConsumerWidget {
                       context, ref, '討伐済み一覧', BookStatus.completed),
               ),
               _StatCard(
+                  testId: 'card_history_stat_minutes',
                   icon: '⏱',
                   label: '読書時間',
                   value: '${adventurer.totalReadingMinutes}分'),
               _StatCard(
+                  testId: 'card_history_stat_pages',
                   icon: '📄',
                   label: '総ページ',
                   value: '${adventurer.totalPagesRead}'),
               _StatCard(
+                  testId: 'card_history_stat_streak',
                   icon: '🔥',
                   label: '連続日数',
                   value: '${adventurer.currentStreak}日'),
               _StatCard(
+                  testId: 'card_history_stat_completion_rate',
                   icon: '📖',
                   label: '読了率',
                   value: '${(stats.completionRate * 100).toStringAsFixed(0)}%'),
@@ -128,7 +151,10 @@ class HistoryScreen extends ConsumerWidget {
           const SizedBox(height: 24),
 
           // Level info
-          Container(
+          SemanticHelper.container(
+            testId: 'card_history_level',
+            label: '冒険者レベル',
+            child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: AppTheme.cardBackground,
@@ -172,6 +198,7 @@ class HistoryScreen extends ConsumerWidget {
                 ),
               ],
             ),
+          ),
           ),
           const SizedBox(height: 24),
 
@@ -268,11 +295,13 @@ void _showBookList(BuildContext context, WidgetRef ref, String title,
 class _StatCard extends StatelessWidget {
   final String icon, label, value;
   final VoidCallback? onTap;
+  final String? testId;
   const _StatCard({
     required this.icon,
     required this.label,
     required this.value,
     this.onTap,
+    this.testId,
   });
 
   @override
@@ -300,13 +329,23 @@ class _StatCard extends StatelessWidget {
         ],
       ),
     );
+    Widget result;
     if (onTap != null) {
-      return GestureDetector(
+      result = GestureDetector(
         onTap: onTap,
         child: card,
       );
+    } else {
+      result = card;
     }
-    return card;
+    final id = testId;
+    if (id == null) return result;
+    final semanticLabel = '$label $value';
+    return onTap != null
+        ? SemanticHelper.interactive(
+            testId: id, label: semanticLabel, child: result)
+        : SemanticHelper.container(
+            testId: id, label: semanticLabel, child: result);
   }
 }
 
@@ -363,12 +402,16 @@ class _ReadingNotesSection extends ConsumerWidget {
                         fontWeight: FontWeight.bold,
                         color: AppTheme.textPrimary)),
               ),
-              IconButton(
-                key: AppKeys.readingNoteSearchButton,
-                icon: const Icon(Icons.search),
-                tooltip: '感想を検索',
-                onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-                    builder: (_) => const ReadingNoteSearchScreen())),
+              SemanticHelper.interactive(
+                testId: 'btn_history_note_search',
+                label: '感想を検索',
+                child: IconButton(
+                  key: AppKeys.readingNoteSearchButton,
+                  icon: const Icon(Icons.search),
+                  tooltip: '感想を検索',
+                  onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => const ReadingNoteSearchScreen())),
+                ),
               ),
             ],
           ),
@@ -376,15 +419,21 @@ class _ReadingNotesSection extends ConsumerWidget {
           if (notes.isEmpty || notes.every((n) => !n.hasContent))
             const _EmptyNotesPlaceholder()
           else
-            ListView.builder(
-              key: AppKeys.readingNotesList,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: notes.length,
-              itemBuilder: (context, index) {
-                final note = notes[index];
-                return _NoteCard(note: note);
-              },
+            // 一覧 identifier は外側で1回だけ付与する（行ごとの重複発行を避ける）
+            SemanticHelper.container(
+              testId: 'list_history_notes',
+              label: '読書感想の一覧',
+              explicitChildNodes: true,
+              child: ListView.builder(
+                key: AppKeys.readingNotesList,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: notes.length,
+                itemBuilder: (context, index) {
+                  final note = notes[index];
+                  return _NoteCard(note: note);
+                },
+              ),
             ),
         ],
       ),
@@ -398,7 +447,10 @@ class _EmptyNotesPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SemanticHelper.container(
+      testId: 'txt_history_notes_empty',
+      label: '感想を書いてみよう',
+      child: Container(
       key: AppKeys.readingNotesEmpty,
       padding: const EdgeInsets.symmetric(vertical: 24),
       child: Center(
@@ -422,6 +474,7 @@ class _EmptyNotesPlaceholder extends StatelessWidget {
           ],
         ),
       ),
+      ),
     );
   }
 }
@@ -438,7 +491,10 @@ class _NoteCard extends StatelessWidget {
         ? note.createdAt.substring(0, 10)
         : note.createdAt;
 
-    return Container(
+    return SemanticHelper.container(
+      testId: 'card_history_note_${note.id}',
+      label: title,
+      child: Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -519,6 +575,9 @@ class _NoteCard extends StatelessWidget {
           ],
         ],
       ),
+      ),
     );
   }
 }
+
+
