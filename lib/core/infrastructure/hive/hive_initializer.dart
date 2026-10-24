@@ -8,6 +8,12 @@ library;
 
 import 'package:hive_flutter/hive_flutter.dart';
 
+/// Hive の初期化が完了したか（widget 試練では false のまま）
+///
+/// 未初期化のまま `Hive.openBox` を呼ぶと zone 汚染で flutter_test が必ず落ちるため、
+/// 永続化リポジトリはこのフラグを見て「開いてよいか」を判断する。
+bool hiveInitialized = false;
+
 /// Hive の初期化と全 TypeAdapter の登録を行う。
 ///
 /// 呼出順序:
@@ -21,6 +27,7 @@ Future<void> initializeHive({
 }) async {
   // 1. Flutter 用に Hive を初期化（プラットフォーム固有パス設定）
   await Hive.initFlutter();
+  hiveInitialized = true;
 
   // 2. TypeAdapter を登録（モデルが増えたら追記）
   if (registerAdaptersCallback != null) {

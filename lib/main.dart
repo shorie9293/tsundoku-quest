@@ -332,10 +332,12 @@ class _TsundokuQuestAppState extends ConsumerState<TsundokuQuestApp> {
     }
   }
 
-  void _retryLoadAdventurer() {
+  Future<void> _retryLoadAdventurer() async {
     try {
-      final repository = ref.read(adventurerRepositoryProvider);
-      ref.read(adventurerProvider.notifier).loadFromRepository(repository);
+      final notifier = ref.read(adventurerProvider.notifier);
+      // 先にローカルの積み上げを復元してからサーバ統計を重ねる
+      await notifier.loadProgress();
+      notifier.loadFromRepository(ref.read(adventurerRepositoryProvider));
     } catch (e) {
       debugPrint('⚠️ 冒険者ステータスの再取得失敗: $e');
     }
@@ -417,8 +419,12 @@ class _AppStartupInitializerState
   }
 
   /// Supabase から冒険者ステータスを読み込む
-  void _loadAdventurerStatus() {
+  ///
+  /// 先にローカルへ永続化した積み上げ（レベル・XP・称号・読書日）を復元し、
+  /// その後サーバ統計を重ねる（順序を逆にすると再起動で見習いに戻る）。
+  Future<void> _loadAdventurerStatus() async {
     try {
+      await ref.read(adventurerProvider.notifier).loadProgress();
       final repository = ref.read(adventurerRepositoryProvider);
       ref.read(adventurerProvider.notifier).loadFromRepository(repository);
     } catch (e) {

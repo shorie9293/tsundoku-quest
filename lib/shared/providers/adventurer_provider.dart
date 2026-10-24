@@ -1,7 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tsundoku_quest/core/infrastructure/hive/box_manager_provider.dart';
+import 'package:tsundoku_quest/domain/models/adventurer_progress.dart';
 import 'package:tsundoku_quest/domain/models/adventurer_stats.dart';
 import 'package:tsundoku_quest/domain/repositories/adventurer_repository.dart';
+import 'package:tsundoku_quest/features/shared/data/adventurer_progress_repository.dart';
 import 'package:tsundoku_quest/features/shared/data/tsundoku_reward_event_exporter.dart';
 import 'xp_calculator.dart';
 
@@ -17,21 +20,57 @@ const _streakMilestones = [7, 14, 30, 60, 100];
 /// 冒険者ステータスを管理するStateNotifier
 class AdventurerNotifier extends StateNotifier<AdventurerStats> {
   final TsundokuRewardEventExporter? _rewardExporter;
+  final AdventurerProgressRepository? _progressRepository;
+
+  /// ローカルに復元した積み上げ（level/xp/title/readingDates）
+  AdventurerProgress? _localProgress;
 
   /// [rewardExporter] が指定された場合、レベルアップやマイルストーン達成時に
   /// イベントを共有ストレージに書き出す。
-  AdventurerNotifier({TsundokuRewardEventExporter? rewardExporter})
-      : _rewardExporter = rewardExporter,
+  /// [progressRepository] が指定された場合、積み上げ（レベル・XP・称号・読書日）を
+  /// 永続化し、再起動時に復元する。
+  AdventurerNotifier({
+    TsundokuRewardEventExporter? rewardExporter,
+    AdventurerProgressRepository? progressRepository,
+  })  : _rewardExporter = rewardExporter,
+        _progressRepository = progressRepository,
         super(AdventurerStats.beginner());
 
+  /// 保存済みの積み上げを復元する（起動時に一度だけ呼ぶ）
+  Future<void> loadProgress() async {
+    final repository = _progressRepository;
+    if (repository == null) return;
+    try {
+      final progress = await repository.load();
+      _localProgress = progress;
+      state = progress.applyTo(state);
+    } catch (e) {
+      debugPrint('⚠️ 冒険者ステータスの復元失敗: $e');
+    }
+  }
+
+  /// 現在の state を永続化する（失敗しても本処理は止めない）
+  void persistProgress() {
+    final repository = _progressRepository;
+    if (repository == null) return;
+    final progress = AdventurerProgress.fromStats(state);
+    _localProgress = progress;
+    repository.save(progress).catchError((Object e) {
+      debugPrint('⚠️ 冒険者ステータスの保存失敗: $e');
+    });
+  }
+
   /// Supabase から冒険者ステータスを読み込んで state を更新する
+  ///
+  /// サーバ側は level/xp を常に初期値で返すため、ローカルの積み上げを重ねる。
   void loadFromRepository(AdventurerRepository repository) {
     repository.stats().then((stats) {
-      // level/XP はクライアントサイド管理だが stats() は常に level=1 から始まるため
-      // そのまま上書きして問題ない（XP永続化は未実装）
-      state = stats;
+      final progress =
+          _localProgress ?? AdventurerProgress.fromStats(state);
+      _localProgress = progress;
+      state = progress.applyTo(stats);
     }).catchError((error, stackTrace) {
-      // Supabase が使えない場合は初期状態のまま。エラー情報を state に保持
+      // Supabase が使えない場合はローカルの積み上げを保ったまま
       debugPrint('⚠️ Supabase から冒険者ステータス取得失敗: $error\n$stackTrace');
       state = _copyWith(errorMessage: 'サーバーに接続できません（オフラインモード）');
     });
@@ -75,6 +114,9 @@ class AdventurerNotifier extends StateNotifier<AdventurerStats> {
         );
       }
     }
+
+    // 積み上げ（レベル・XP・称号）を永続化
+    persistProgress();
   }
 
   /// 現在のレベルとXPから総XPを逆算
@@ -169,12 +211,29 @@ class AdventurerNotifier extends StateNotifier<AdventurerStats> {
       state = _copyWith(
         readingDates: [...state.readingDates, dateStr],
       );
+      // 読書日リストを永続化
+      persistProgress();
     }
   }
 }
 
+/// 冒険者ステータスの永続化リポジトリ
+///
+/// Hive が初期化されていれば Hive 実装、それ以外はインメモリ実装にフォールバックする。
+final adventurerProgressRepositoryProvider =
+    Provider<AdventurerProgressRepository>((ref) {
+  try {
+    final boxManager = ref.read(hiveBoxManagerProvider);
+    return HiveAdventurerProgressRepository(boxManager);
+  } catch (_) {
+    return InMemoryAdventurerProgressRepository();
+  }
+});
+
 /// Riverpod プロバイダ
 final adventurerProvider =
     StateNotifierProvider<AdventurerNotifier, AdventurerStats>((ref) {
-  return AdventurerNotifier();
+  return AdventurerNotifier(
+    progressRepository: ref.read(adventurerProgressRepositoryProvider),
+  );
 });
