@@ -6,6 +6,7 @@ import 'package:tsundoku_quest/domain/models/adventurer_stats.dart';
 import 'package:tsundoku_quest/domain/repositories/adventurer_repository.dart';
 import 'package:tsundoku_quest/features/shared/data/adventurer_progress_repository.dart';
 import 'package:tsundoku_quest/features/shared/data/tsundoku_reward_event_exporter.dart';
+import 'package:tsundoku_quest/features/shared/providers/reward_event_exporter_provider.dart';
 import 'xp_calculator.dart';
 
 /// XPマイルストーン閾値
@@ -21,6 +22,10 @@ const _streakMilestones = [7, 14, 30, 60, 100];
 class AdventurerNotifier extends StateNotifier<AdventurerStats> {
   final TsundokuRewardEventExporter? _rewardExporter;
   final AdventurerProgressRepository? _progressRepository;
+
+  /// 試練用: 注入された書き出し先（Provider が単一インスタンスを渡しているか検証する）
+  @visibleForTesting
+  TsundokuRewardEventExporter? get rewardExporter => _rewardExporter;
 
   /// ローカルに復元した積み上げ（level/xp/title/readingDates）
   AdventurerProgress? _localProgress;
@@ -233,7 +238,14 @@ final adventurerProgressRepositoryProvider =
 /// Riverpod プロバイダ
 final adventurerProvider =
     StateNotifierProvider<AdventurerNotifier, AdventurerStats>((ref) {
+  TsundokuRewardEventExporter? rewardExporter;
+  try {
+    rewardExporter = ref.read(tsundokuRewardEventExporterProvider);
+  } catch (_) {
+    // Supabase 非依存だが、初期化失敗時の流儀に合わせて防御
+  }
   return AdventurerNotifier(
+    rewardExporter: rewardExporter,
     progressRepository: ref.read(adventurerProgressRepositoryProvider),
   );
 });

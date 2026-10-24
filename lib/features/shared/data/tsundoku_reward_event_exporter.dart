@@ -34,11 +34,28 @@ class TsundokuRewardEventExporter {
   String _nowTimestamp() => DateTime.now().toUtc().toIso8601String();
 
   /// JSONLに1行追記。書き込み失敗は握りつぶす（best-effort）。
-  Future<void> _writeEvent(Map<String, dynamic> event) async {
+  ///
+  /// [metadata] は rpg-task 側の報酬計算が読む入れ子オブジェクト。
+  /// 参照: rpg-task/lib/features/crossapp/data/cross_app_reward_service.dart は
+  /// `event.metadata['count'|'streak_days'|'xp'|'pages']` を読む。
+  /// トップレベルフィールド（streak/total_xp/total_pages 等）は後方互換のため残す。
+  ///
+  /// userId が空のまま書き出すと rpg の `CrossAppRewardEvent.fromJson` が
+  /// FormatException を投げて行ごとスキップされる（=報酬ゼロ）ため、
+  /// 空のときは書き出さない。認証前のイベントは捨てるのが正しい挙動。
+  Future<void> _writeEvent(
+    Map<String, dynamic> event, {
+    Map<String, dynamic>? metadata,
+  }) async {
+    if (_userId.trim().isEmpty) return;
     try {
       final file = File(filePath);
       await file.parent.create(recursive: true);
-      final line = jsonEncode(event);
+      final payload = <String, dynamic>{
+        ...event,
+        'metadata': metadata ?? const <String, dynamic>{},
+      };
+      final line = jsonEncode(payload);
       await file.writeAsString('$line\n', mode: FileMode.append);
     } catch (_) {
       // Best-effort export — silently ignore write failures
@@ -58,6 +75,9 @@ class TsundokuRewardEventExporter {
       'timestamp': timestamp ?? _nowTimestamp(),
       'new_level': newLevel,
       'title': title,
+    }, metadata: {
+      'new_level': newLevel,
+      'title': title,
     });
   }
 
@@ -74,6 +94,9 @@ class TsundokuRewardEventExporter {
       'timestamp': timestamp ?? _nowTimestamp(),
       'milestone': milestone,
       'total_xp': totalXp,
+    }, metadata: {
+      'milestone': milestone,
+      'xp': totalXp,
     });
   }
 
@@ -92,6 +115,10 @@ class TsundokuRewardEventExporter {
       'date': date,
       'completed_count': completedCount,
       'total_count': totalCount,
+    }, metadata: {
+      'date': date,
+      'completed': completedCount,
+      'total': totalCount,
     });
   }
 
@@ -107,6 +134,10 @@ class TsundokuRewardEventExporter {
       'event_type': 'trophy_written',
       'user_id': _userId,
       'timestamp': timestamp ?? _nowTimestamp(),
+      'trophy_id': trophyId,
+      'user_book_id': userBookId,
+      'learning_count': learningCount,
+    }, metadata: {
       'trophy_id': trophyId,
       'user_book_id': userBookId,
       'learning_count': learningCount,
@@ -126,6 +157,11 @@ class TsundokuRewardEventExporter {
       'timestamp': timestamp ?? _nowTimestamp(),
       'book_id': bookId,
       'book_title': bookTitle ?? '',
+    }, metadata: {
+      'book_id': bookId,
+      'book_title': bookTitle ?? '',
+      // rpg は book_completed の回数を metadata['count'] で数える
+      'count': 1,
     });
   }
 
@@ -142,6 +178,9 @@ class TsundokuRewardEventExporter {
       'timestamp': timestamp ?? _nowTimestamp(),
       'milestone': milestone,
       'total_pages': totalPages,
+    }, metadata: {
+      'milestone': milestone,
+      'pages': totalPages,
     });
   }
 
@@ -156,6 +195,9 @@ class TsundokuRewardEventExporter {
       'user_id': _userId,
       'timestamp': timestamp ?? _nowTimestamp(),
       'streak': streak,
+    }, metadata: {
+      // rpg は reading_streak を metadata['streak_days'] で読む
+      'streak_days': streak,
     });
   }
 }

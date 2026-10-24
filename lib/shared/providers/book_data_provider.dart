@@ -10,6 +10,7 @@ import 'package:tsundoku_quest/features/reading/data/reading_session_repository_
 import 'package:tsundoku_quest/features/shared/data/tsundoku_reward_event_exporter.dart';
 import 'package:tsundoku_quest/features/shared/data/tsundoku_book_event_exporter.dart';
 import 'package:tsundoku_quest/features/shared/data/tsundoku_book_completion_exporter.dart';
+import 'package:tsundoku_quest/features/shared/providers/reward_event_exporter_provider.dart';
 import 'package:tsundoku_quest/features/shared/providers/war_trophy_provider.dart';
 
 /// 読了ページ数マイルストーン閾値（1冊あたり）
@@ -59,6 +60,10 @@ class BookDataNotifier extends StateNotifier<BookDataState> {
   // ignore: unused_field — reserved for optional reading stats aggregation in fetchBooks
   final ReadingSessionRepository? _sessionRepository;
   final TsundokuRewardEventExporter? _rewardExporter;
+
+  /// 試練用: 注入された書き出し先（Provider が単一インスタンスを渡しているか検証する）
+  @visibleForTesting
+  TsundokuRewardEventExporter? get rewardExporter => _rewardExporter;
   final TsundokuBookEventExporter? _bookEventExporter;
   final TsundokuBookCompletionExporter? _completionExporter;
 
@@ -343,10 +348,16 @@ final bookDataProvider =
   } catch (_) {
     // Supabase未初期化（テスト環境）→ リポジトリなしで動作
   }
+  TsundokuRewardEventExporter? rewardExporter;
+  try {
+    rewardExporter = ref.read(tsundokuRewardEventExporterProvider);
+  } catch (_) {
+    // Supabase未初期化（テスト環境）→ 書き出しなしで動作
+  }
   return BookDataNotifier(
     repository,
     sessionRepository,
-    null, // rewardExporter — 必要に応じて注入
+    rewardExporter,
     const TsundokuBookEventExporter(), // kozuchi 連携用（蔵書追加）
     const TsundokuBookCompletionExporter(), // kozuchi 連携用（読了→金運バフ）
   )..trophyCleanup = (userBookId) {

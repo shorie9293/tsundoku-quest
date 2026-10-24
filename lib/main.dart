@@ -38,6 +38,9 @@ import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:app_links/app_links.dart';
 import 'core/infrastructure/deep_link_service.dart';
 import 'core/infrastructure/app_lock_gate.dart';
+import 'features/shared/data/tsundoku_reward_event_exporter.dart';
+import 'features/shared/data/reward_event_user_linker.dart';
+import 'features/shared/providers/reward_event_exporter_provider.dart';
 
 /// アプリ完全終了状態から起動した場合の初期ディープリンクを保持
 Uri? _pendingInitialDeepLink;
@@ -47,6 +50,39 @@ Widget buildWithAppLockGate(BuildContext context, Widget? child) {
   return AppLockGate(
     unlockedBuilder: (_) => child ?? const SizedBox.shrink(),
   );
+}
+
+/// クロスアプリ報酬イベント書き出しの起動時配線。
+///
+/// 単一の [TsundokuRewardEventExporter] を生成した main() から呼ばれる。
+/// rpg-task（Kozuchi）は JSONL の各行を `user_id` 必須で解釈するため、
+/// 書き出し前に認証状態を購読して userId を追随させる必要がある。
+///
+/// - [userIdChanges] 指定時はそれを購読（試練用の注入点）。
+/// - [authStates] 指定時は Supabase の AuthState を購読。
+/// - どちらも未指定なら Supabase の現在セッションと認証状態ストリームを使う。
+///
+/// Supabase 未初期化（テスト環境・オフライン）では**静かに何もしない**。
+/// 例外は投げない（アプリ起動を妨げない）。既存の try/catch 流儀に倣う。
+void wireRewardEventExporter({
+  required TsundokuRewardEventExporter exporter,
+  Stream<AuthState>? authStates,
+  Stream<String?>? userIdChanges,
+}) {
+  try {
+    if (userIdChanges != null) {
+      RewardEventUserLinker(exporter: exporter).bind(userIdChanges);
+      return;
+    }
+    if (authStates != null) {
+      RewardEventUserLinker(exporter: exporter).bindSupabaseAuthStates(authStates);
+      return;
+    }
+    // Supabase 未初期化時は tryCreateForSupabase が内部で握りつぶして null を返す
+    RewardEventUserLinker.tryCreateForSupabase(exporter);
+  } catch (e) {
+    debugPrint('⚠️ 報酬イベント書き出しの配線失敗（アプリは継続）: $e');
+  }
 }
 
 Future<void> main() async {
@@ -151,9 +187,22 @@ Future<void> main() async {
   // バックグラウンド→フォアグラウンド復帰時のリンクをリッスン
   appLinks.uriLinkStream.listen(_handleDeepLink);
 
+  // ── クロスアプリ報酬イベント書き出し（rpg-task/Kozuchi 連携）──
+  // Supabase 初期化の成否に関わらず単一インスタンスを生成し、runApp 前に
+  // ProviderScope へ override して全 Notifier に同一インスタンスを配る。
+  // Supabase 未初期化時は userId が空のままで書き出しはスキップされる
+  // （rpg 側で解釈できない行を作らない）。
+  final rewardEventExporter = TsundokuRewardEventExporter();
+  // 認証状態を購読して userId を追随させる（Supabase 未初期化なら静かに no-op）
+  wireRewardEventExporter(exporter: rewardEventExporter);
+
   runApp(
-    const ProviderScope(
-      child: TsundokuQuestApp(),
+    ProviderScope(
+      overrides: [
+        tsundokuRewardEventExporterProvider
+            .overrideWithValue(rewardEventExporter),
+      ],
+      child: const TsundokuQuestApp(),
     ),
   );
   debugPrint('🏁 runApp 完了');

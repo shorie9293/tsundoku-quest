@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tsundoku_quest/core/infrastructure/hive/box_manager.dart';
 import 'package:tsundoku_quest/features/shared/data/tsundoku_reward_event_exporter.dart';
+import 'package:tsundoku_quest/features/shared/providers/reward_event_exporter_provider.dart';
 import '../domain/daily_mission.dart';
 
 /// デイリーミッション状態
@@ -36,6 +37,10 @@ class DailyMissionNotifier extends StateNotifier<DailyMissionState> {
   final TsundokuRewardEventExporter? _rewardExporter;
   final BoxManagerInterface? _boxManager;
   bool _dailyMissionCompleteEmitted = false;
+
+  /// 試練用: 注入された書き出し先（Provider が単一インスタンスを渡しているか検証する）
+  @visibleForTesting
+  TsundokuRewardEventExporter? get rewardExporter => _rewardExporter;
 
   /// [boxManager] が指定された場合は Hive 永続化、
   /// null の場合は SharedPreferences 永続化を使用する。
@@ -253,5 +258,11 @@ class DailyMissionNotifier extends StateNotifier<DailyMissionState> {
 /// Riverpod プロバイダ
 final dailyMissionProvider =
     StateNotifierProvider<DailyMissionNotifier, DailyMissionState>((ref) {
-  return DailyMissionNotifier();
+  TsundokuRewardEventExporter? rewardExporter;
+  try {
+    rewardExporter = ref.read(tsundokuRewardEventExporterProvider);
+  } catch (_) {
+    // Supabase未初期化（テスト環境）→ 書き出しなしで動作
+  }
+  return DailyMissionNotifier(rewardExporter: rewardExporter);
 });

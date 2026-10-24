@@ -4,6 +4,7 @@ import 'package:tsundoku_quest/domain/models/war_trophy.dart';
 import 'package:tsundoku_quest/domain/repositories/war_trophy_repository.dart';
 import 'package:tsundoku_quest/features/bookshelf/data/war_trophy_repository_provider.dart';
 import 'package:tsundoku_quest/features/shared/data/tsundoku_reward_event_exporter.dart';
+import 'package:tsundoku_quest/features/shared/providers/reward_event_exporter_provider.dart';
 
 /// 戦利品を管理するStateNotifier
 ///
@@ -13,6 +14,10 @@ import 'package:tsundoku_quest/features/shared/data/tsundoku_reward_event_export
 class WarTrophyNotifier extends StateNotifier<List<WarTrophy>> {
   final WarTrophyRepository? _repository;
   final TsundokuRewardEventExporter? _rewardExporter;
+
+  /// 試練用: 注入された書き出し先（Provider が単一インスタンスを渡しているか検証する）
+  @visibleForTesting
+  TsundokuRewardEventExporter? get rewardExporter => _rewardExporter;
 
   /// [repository] が null の場合はインメモリモード、
   /// 指定時は Supabase 透過永続化モードで動作する。
@@ -127,5 +132,11 @@ final warTrophyProvider =
   } catch (_) {
     // Supabase未初期化（テスト環境）→ リポジトリなしで動作
   }
-  return WarTrophyNotifier(repository);
+  TsundokuRewardEventExporter? rewardExporter;
+  try {
+    rewardExporter = ref.read(tsundokuRewardEventExporterProvider);
+  } catch (_) {
+    // Supabase未初期化（テスト環境）→ 書き出しなしで動作
+  }
+  return WarTrophyNotifier(repository, rewardExporter);
 });
