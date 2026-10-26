@@ -68,6 +68,6 @@ const kAboutInfo = AboutInfo.constValid(
   appName: '積ん読クエスト',
   version: '1.1.21',
   contactEmail: 'horie.shunta@gmail.com',
-  privacyPolicyUrl: 'https://yoppala.in/privacy',
+  privacyPolicyUrl: 'https://www.yoppala.in/privacy',
   tagline: '積ん読を冒険に変える読書アプリ',
 );

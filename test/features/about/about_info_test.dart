@@ -73,7 +73,7 @@ void main() {
     test('appName / contactEmail / privacyPolicyUrl が正しい', () {
       expect(kAboutInfo.appName, '積ん読クエスト');
       expect(kAboutInfo.contactEmail, 'horie.shunta@gmail.com');
-      expect(kAboutInfo.privacyPolicyUrl, 'https://yoppala.in/privacy');
+      expect(kAboutInfo.privacyPolicyUrl, 'https://www.yoppala.in/privacy');
     });
 
     test('version は 1.1.21（pubspec 同期試練が真値を担保）', () {
