@@ -29,7 +29,13 @@ void main() {
   Future<void> pumpScreen(WidgetTester tester) async {
     await tester.pumpWidget(
       ProviderScope(
-        child: MaterialApp(home: AboutScreen(info: info)),
+        child: MaterialApp(
+          home: AboutScreen(
+            info: info,
+            // 外部リンクは撃たず、常にコピー導線へ退避させる
+            urlOpener: (_) async => false,
+          ),
+        ),
       ),
     );
     await tester.pumpAndSettle();

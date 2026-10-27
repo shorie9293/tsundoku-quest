@@ -3,22 +3,39 @@ import 'package:flutter/services.dart';
 
 import 'about_app_keys.dart';
 import '../domain/about_info.dart';
+import '../domain/external_url_opener.dart';
+import 'external_url_launcher.dart';
 
 /// アプリについて画面。
 ///
 /// - アプリ名＋バージョン表示
 /// - OSSライセンス: showLicensePage（追加依存なし）
-/// - プライバシーポリシー: ダイアログでURL表示＋コピー（url_launcher不使用）
-/// - 問い合わせ: メール表示＋コピー
+/// - プライバシーポリシー / 問い合わせ: タップで外部アプリ（ブラウザ・メール）へ渡し、
+///   開けなかった場合は従来のコピー導線（ダイアログ）へ退避する
 class AboutScreen extends StatelessWidget {
-  const AboutScreen({super.key, this.info = kAboutInfo});
+  const AboutScreen({
+    super.key,
+    this.info = kAboutInfo,
+    this.clipboardWriter = _defaultClipboardWriter,
+    this.urlOpener = launchExternalUrl,
+  });
 
   /// 表示する情報（既定は kAboutInfo。試練から注入可能）。
   final AboutInfo info;
 
+  /// クリップボード書き込み口（試練ではインメモリ実装を注入する）。
+  final Future<void> Function(String value) clipboardWriter;
+
+  /// 外部URLを開く口（試練ではフェイクを注入する）。
+  final ExternalUrlOpener urlOpener;
+
+  static Future<void> _defaultClipboardWriter(String value) {
+    return Clipboard.setData(ClipboardData(text: value));
+  }
+
   Future<void> _copy(BuildContext context, String text) async {
     try {
-      await Clipboard.setData(ClipboardData(text: text));
+      await clipboardWriter(text);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('コピーしました')),
@@ -33,13 +50,44 @@ class AboutScreen extends StatelessWidget {
     }
   }
 
-  void _showCopyDialog(BuildContext context, String title, String value) {
-    showDialog<void>(
+  /// 外部アプリで開く。開けなければ（false・例外）コピー導線へ退避する。
+  Future<void> _openOrCopy(
+    BuildContext context, {
+    required Uri? uri,
+    required String title,
+    required String value,
+  }) async {
+    var opened = false;
+    if (uri != null) {
+      try {
+        opened = await urlOpener(uri);
+      } catch (_) {
+        opened = false;
+      }
+    }
+    if (opened || !context.mounted) return;
+    await _showCopyDialog(context, title, value);
+  }
+
+  Future<void> _showCopyDialog(
+    BuildContext context,
+    String title,
+    String value,
+  ) {
+    return showDialog<void>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
           title: Text(title),
-          content: SelectableText(value),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('外部アプリで開けませんでした。以下をコピーしてご利用ください。'),
+              const SizedBox(height: 8),
+              SelectableText(value),
+            ],
+          ),
           actions: [
             TextButton(
               key: AboutAppKeys.copyButton,
@@ -104,11 +152,12 @@ class AboutScreen extends StatelessWidget {
             key: AboutAppKeys.privacyTile,
             leading: const Icon(Icons.privacy_tip_outlined),
             title: const Text('プライバシーポリシー'),
-            subtitle: const Text('URLを確認・コピーする'),
-            onTap: () => _showCopyDialog(
+            subtitle: const Text('ブラウザで開く（開けない場合はコピー）'),
+            onTap: () => _openOrCopy(
               context,
-              'プライバシーポリシー',
-              info.privacyPolicyUrl,
+              uri: externalUri(info.privacyPolicyUrl),
+              title: 'プライバシーポリシー',
+              value: info.privacyPolicyUrl,
             ),
           ),
           const Divider(height: 1),
@@ -116,8 +165,13 @@ class AboutScreen extends StatelessWidget {
             key: AboutAppKeys.contactTile,
             leading: const Icon(Icons.mail_outline),
             title: const Text('問い合わせ'),
-            subtitle: const Text('メールアドレスを確認・コピーする'),
-            onTap: () => _showCopyDialog(context, '問い合わせ', info.contactEmail),
+            subtitle: const Text('メールで送る（開けない場合はコピー）'),
+            onTap: () => _openOrCopy(
+              context,
+              uri: mailtoUri(info.contactEmail),
+              title: '問い合わせ',
+              value: info.contactEmail,
+            ),
           ),
           const Divider(height: 1),
         ],
