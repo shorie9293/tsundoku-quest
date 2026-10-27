@@ -152,6 +152,19 @@ class AppKeys {
   static const Key reminderTimeTile = Key('tile_reminder_time');
   static const Key reminderTimeText = Key('txt_reminder_time');
 
+  // ━━━ 静穏時間（おやすみモード） ━━━
+  static const Key quietHoursEntry = Key('btn_quiet_hours_entry');
+  static const Key quietHoursScreen = Key('screen_quiet_hours');
+  static const Key quietHoursToggle = Key('switch_quiet_hours_enabled');
+  static const Key quietHoursStartHour = Key('dd_quiet_hours_start_hour');
+  static const Key quietHoursStartMinute = Key('dd_quiet_hours_start_minute');
+  static const Key quietHoursEndHour = Key('dd_quiet_hours_end_hour');
+  static const Key quietHoursEndMinute = Key('dd_quiet_hours_end_minute');
+  static const Key quietHoursPreview = Key('txt_quiet_hours_preview');
+  static const Key quietHoursSaveButton = Key('btn_quiet_hours_save');
+  static Key quietHoursPolicyOption(String storageKey) =>
+      Key('radio_quiet_hours_$storageKey');
+
   // ━━━ 読書統計ダッシュボード ━━━
   static const Key readingStatisticsMonthlyChart =
       Key('chart_reading_statistics_monthly');

@@ -38,6 +38,9 @@ class BoxNames {
   /// 読書リマインダー設定（単一オブジェクト、index 0 保存）
   static const String reminder = 'reminder_box';
 
+  /// 静穏時間（おやすみモード）設定（'quiet_hours_settings' キーに JSON 文字列保存）
+  static const String quietHours = 'quiet_hours_box';
+
   /// 自作棚（JSON 文字列のコレクション: shelfId → BookShelf json）
   static const String shelves = 'shelves_box';
 
@@ -56,6 +59,7 @@ class BoxNames {
     tutorial,
     warTrophies,
     reminder,
+    quietHours,
     shelves,
     readingGoal,
     readingQueue,

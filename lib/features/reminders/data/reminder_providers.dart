@@ -7,22 +7,43 @@ import 'package:tsundoku_quest/core/infrastructure/hive/box_manager_provider.dar
 import 'package:tsundoku_quest/domain/models/reading_reminder_settings.dart';
 import 'package:tsundoku_quest/domain/models/user_book.dart';
 import 'package:tsundoku_quest/shared/providers/derived_provider.dart';
+import '../domain/quiet_hours_service.dart';
 import '../domain/reading_reminder_scheduler.dart';
 import 'flutter_local_reminder_service.dart';
+import 'hive_quiet_hours_repository.dart';
 import 'hive_reminder_settings_repository.dart';
 import 'local_notification_scheduler.dart';
+import 'quiet_hours_repository.dart';
 import 'reminder_settings_repository.dart';
 
 /// ローカル通知スケジューラ（テストでは Fake に置換）
+///
+/// 静穏時間ガードを注入するため、production でも保存済み設定が通知経路へ
+/// 自動反映される（保存しただけで効かない分裂を作らない）。
 final localNotificationSchedulerProvider =
     Provider<LocalNotificationScheduler>((ref) {
-  return FlutterLocalReminderService(FlutterLocalNotificationsPlugin());
+  return FlutterLocalReminderService(
+    FlutterLocalNotificationsPlugin(),
+    guard: ref.watch(quietHoursGuardProvider),
+  );
+});
+
+/// 静穏時間設定の永続化リポジトリ
+final quietHoursRepositoryProvider = Provider<QuietHoursRepository>((ref) {
+  final boxManager = ref.watch(hiveBoxManagerProvider);
+  return HiveQuietHoursRepository(boxManager);
+});
+
+/// 静穏時間ガード（リポジトリの設定を通知予約時刻へ適用する）
+final quietHoursGuardProvider = Provider<QuietHoursGuard>((ref) {
+  return QuietHoursRepositoryGuard(ref.watch(quietHoursRepositoryProvider));
 });
 
 /// リマインダー統括サービス
 final readingReminderSchedulerProvider =
     Provider<ReadingReminderScheduler>((ref) {
-  return ReadingReminderScheduler(ref.watch(localNotificationSchedulerProvider));
+  return ReadingReminderScheduler(
+      ref.watch(localNotificationSchedulerProvider));
 });
 
 /// Hive 永続化リポジトリ
@@ -73,7 +94,8 @@ class ReminderSettingsNotifier extends StateNotifier<ReadingReminderSettings> {
   }
 
   Future<void> _reschedule() async {
-    final count = _ref.read(userBooksByStatusProvider(state.targetStatus)).length;
+    final count =
+        _ref.read(userBooksByStatusProvider(state.targetStatus)).length;
     await _scheduler.applySettings(settings: state, tsundokuCount: count);
   }
 }

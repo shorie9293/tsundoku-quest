@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -13,6 +14,7 @@ import 'features/auth/presentation/login_screen.dart';
 import 'features/recommendation/presentation/recommendation_screen.dart';
 import 'features/tutorial/presentation/tutorial_screen.dart';
 import 'features/tutorial/data/tutorial_preferences.dart';
+import 'features/reminders/data/reminder_providers.dart';
 import 'features/reminders/presentation/reminder_settings_screen.dart';
 import 'features/settings/presentation/text_scale_settings_screen.dart';
 import 'features/settings/presentation/theme_mode_settings_screen.dart';
@@ -113,7 +115,12 @@ class AppRouter {
         ),
         GoRoute(
           path: '/reminder-settings',
-          builder: (context, state) => const ReminderSettingsScreen(),
+          builder: (context, state) => Consumer(
+            builder: (context, ref, _) => ReminderSettingsScreen(
+              // 静穏時間の永続化リポジトリを注入 → 設定画面への導線が出る。
+              quietHoursRepository: ref.watch(quietHoursRepositoryProvider),
+            ),
+          ),
         ),
         GoRoute(
           path: '/settings/text-scale',
