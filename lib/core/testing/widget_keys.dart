@@ -222,6 +222,11 @@ class AppKeys {
   static const Key readingForecastLabel = Key('txt_reading_forecast');
   static const Key readingForecastPace = Key('txt_reading_pace');
 
+  // ━━━ 設定ハブ ━━━
+  static const Key settingsHubScreen = Key('screen_settings_hub');
+  static const Key settingsHubEntry = Key('btn_settings_hub_entry');
+  static Key settingsHubItem(String id) => Key('item_settings_hub_$id');
+
   // ━━━ テーマ設定 ━━━
   static const Key themeModeScreen = Key('screen_theme_mode_settings');
   static const Key themeModeEntry = Key('btn_theme_mode_settings');
