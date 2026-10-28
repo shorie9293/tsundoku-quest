@@ -28,6 +28,17 @@ final localNotificationSchedulerProvider =
   );
 });
 
+/// 通知タップ経路を持つ具象サービス（型付きで取り出す）。
+///
+/// `LocalNotificationScheduler` は抽象のため、タップ配線に必要な
+/// `onRouteSelected` / `consumePendingRoute` を持つ実装だけを露出する。
+/// 試練で Fake に差し替えられている場合は null（配線は静かにスキップ）。
+final notificationTapServiceProvider =
+    Provider<FlutterLocalReminderService?>((ref) {
+  final scheduler = ref.watch(localNotificationSchedulerProvider);
+  return scheduler is FlutterLocalReminderService ? scheduler : null;
+});
+
 /// 静穏時間設定の永続化リポジトリ
 final quietHoursRepositoryProvider = Provider<QuietHoursRepository>((ref) {
   final boxManager = ref.watch(hiveBoxManagerProvider);

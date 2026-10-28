@@ -25,6 +25,7 @@ import 'features/reading/data/reading_session_repository_provider.dart';
 import 'features/reading/data/fallback_reading_session_repository.dart';
 import 'features/tutorial/data/tutorial_preferences.dart';
 import 'features/reminders/data/reminder_providers.dart';
+import 'features/reminders/presentation/notification_tap_router.dart';
 import 'features/settings/data/text_scale_provider.dart';
 import 'features/settings/data/theme_mode_provider.dart';
 import 'features/settings/data/reduce_motion_provider.dart';
@@ -452,11 +453,25 @@ class _AppStartupInitializerState
   ///
   /// 通知プラグインを初期化し、保存済み設定を読み込んで毎日の通知を
   /// スケジュールする。失敗してもアプリ動作は妨げない。
+  /// 通知タップの遷移先（payload）は [NotificationTapRouter] が
+  /// go_router へ渡す。起動前タップは保留から1度だけ回収する。
   void _initReminder() {
     try {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         try {
+          final service = ref.read(notificationTapServiceProvider);
+          final tapRouter = NotificationTapRouter(
+            routerGetter: () => AppRouter.router,
+          );
+          // 稼働中のタップはコールバックへ直送（未知 route は router 側で無視）
+          service?.onRouteSelected = tapRouter.onNotificationTap;
+
           await ref.read(localNotificationSchedulerProvider).initialize();
+
+          // 完全終了状態から通知タップで起動した場合の回収（1度だけ）。
+          final pending = service?.consumePendingRoute();
+          if (pending != null) tapRouter.handle(pending);
+
           await ref.read(reminderSettingsProvider.notifier).load();
         } catch (e) {
           debugPrint('⚠️ リマインダー初期化失敗: $e');

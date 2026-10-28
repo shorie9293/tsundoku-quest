@@ -244,6 +244,8 @@ void main() {
           uiLocalNotificationDateInterpretation: any(
             named: 'uiLocalNotificationDateInterpretation',
           ),
+          // 通知タップ経路の追加に伴い payload も照合対象へ（意図は従来どおり）
+          payload: any(named: 'payload'),
         ),
       ).thenAnswer((_) async {});
 
@@ -270,6 +272,8 @@ void main() {
           uiLocalNotificationDateInterpretation: any(
             named: 'uiLocalNotificationDateInterpretation',
           ),
+          // 通知タップ経路の追加に伴い payload も照合対象へ（意図は従来どおり）
+          payload: any(named: 'payload'),
         ),
       ).captured;
       final scheduled = captured.single as DateTime;
@@ -315,6 +319,8 @@ void main() {
           uiLocalNotificationDateInterpretation: any(
             named: 'uiLocalNotificationDateInterpretation',
           ),
+          // 通知タップ経路の追加に伴い payload も照合対象へ（意図は従来どおり）
+          payload: any(named: 'payload'),
         ),
       );
     });
@@ -332,6 +338,8 @@ void main() {
           uiLocalNotificationDateInterpretation: any(
             named: 'uiLocalNotificationDateInterpretation',
           ),
+          // 通知タップ経路の追加に伴い payload も照合対象へ（意図は従来どおり）
+          payload: any(named: 'payload'),
         ),
       ).thenAnswer((_) async {});
 
@@ -358,6 +366,8 @@ void main() {
           uiLocalNotificationDateInterpretation: any(
             named: 'uiLocalNotificationDateInterpretation',
           ),
+          // 通知タップ経路の追加に伴い payload も照合対象へ（意図は従来どおり）
+          payload: any(named: 'payload'),
         ),
       ).captured;
       final scheduled = captured.single as DateTime;
