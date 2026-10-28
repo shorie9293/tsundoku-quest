@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -42,6 +43,9 @@ import 'core/infrastructure/app_lock_gate.dart';
 import 'features/shared/data/tsundoku_reward_event_exporter.dart';
 import 'features/shared/data/reward_event_user_linker.dart';
 import 'features/shared/providers/reward_event_exporter_provider.dart';
+import 'features/auto_backup/data/auto_backup_bootstrap.dart';
+import 'features/backup/data/backup_repository.dart';
+import 'features/goals/data/reading_goal_repository.dart';
 
 /// アプリ完全終了状態から起動した場合の初期ディープリンクを保持
 Uri? _pendingInitialDeepLink;
@@ -171,6 +175,21 @@ Future<void> main() async {
 
   // ── データ移行（初回起動時のみ）──
   await _runHiveMigration();
+
+  // ── 起動時自動バックアップ（1日1回・世代3ローテーション）──
+  // Kanban t_db8484e0 / 改善提案 #188。既存の手動エクスポートは置換せず追加のみ。
+  // Hive 初期化済みの地点で投げっぱなしにし、起動をブロックしない。
+  final autoBackupBoxManager = HiveBoxManager();
+  final autoBackupRepository = HiveBackupRepository(
+    autoBackupBoxManager,
+    goalRepository: HiveReadingGoalRepository(autoBackupBoxManager),
+  );
+  scheduleAutoBackup(
+    buildJson: () async {
+      final data = await autoBackupRepository.collect();
+      return const JsonEncoder.withIndent('  ').convert(data.toJson());
+    },
+  );
 
   debugPrint('🚀 runApp 開始...');
   // ━━━ アプリ間送客用ディープリンク受信基盤 ━━━
