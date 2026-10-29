@@ -7,6 +7,7 @@ import 'package:tsundoku_quest/features/about/presentation/about_screen.dart';
 import 'package:tsundoku_quest/features/backup/presentation/backup_screen.dart';
 import 'package:tsundoku_quest/features/reminders/data/reminder_providers.dart';
 import 'package:tsundoku_quest/features/reminders/presentation/quiet_hours_settings_screen.dart';
+import 'package:tsundoku_quest/features/reminders/data/notification_permission_requester.dart';
 import 'package:tsundoku_quest/features/reminders/presentation/reminder_settings_screen.dart';
 import 'package:tsundoku_quest/features/settings/presentation/app_lock_settings_screen.dart';
 import 'package:tsundoku_quest/features/settings/presentation/reduce_motion_settings_screen.dart';
@@ -157,6 +158,8 @@ Widget buildAppLockSettings(BuildContext context) =>
 Widget buildReminderSettings(BuildContext context) => Consumer(
       builder: (context, ref, _) => ReminderSettingsScreen(
         quietHoursRepository: ref.watch(quietHoursRepositoryProvider),
+        // 通知権限の要求（Android 13+ は要求しないと通知が出ない）。
+        permissionRequester: PlatformNotificationPermissionRequester(),
       ),
     );
 

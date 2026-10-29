@@ -15,6 +15,7 @@ import 'features/recommendation/presentation/recommendation_screen.dart';
 import 'features/tutorial/presentation/tutorial_screen.dart';
 import 'features/tutorial/data/tutorial_preferences.dart';
 import 'features/reminders/data/reminder_providers.dart';
+import 'features/reminders/data/notification_permission_requester.dart';
 import 'features/reminders/presentation/reminder_settings_screen.dart';
 import 'features/settings/presentation/text_scale_settings_screen.dart';
 import 'features/settings/presentation/theme_mode_settings_screen.dart';
@@ -119,6 +120,8 @@ class AppRouter {
             builder: (context, ref, _) => ReminderSettingsScreen(
               // 静穏時間の永続化リポジトリを注入 → 設定画面への導線が出る。
               quietHoursRepository: ref.watch(quietHoursRepositoryProvider),
+              // 通知権限の要求（Android 13+ は要求しないと通知が出ない）。
+              permissionRequester: PlatformNotificationPermissionRequester(),
             ),
           ),
         ),

@@ -149,6 +149,12 @@ class AppKeys {
   static const Key reminderSettingsScreen = Key('screen_reminder_settings');
   static const Key reminderSettingsButton = Key('btn_reminder_settings');
   static const Key reminderEnabledSwitch = Key('switch_reminder_enabled');
+
+  // 通知権限（Android 13+ の POST_NOTIFICATIONS）
+  static const Key reminderPermissionBanner =
+      Key('banner_reminder_permission');
+  static const Key reminderPermissionSettingsButton =
+      Key('btn_reminder_permission_settings');
   static const Key reminderTimeTile = Key('tile_reminder_time');
   static const Key reminderTimeText = Key('txt_reminder_time');
 

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tsundoku_quest/core/testing/widget_keys.dart';
 import 'package:tsundoku_quest/domain/models/user_book.dart';
 import '../data/quiet_hours_repository.dart';
+import '../data/notification_permission_requester.dart';
 import '../data/reminder_providers.dart';
 import 'quiet_hours_settings_screen.dart';
 
@@ -17,6 +18,7 @@ class ReminderSettingsScreen extends ConsumerStatefulWidget {
     super.key,
     this.quietHoursRepository,
     this.quietHoursScreenBuilder,
+    this.permissionRequester,
   });
 
   /// 静穏時間設定のリポジトリ（注入時のみ導線を出す）。
@@ -25,6 +27,11 @@ class ReminderSettingsScreen extends ConsumerStatefulWidget {
   /// 静穏時間画面のビルダー（試練での差し替え用）。
   final WidgetBuilder? quietHoursScreenBuilder;
 
+  /// 通知権限の要求窓口。
+  ///
+  /// 未注入なら権限要求もバナーも行わない（従来挙動・既存試練の無破壊）。
+  final NotificationPermissionRequester? permissionRequester;
+
   @override
   ConsumerState<ReminderSettingsScreen> createState() =>
       _ReminderSettingsScreenState();
@@ -32,6 +39,9 @@ class ReminderSettingsScreen extends ConsumerStatefulWidget {
 
 class _ReminderSettingsScreenState
     extends ConsumerState<ReminderSettingsScreen> {
+  NotificationPermissionStatus? _permission;
+  bool _askedOnce = false;
+
   @override
   void initState() {
     super.initState();
@@ -39,6 +49,63 @@ class _ReminderSettingsScreenState
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(reminderSettingsProvider.notifier).load();
     });
+    _ensurePermission(alreadyAsked: _askedOnce);
+  }
+
+  /// 通知権限を確保する（画面表示時の1回＋通知をONにした時）。
+  Future<void> _ensurePermission({bool alreadyAsked = false}) async {
+    final requester = widget.permissionRequester;
+    if (requester == null) return;
+    final status = await requester.ensure(alreadyAsked: alreadyAsked);
+    _askedOnce = true;
+    if (!mounted) return;
+    setState(() => _permission = status);
+  }
+
+  bool get _showPermissionBanner =>
+      _permission == NotificationPermissionStatus.denied ||
+      _permission == NotificationPermissionStatus.permanentlyDenied;
+
+  Widget _buildPermissionBanner(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      key: AppKeys.reminderPermissionBanner,
+      color: scheme.errorContainer,
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.notifications_off, color: scheme.onErrorContainer),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '通知が許可されていません。'
+                  '端末の設定 > アプリ > 通知 から許可してください。',
+                  style: TextStyle(color: scheme.onErrorContainer),
+                ),
+              ),
+            ],
+          ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              key: AppKeys.reminderPermissionSettingsButton,
+              onPressed: () => widget.permissionRequester?.openAppSettings(),
+              child: const Text('設定を開く'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 通知の有効/無効を切り替える（ON にした時だけ権限を要求する）。
+  void _setEnabled(bool enabled) {
+    ref.read(reminderSettingsProvider.notifier).setEnabled(enabled);
+    if (enabled) _ensurePermission();
   }
 
   Future<void> _pickTime(int currentHour, int currentMinute) async {
@@ -93,6 +160,7 @@ class _ReminderSettingsScreenState
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          if (_showPermissionBanner) _buildPermissionBanner(context),
           ListTile(
             leading: const Icon(Icons.notifications_active),
             title: const Text('毎日のリマインダー'),
@@ -100,12 +168,9 @@ class _ReminderSettingsScreenState
             trailing: Switch(
               key: AppKeys.reminderEnabledSwitch,
               value: settings.enabled,
-              onChanged: (v) =>
-                  ref.read(reminderSettingsProvider.notifier).setEnabled(v),
+              onChanged: _setEnabled,
             ),
-            onTap: () => ref
-                .read(reminderSettingsProvider.notifier)
-                .setEnabled(!settings.enabled),
+            onTap: () => _setEnabled(!settings.enabled),
           ),
           const Divider(),
           ListTile(
