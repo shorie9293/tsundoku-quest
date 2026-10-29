@@ -46,6 +46,12 @@ import 'features/shared/providers/reward_event_exporter_provider.dart';
 import 'features/auto_backup/data/auto_backup_bootstrap.dart';
 import 'features/backup/data/backup_repository.dart';
 import 'features/goals/data/reading_goal_repository.dart';
+import 'features/lifecycle/domain/day_rollover_detector.dart';
+import 'features/lifecycle/presentation/app_lifecycle_refresher.dart';
+import 'features/history/data/reading_statistics_provider.dart';
+import 'features/history/data/weekly_reading_provider.dart';
+import 'features/goals/data/reading_goal_provider.dart';
+import 'features/bookshelf/data/daily_mission_provider.dart';
 
 /// アプリ完全終了状態から起動した場合の初期ディープリンクを保持
 Uri? _pendingInitialDeepLink;
@@ -88,6 +94,22 @@ void wireRewardEventExporter({
   } catch (e) {
     debugPrint('⚠️ 報酬イベント書き出しの配線失敗（アプリは継続）: $e');
   }
+}
+
+/// 日付跨ぎ（前面復帰）で再計算すべき「日付依存 Provider」の invalidate。
+///
+/// `grep -rn "DateTime.now()" lib` で実在を確認したものだけを列挙する。
+/// 依存の連鎖で再計算されるものは末端だけを落とす。
+///   - [statisticsClockProvider] … 月別/年別読書統計（monthly/yearly）の時刻源
+///   - [monthlyGoalProgressProvider] / [yearlyGoalProgressProvider] … 今月/今年の達成率
+///   - [dailyMissionProvider] … デイリーミッション（日付が変われば再生成）
+///   - [weeklyReadingMinutesProvider] … 直近7日窓の読書時間
+void invalidateDateDependentProviders(ProviderContainer container) {
+  container.invalidate(statisticsClockProvider);
+  container.invalidate(monthlyGoalProgressProvider);
+  container.invalidate(yearlyGoalProgressProvider);
+  container.invalidate(dailyMissionProvider);
+  container.invalidate(weeklyReadingMinutesProvider);
 }
 
 Future<void> main() async {
@@ -216,13 +238,43 @@ Future<void> main() async {
   // 認証状態を購読して userId を追随させる（Supabase 未初期化なら静かに no-op）
   wireRewardEventExporter(exporter: rewardEventExporter);
 
+  // ── 前面復帰時の日付跨ぎ再計算（kanban #194）──
+  // 端末を一晩スリープさせたまま翌朝復帰すると、`DateTime.now()` を
+  // build 時に読む Provider は前日の値を持ち続ける。resumed で検知して
+  // 日付依存 Provider を invalidate し、再計算させる。
+  final dayRolloverDetector = DayRolloverDetector(lastSeen: DateTime.now());
+
   runApp(
     ProviderScope(
       overrides: [
         tsundokuRewardEventExporterProvider
             .overrideWithValue(rewardEventExporter),
       ],
-      child: const TsundokuQuestApp(),
+      child: Builder(
+        builder: (context) => AppLifecycleRefresher(
+          detector: dayRolloverDetector,
+          onRollover: () async {
+            final container =
+                ProviderScope.containerOf(context, listen: false);
+            // ① 日付依存 Provider の再計算
+            invalidateDateDependentProviders(container);
+            // ② 通知の再スケジュール（既存 API を1回だけ。静穏時間ガードは
+            //    scheduler 側の guard がそのまま効くため壊さない）
+            try {
+              final reschedule =
+                  container.read(reminderSettingsProvider.notifier).load();
+              unawaited(
+                reschedule.catchError((Object e) {
+                  debugPrint('⚠️ 日付跨ぎの通知再スケジュール失敗（アプリは継続）: $e');
+                }),
+              );
+            } catch (e) {
+              debugPrint('⚠️ 日付跨ぎの通知再スケジュール失敗（アプリは継続）: $e');
+            }
+          },
+          child: const TsundokuQuestApp(),
+        ),
+      ),
     ),
   );
   debugPrint('🏁 runApp 完了');
