@@ -44,6 +44,14 @@ void main() {
 
       expect((await store.list()).single.createdAt, now);
     });
+
+    test('read は書き込み内容を往復し、未存在は null', () async {
+      final store = InMemoryAutoBackupStore();
+      await store.write('auto_backup_20261029.json', '{"v":1}');
+
+      expect(await store.read('auto_backup_20261029.json'), '{"v":1}');
+      expect(await store.read('auto_backup_20990101.json'), isNull);
+    });
   });
 
   group('FileAutoBackupStore', () {
@@ -78,7 +86,8 @@ void main() {
       await store.write('auto_backup_20260101.json', '{"v":1}');
       await store.write('auto_backup_20260101.json', '{"v":2}');
 
-      final file = File('${tempDir.path}/auto_backups/auto_backup_20260101.json');
+      final file =
+          File('${tempDir.path}/auto_backups/auto_backup_20260101.json');
       expect(await file.exists(), isTrue);
       expect(await file.readAsString(), '{"v":2}');
     });
@@ -102,6 +111,13 @@ void main() {
             .exists(),
         isFalse,
       );
+    });
+
+    test('read は内容を往復し、未存在は null（例外を投げない）', () async {
+      await store.write('auto_backup_20260101.json', '{"v":7}');
+
+      expect(await store.read('auto_backup_20260101.json'), '{"v":7}');
+      expect(await store.read('auto_backup_20991231.json'), isNull);
     });
   });
 }

@@ -18,6 +18,9 @@ abstract interface class AutoBackupStore {
   /// [fileName] で書き込む（同日同名は上書き＝冪等）
   Future<void> write(String fileName, String contents);
 
+  /// [fileName] の内容（存在しなければ null）
+  Future<String?> read(String fileName);
+
   /// [fileName] を削除する
   Future<void> delete(String fileName);
 }
@@ -48,6 +51,9 @@ class InMemoryAutoBackupStore implements AutoBackupStore {
     _contents[fileName] = contents;
     _createdAt[fileName] = _now();
   }
+
+  @override
+  Future<String?> read(String fileName) async => _contents[fileName];
 
   @override
   Future<void> delete(String fileName) async {
@@ -99,16 +105,27 @@ class FileAutoBackupStore implements AutoBackupStore {
   @override
   Future<void> write(String fileName, String contents) async {
     final dir = await _ensureDir();
-    final file =
-        File('${dir.path}${Platform.pathSeparator}$fileName');
+    final file = File('${dir.path}${Platform.pathSeparator}$fileName');
     await file.writeAsString(contents, flush: true);
+  }
+
+  @override
+  Future<String?> read(String fileName) async {
+    final dir = await _ensureDir();
+    final file = File('${dir.path}${Platform.pathSeparator}$fileName');
+    try {
+      if (!await file.exists()) return null;
+      return await file.readAsString();
+    } catch (e) {
+      debugPrint('[AutoBackup] read failed ($fileName): $e');
+      return null;
+    }
   }
 
   @override
   Future<void> delete(String fileName) async {
     final dir = await _ensureDir();
-    final file =
-        File('${dir.path}${Platform.pathSeparator}$fileName');
+    final file = File('${dir.path}${Platform.pathSeparator}$fileName');
     if (await file.exists()) {
       await file.delete();
     }

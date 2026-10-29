@@ -48,6 +48,10 @@ void main() {
         called.add('backup');
         return fake('backup');
       },
+      autoBackupBuilder: (_) {
+        called.add('auto_backup');
+        return fake('auto_backup');
+      },
       aboutBuilder: (_) {
         called.add('about');
         return fake('about');
@@ -68,7 +72,7 @@ void main() {
 
     expect(find.byKey(AppKeys.settingsHubScreen), findsOneWidget);
     expect(find.text('設定'), findsOneWidget);
-    expect(find.byType(ListTile), findsNWidgets(8));
+    expect(find.byType(ListTile), findsNWidgets(9));
 
     const labels = <String>[
       'テーマ設定',
@@ -78,6 +82,7 @@ void main() {
       '読書リマインダー',
       '静穏時間（おやすみモード）',
       'バックアップ',
+      '自動バックアップ',
       'アプリについて',
     ];
     for (final label in labels) {
@@ -95,8 +100,7 @@ void main() {
     expect(find.text('FAKE:theme_mode'), findsWidgets);
   });
 
-  testWidgets('文字サイズ・動きを減らす・アプリロックの各ビルダーが呼ばれる',
-      (tester) async {
+  testWidgets('文字サイズ・動きを減らす・アプリロックの各ビルダーが呼ばれる', (tester) async {
     final called = await pumpHub(tester);
 
     for (final id in ['text_scale', 'reduce_motion', 'app_lock']) {
@@ -127,7 +131,7 @@ void main() {
   testWidgets('バックアップ・アプリについてのビルダーが呼ばれる', (tester) async {
     final called = await pumpHub(tester);
 
-    for (final id in ['backup', 'about']) {
+    for (final id in ['backup', 'auto_backup', 'about']) {
       await tester.tap(find.byKey(AppKeys.settingsHubItem(id)));
       await tester.pumpAndSettle();
       expect(find.text('FAKE:$id'), findsWidgets);
@@ -135,7 +139,7 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    expect(called, containsAll(['backup', 'about']));
+    expect(called, containsAll(['backup', 'auto_backup', 'about']));
   });
 
   testWidgets('遷移先から戻るとハブが再表示される', (tester) async {
@@ -149,7 +153,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(AppKeys.settingsHubScreen), findsOneWidget);
-    expect(find.byType(ListTile), findsNWidgets(8));
+    expect(find.byType(ListTile), findsNWidgets(9));
   });
 
   testWidgets('テーマ設定画面の導線から設定ハブへ到達できる', (tester) async {

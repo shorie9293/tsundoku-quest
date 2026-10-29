@@ -12,11 +12,13 @@ import 'package:tsundoku_quest/features/auto_backup/domain/auto_backup_service.d
 /// list が必ず失敗する保管庫（例外握りの検証用）
 class _FailingStore implements AutoBackupStore {
   @override
-  Future<List<AutoBackupEntry>> list() async =>
-      throw StateError('list failed');
+  Future<List<AutoBackupEntry>> list() async => throw StateError('list failed');
 
   @override
   Future<void> write(String fileName, String contents) async {}
+
+  @override
+  Future<String?> read(String fileName) async => null;
 
   @override
   Future<void> delete(String fileName) async {}
@@ -154,7 +156,8 @@ void main() {
       await pumpEventQueue();
       final entries = await store.list();
       expect(entries, hasLength(1));
-      expect(AutoBackupPolicy.isAutoBackupFile(entries.single.fileName), isTrue);
+      expect(
+          AutoBackupPolicy.isAutoBackupFile(entries.single.fileName), isTrue);
     });
   });
 }

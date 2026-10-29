@@ -1,9 +1,19 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:takamagahara_ui/takamagahara_ui.dart' hide AppKeys;
 
 import 'package:tsundoku_quest/core/testing/widget_keys.dart';
 import 'package:tsundoku_quest/features/about/presentation/about_screen.dart';
+import 'package:tsundoku_quest/features/auto_backup/data/auto_backup_restorer_impl.dart';
+import 'package:tsundoku_quest/features/auto_backup/data/auto_backup_sharer_impl.dart';
+import 'package:tsundoku_quest/features/auto_backup/data/auto_backup_store.dart';
+import 'package:tsundoku_quest/features/auto_backup/domain/auto_backup_service.dart';
+import 'package:tsundoku_quest/features/auto_backup/presentation/auto_backup_screen.dart';
+import 'package:tsundoku_quest/features/backup/data/backup_repository.dart';
+import 'package:tsundoku_quest/features/backup/domain/backup_exporter.dart';
+import 'package:tsundoku_quest/features/backup/domain/backup_models.dart';
 import 'package:tsundoku_quest/features/backup/presentation/backup_screen.dart';
 import 'package:tsundoku_quest/features/reminders/data/reminder_providers.dart';
 import 'package:tsundoku_quest/features/reminders/presentation/quiet_hours_settings_screen.dart';
@@ -31,6 +41,7 @@ class SettingsHubScreen extends StatelessWidget {
     this.reminderBuilder = buildReminderSettings,
     this.quietHoursBuilder = buildQuietHoursSettings,
     this.backupBuilder = buildBackupSettings,
+    this.autoBackupBuilder = buildAutoBackupSettings,
     this.aboutBuilder = buildAboutSettings,
   });
 
@@ -41,6 +52,7 @@ class SettingsHubScreen extends StatelessWidget {
   final WidgetBuilder reminderBuilder;
   final WidgetBuilder quietHoursBuilder;
   final WidgetBuilder backupBuilder;
+  final WidgetBuilder autoBackupBuilder;
   final WidgetBuilder aboutBuilder;
 
   /// 一覧の定義（並び順がそのまま表示順）。
@@ -86,6 +98,12 @@ class SettingsHubScreen extends StatelessWidget {
           icon: Icons.cloud_upload_outlined,
           label: 'バックアップ',
           builder: backupBuilder,
+        ),
+        _SettingsHubItem(
+          id: 'auto_backup',
+          icon: Icons.history,
+          label: '自動バックアップ',
+          builder: autoBackupBuilder,
         ),
         _SettingsHubItem(
           id: 'about',
@@ -170,5 +188,42 @@ Widget buildQuietHoursSettings(BuildContext context) => Consumer(
     );
 
 Widget buildBackupSettings(BuildContext context) => const BackupScreen();
+
+/// 自動バックアップの閲覧・復元・共有（本番アダプタ注入）。
+///
+/// 復元は features/backup の既存インポート経路
+/// （`BackupData.tryFromJson` → `restore`）に委ねる。
+/// 「今すぐバックアップ」も同じ collect を使って強制実行する。
+Widget buildAutoBackupSettings(BuildContext context) => Consumer(
+      builder: (context, ref, _) {
+        final repository = ref.watch(backupRepositoryProvider);
+        final store = FileAutoBackupStore();
+
+        Future<String> buildJson() async {
+          final data = await repository.collect();
+          return const JsonEncoder.withIndent('  ').convert(data.toJson());
+        }
+
+        return AutoBackupScreen(
+          store: store,
+          restorer: AutoBackupRestorerImpl(
+            store: store,
+            buildCurrentJson: buildJson,
+            applyBackup: (json) async {
+              final decoded = backupJsonDecode(json);
+              final data = BackupData.tryFromJson(decoded);
+              if (data == null) {
+                throw const FormatException('バックアップJSONの形式が正しくありません');
+              }
+              await repository.restore(data);
+            },
+          ),
+          sharer: FileAutoBackupSharer(),
+          onBackupNow: () async {
+            await AutoBackupService(store: store).run(buildJson);
+          },
+        );
+      },
+    );
 
 Widget buildAboutSettings(BuildContext context) => const AboutScreen();
