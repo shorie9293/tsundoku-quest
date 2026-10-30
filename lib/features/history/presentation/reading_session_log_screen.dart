@@ -10,6 +10,8 @@ import '../../../../domain/repositories/reading_session_repository.dart';
 import '../../../../shared/providers/book_data_provider.dart';
 import '../../reading/data/reading_session_repository_provider.dart';
 import '../../reading/domain/reading_session_editor_service.dart';
+import '../../undo/domain/undo_buffer.dart';
+import '../../undo/presentation/undo_snack_bar.dart';
 
 /// 読書セッションの記録・修正・削除画面
 class ReadingSessionLogScreen extends ConsumerStatefulWidget {
@@ -36,6 +38,9 @@ class ReadingSessionLogScreen extends ConsumerStatefulWidget {
 class _ReadingSessionLogScreenState
     extends ConsumerState<ReadingSessionLogScreen> {
   List<ReadingSession> _sessions = const [];
+
+  /// 直近の削除を取り消すための単一スロット（二重復元防止）。
+  final _undoBuffer = UndoBuffer<ReadingSession>();
 
   // widget の値は late final で固めず getter で毎回読む（State 再利用対策）
   ReadingSessionRepository get _repo =>
@@ -110,8 +115,22 @@ class _ReadingSessionLogScreenState
       ),
     );
     if (confirmed == true) {
+      // 削除対象のコピーを保持 → 削除実行（即時削除の既存挙動は不変）
+      _undoBuffer.push(session);
       await _repo.deleteSession(session.id);
       await _reload();
+      if (!mounted) return;
+      showUndoSnackBar(
+        context,
+        message: '読書記録を削除しました',
+        onUndo: () async {
+          final deleted = _undoBuffer.take();
+          if (deleted == null) return;
+          // createSession は box.put(session.id, session) のため id は保たれる
+          await _repo.createSession(deleted);
+          await _reload();
+        },
+      );
     }
   }
 
