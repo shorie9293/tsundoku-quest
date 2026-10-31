@@ -72,9 +72,10 @@ void main() {
 
     expect(find.byKey(AppKeys.settingsHubScreen), findsOneWidget);
     expect(find.text('設定'), findsOneWidget);
-    expect(find.byType(ListTile), findsNWidgets(9));
+    expect(find.byType(ListTile), findsNWidgets(10));
 
     const labels = <String>[
+      '不具合の報告',
       'テーマ設定',
       '文字サイズ',
       '動きを減らす',
@@ -153,7 +154,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(AppKeys.settingsHubScreen), findsOneWidget);
-    expect(find.byType(ListTile), findsNWidgets(9));
+    expect(find.byType(ListTile), findsNWidgets(10));
   });
 
   testWidgets('テーマ設定画面の導線から設定ハブへ到達できる', (tester) async {

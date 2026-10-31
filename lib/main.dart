@@ -33,12 +33,15 @@ import 'features/settings/data/reduce_motion_provider.dart';
 import 'features/settings/domain/reduce_motion_setting.dart';
 import 'shared/providers/adventurer_provider.dart';
 import 'shared/providers/startup_loader.dart';
-import 'package:takamagahara_ui/takamagahara_ui.dart';
+import 'package:takamagahara_ui/takamagahara_ui.dart' hide ErrorBoundary;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:app_links/app_links.dart';
 import 'core/infrastructure/deep_link_service.dart';
+import 'core/crash/crash_guard.dart';
+import 'core/crash/crash_log_service.dart';
+import 'core/crash/error_boundary.dart';
 import 'core/infrastructure/app_lock_gate.dart';
 import 'features/shared/data/tsundoku_reward_event_exporter.dart';
 import 'features/shared/data/reward_event_user_linker.dart';
@@ -86,7 +89,8 @@ void wireRewardEventExporter({
       return;
     }
     if (authStates != null) {
-      RewardEventUserLinker(exporter: exporter).bindSupabaseAuthStates(authStates);
+      RewardEventUserLinker(exporter: exporter)
+          .bindSupabaseAuthStates(authStates);
       return;
     }
     // Supabase 未初期化時は tryCreateForSupabase が内部で握りつぶして null を返す
@@ -112,7 +116,24 @@ void invalidateDateDependentProviders(ProviderContainer container) {
   container.invalidate(weeklyReadingMinutesProvider);
 }
 
-Future<void> main() async {
+/// 未捕捉例外の最終防壁。
+///
+/// ゾーン内で投げられた例外（await 先の失敗を含む）を端末内ログへ記録し、
+/// 既存の初期化順序は [bootstrap] にそのまま残す。
+void main() {
+  runZonedGuarded(
+    () async {
+      await bootstrap();
+    },
+    (Object error, StackTrace stack) {
+      CrashLogger().record(error, stack, kind: 'zone');
+      debugPrint('💀 ゾーン未捕捉例外: $error');
+    },
+  );
+}
+
+/// アプリ本体の初期化（従来の main() の中身そのまま）。
+Future<void> bootstrap() async {
   debugPrint('🔵 main() 開始');
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -173,6 +194,9 @@ Future<void> main() async {
     }
     return true;
   };
+
+  // ④ 端末内クラッシュログへの合流（既存①②③を置き換えずに包む）
+  installCrashGuard();
 
   // ── Hive 初期化 ──
   try {
@@ -254,8 +278,7 @@ Future<void> main() async {
         builder: (context) => AppLifecycleRefresher(
           detector: dayRolloverDetector,
           onRollover: () async {
-            final container =
-                ProviderScope.containerOf(context, listen: false);
+            final container = ProviderScope.containerOf(context, listen: false);
             // ① 日付依存 Provider の再計算
             invalidateDateDependentProviders(container);
             // ② 通知の再スケジュール（既存 API を1回だけ。静穏時間ガードは
@@ -272,7 +295,7 @@ Future<void> main() async {
               debugPrint('⚠️ 日付跨ぎの通知再スケジュール失敗（アプリは継続）: $e');
             }
           },
-          child: const TsundokuQuestApp(),
+          child: ErrorBoundary(child: const TsundokuQuestApp()),
         ),
       ),
     ),
@@ -299,9 +322,7 @@ Future<void> _runHiveMigration() async {
               .from('user_books')
               .select('*, book:books(*)')
               .order('created_at', ascending: false);
-          return response
-              .map((json) => UserBook.fromSupabase(json))
-              .toList();
+          return response.map((json) => UserBook.fromSupabase(json)).toList();
         } catch (e) {
           debugPrint('[HiveMigration] UserBook fetch failed: $e');
           return [];
@@ -363,7 +384,8 @@ void _handleDeepLink(Uri uri) {
 
   // 送客元現世と報酬タイプを記録（受信基盤の具現化）。
   // 報酬付与は既存の報酬サービス等が担うため、ここでは受信を確認する。
-  debugPrint('[main] Cross reward: source=${link.source}, reward=${link.reward}');
+  debugPrint(
+      '[main] Cross reward: source=${link.source}, reward=${link.reward}');
 }
 
 class TsundokuQuestApp extends ConsumerStatefulWidget {

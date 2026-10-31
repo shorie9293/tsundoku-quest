@@ -77,7 +77,7 @@ void main() {
     });
 
     test('version は 1.1.31（pubspec 同期試練が真値を担保）', () {
-      expect(kAboutInfo.version, '1.1.31');
+      expect(kAboutInfo.version, '1.1.32');
       expect(kAboutInfo.version, isNotEmpty);
     });
   });

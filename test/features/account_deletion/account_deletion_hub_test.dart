@@ -12,7 +12,7 @@ void main() {
 
     expect(find.text('アカウント削除（退会）'), findsNothing);
     expect(find.byKey(AppKeys.settingsHubItem('account_deletion')), findsNothing);
-    expect(find.byType(ListTile), findsNWidgets(9));
+    expect(find.byType(ListTile), findsNWidgets(10));
   });
 
   testWidgets('accountDeletionBuilder 注入で退会項目が表示される', (tester) async {
@@ -27,10 +27,15 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('アカウント削除（退会）'), findsOneWidget);
-    expect(find.byType(ListTile), findsNWidgets(10));
+    // 11件目（退会）は初期表示で画面外のため、スクロールしてから検証する
+    final deletionItem = find.byKey(AppKeys.settingsHubItem('account_deletion'));
+    await tester.scrollUntilVisible(deletionItem, 120);
+    await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(AppKeys.settingsHubItem('account_deletion')));
+    expect(find.text('アカウント削除（退会）'), findsOneWidget);
+    expect(deletionItem, findsOneWidget);
+
+    await tester.tap(deletionItem);
     await tester.pumpAndSettle();
 
     expect(find.text('FAKE:account_deletion'), findsOneWidget);

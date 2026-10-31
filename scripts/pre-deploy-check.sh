@@ -28,6 +28,7 @@ echo ""
 echo "[3/5] 🧪 test shard 1/3 (core + shared)..."
 flutter test --no-pub -j 2 \
   test/core/ \
+  test/core/crash/ \
   test/shared/
 echo "✅ shard 1/3 passed"
 

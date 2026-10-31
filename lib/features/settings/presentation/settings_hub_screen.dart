@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:takamagahara_ui/takamagahara_ui.dart' hide AppKeys;
 
+import 'package:tsundoku_quest/core/crash/crash_log_repository.dart';
+import 'package:tsundoku_quest/core/crash/crash_log_screen.dart';
 import 'package:tsundoku_quest/core/testing/widget_keys.dart';
 import 'package:tsundoku_quest/features/about/presentation/about_screen.dart';
 import 'package:tsundoku_quest/features/account_deletion/data/hive_account_deletion_data_eraser.dart';
@@ -49,6 +51,7 @@ class SettingsHubScreen extends StatelessWidget {
     this.backupBuilder = buildBackupSettings,
     this.autoBackupBuilder = buildAutoBackupSettings,
     this.aboutBuilder = buildAboutSettings,
+    this.crashLogBuilder = buildCrashLogSettings,
     this.accountDeletionBuilder,
   });
 
@@ -62,6 +65,9 @@ class SettingsHubScreen extends StatelessWidget {
   final WidgetBuilder autoBackupBuilder;
   final WidgetBuilder aboutBuilder;
 
+  /// 不具合の報告（端末内クラッシュログ）の遷移先。
+  final WidgetBuilder crashLogBuilder;
+
   /// アカウント削除（退会）の遷移先。
   ///
   /// null のときは項目自体を出さない（退会導線を持たない構成・既存試練の後方互換）。
@@ -69,6 +75,14 @@ class SettingsHubScreen extends StatelessWidget {
 
   /// 一覧の定義（並び順がそのまま表示順）。
   List<_SettingsHubItem> get _items => [
+        // 先頭に「不具合の報告」。記録がある時だけ件数を添える。
+        _SettingsHubItem(
+          id: 'crash_log',
+          icon: Icons.bug_report_outlined,
+          label: '不具合の報告',
+          builder: crashLogBuilder,
+          showCrashCount: true,
+        ),
         _SettingsHubItem(
           id: 'theme_mode',
           icon: Icons.brightness_6_outlined,
@@ -152,7 +166,9 @@ class SettingsHubScreen extends StatelessWidget {
               child: ListTile(
                 key: AppKeys.settingsHubItem(item.id),
                 leading: Icon(item.icon),
-                title: Text(item.label),
+                title: item.showCrashCount
+                    ? _CrashLogLabel(label: item.label)
+                    : Text(item.label),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => _open(context, item),
               ),
@@ -169,12 +185,51 @@ class _SettingsHubItem {
     required this.icon,
     required this.label,
     required this.builder,
+    this.showCrashCount = false,
   });
 
   final String id;
   final IconData icon;
   final String label;
   final WidgetBuilder builder;
+
+  /// true のとき、保存済みクラッシュログ件数（1件以上の時のみ）を添える。
+  final bool showCrashCount;
+}
+
+/// 「不具合の報告」ラベル。記録が1件以上の時だけ `(N)` を付ける。
+class _CrashLogLabel extends StatefulWidget {
+  const _CrashLogLabel({required this.label});
+
+  final String label;
+
+  @override
+  State<_CrashLogLabel> createState() => _CrashLogLabelState();
+}
+
+class _CrashLogLabelState extends State<_CrashLogLabel> {
+  int _count = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final entries = await FileCrashLogRepository().loadAll();
+      if (!mounted) return;
+      setState(() => _count = entries.length);
+    } catch (_) {
+      // 件数が読めなくてもラベルは出す
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(_count > 0 ? '${widget.label} ($_count)' : widget.label);
+  }
 }
 
 /// 既定の遷移先ビルダー群（試練では注入で差し替える）。
@@ -246,6 +301,9 @@ Widget buildAutoBackupSettings(BuildContext context) => Consumer(
     );
 
 Widget buildAboutSettings(BuildContext context) => const AboutScreen();
+
+/// 不具合の報告（端末内クラッシュログの閲覧・コピー）。
+Widget buildCrashLogSettings(BuildContext context) => const CrashLogScreen();
 
 /// アカウント削除（退会）の本番結線。
 ///
