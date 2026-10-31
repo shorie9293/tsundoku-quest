@@ -7,8 +7,10 @@ import 'dart:async';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/testing/widget_keys.dart';
 import '../../../core/widgets/dungeon_background.dart';
+import '../../../core/widgets/load_state_views.dart';
 import '../../../domain/models/book.dart';
 import '../../../domain/models/user_book.dart';
+import '../../../shared/load_state.dart';
 import '../../../shared/providers/book_data_provider.dart';
 import '../../../shared/providers/book_search_service_provider.dart';
 import '../../../shared/repositories/book_search_service.dart';
@@ -31,8 +33,8 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
   final _isbnController = TextEditingController();
 
   // 検索状態
-  List<Book>? _searchResults;
-  bool _isSearching = false;
+  LoadState<List<Book>>? _searchState;
+  String _lastQuery = '';
 
   // スキャン状態
   bool _isScanning = false;
@@ -60,28 +62,37 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
     final trimmed = query.trim();
     if (trimmed.isEmpty) return;
 
+    _lastQuery = trimmed;
+
     setState(() {
-      _isSearching = true;
-      _searchResults = null;
+      _searchState = LoadState.loading();
     });
 
-    try {
-      final service = ref.read(bookSearchServiceProvider);
-      final results = await service.search(trimmed);
-      if (mounted) {
-        setState(() {
-          _searchResults = results;
-          _isSearching = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isSearching = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_errorMessage(e))),
-        );
-      }
+    final service = ref.read(bookSearchServiceProvider);
+    final result = await service.trySearch(trimmed);
+    if (!mounted) return;
+
+    if (result.isSuccess) {
+      final books = result.valueOrNull ?? const <Book>[];
+      setState(() {
+        _searchState = books.isEmpty
+            ? LoadState.empty()
+            : LoadState.data(books);
+      });
+      return;
     }
+
+    // 通信断・API異常は「0件」と混同せず、エラー表示＋再試行導線にする
+    setState(() {
+      _searchState = LoadState.error(
+        '読み込みに失敗しました',
+        retryable: result.retryable,
+        cause: result.cause,
+      );
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(_errorMessage(result.cause ?? result.message ?? ''))),
+    );
   }
 
   void _onManualSubmit() {
@@ -244,24 +255,24 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
   }
 
   Widget _buildSearchContent() {
-    if (_isSearching) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (_searchResults != null) {
-      if (_searchResults!.isEmpty) {
-        return const Center(
-          child: Text('検索結果が見つかりませんでした',
-              style: TextStyle(color: AppTheme.textSecondary)),
-        );
-      }
-      return SearchResultsWidget(
-        books: _searchResults!,
-        onAddBook: _addBook,
+    final state = _searchState;
+    if (state == null) {
+      return const Center(
+        child: Text('本を検索してください',
+            style: TextStyle(color: AppTheme.textSecondary)),
       );
     }
-    return const Center(
-      child: Text('本を検索してください',
-          style: TextStyle(color: AppTheme.textSecondary)),
+    return state.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      data: (books) => SearchResultsWidget(
+        books: books,
+        onAddBook: _addBook,
+      ),
+      empty: () => const LoadEmptyView(message: '検索結果が見つかりませんでした'),
+      error: (message, retryable) => LoadErrorView(
+        message: message,
+        onRetry: retryable ? () => _performSearch(_lastQuery) : null,
+      ),
     );
   }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:tsundoku_quest/domain/models/book.dart';
+import 'package:tsundoku_quest/shared/load_state.dart';
 import 'package:tsundoku_quest/shared/repositories/rakuten_api.dart';
 import 'package:tsundoku_quest/shared/repositories/openbd_api.dart';
 import 'package:tsundoku_quest/shared/repositories/google_books_api.dart';
@@ -76,6 +77,21 @@ class BookSearchService {
     }
 
     return [];
+  }
+
+  /// キーワード検索（失敗と0件を分離した版）
+  ///
+  /// [search] の結果を `LoadResult` として返す。全APIが通信不能なら
+  /// `failure`、正常応答で0件なら `success(空リスト)`。
+  Future<LoadResult<List<Book>>> trySearch(String query) async {
+    try {
+      final results = await search(query);
+      return LoadResult.success(results);
+    } on SearchException catch (e) {
+      return LoadResult.failure('読み込みに失敗しました', cause: e);
+    } catch (e) {
+      return LoadResult.failure('読み込みに失敗しました', cause: e);
+    }
   }
 
   /// ISBN ルックアップ
