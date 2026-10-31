@@ -6,6 +6,12 @@ import 'package:takamagahara_ui/takamagahara_ui.dart' hide AppKeys;
 
 import 'package:tsundoku_quest/core/testing/widget_keys.dart';
 import 'package:tsundoku_quest/features/about/presentation/about_screen.dart';
+import 'package:tsundoku_quest/features/account_deletion/data/hive_account_deletion_data_eraser.dart';
+import 'package:tsundoku_quest/features/account_deletion/domain/account_deletion_policy.dart';
+import 'package:tsundoku_quest/features/account_deletion/domain/account_deletion_service.dart';
+import 'package:tsundoku_quest/features/account_deletion/presentation/account_deletion_screen.dart';
+import 'package:tsundoku_quest/features/auth/domain/auth_state.dart';
+import 'package:tsundoku_quest/features/auth/presentation/auth_provider.dart';
 import 'package:tsundoku_quest/features/auto_backup/data/auto_backup_restorer_impl.dart';
 import 'package:tsundoku_quest/features/auto_backup/data/auto_backup_sharer_impl.dart';
 import 'package:tsundoku_quest/features/auto_backup/data/auto_backup_store.dart';
@@ -43,6 +49,7 @@ class SettingsHubScreen extends StatelessWidget {
     this.backupBuilder = buildBackupSettings,
     this.autoBackupBuilder = buildAutoBackupSettings,
     this.aboutBuilder = buildAboutSettings,
+    this.accountDeletionBuilder,
   });
 
   final WidgetBuilder themeModeBuilder;
@@ -54,6 +61,11 @@ class SettingsHubScreen extends StatelessWidget {
   final WidgetBuilder backupBuilder;
   final WidgetBuilder autoBackupBuilder;
   final WidgetBuilder aboutBuilder;
+
+  /// アカウント削除（退会）の遷移先。
+  ///
+  /// null のときは項目自体を出さない（退会導線を持たない構成・既存試練の後方互換）。
+  final WidgetBuilder? accountDeletionBuilder;
 
   /// 一覧の定義（並び順がそのまま表示順）。
   List<_SettingsHubItem> get _items => [
@@ -111,6 +123,13 @@ class SettingsHubScreen extends StatelessWidget {
           label: 'アプリについて',
           builder: aboutBuilder,
         ),
+        if (accountDeletionBuilder case final builder?)
+          _SettingsHubItem(
+            id: 'account_deletion',
+            icon: Icons.person_off_outlined,
+            label: 'アカウント削除（退会）',
+            builder: builder,
+          ),
       ];
 
   void _open(BuildContext context, _SettingsHubItem item) {
@@ -227,3 +246,40 @@ Widget buildAutoBackupSettings(BuildContext context) => Consumer(
     );
 
 Widget buildAboutSettings(BuildContext context) => const AboutScreen();
+
+/// アカウント削除（退会）の本番結線。
+///
+/// 恒久アカウント（[AuthAuthenticated]）のときだけ退会画面を出す。
+/// それ以外（ゲスト・未ログイン）は理由を添えた案内画面に留める。
+Widget buildAccountDeletionSettings(BuildContext context) => Consumer(
+      builder: (context, ref, _) {
+        final state = ref.watch(authStateProvider);
+        final canDelete = AccountDeletionPolicy.canDelete(
+          hasActiveSession: state is! AuthLoading,
+          isAnonymous: state is AuthGuest,
+        );
+
+        if (!canDelete) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('アカウント削除（退会）')),
+            body: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                AccountDeletionPolicy.summary(
+                  hasActiveSession: state is! AuthLoading,
+                  isAnonymous: state is AuthGuest,
+                ),
+              ),
+            ),
+          );
+        }
+
+        return AccountDeletionScreen(
+          service: AccountDeletionService(
+            // ローカル削除 → サインアウトの順序はサービス側が担保する。
+            clearLocalData: HiveAccountDeletionDataEraser().call,
+            signOut: () => ref.read(authStateProvider.notifier).signOut(),
+          ),
+        );
+      },
+    );

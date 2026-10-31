@@ -35,7 +35,9 @@ class ThemeModeSettingsScreen extends ConsumerWidget {
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute<void>(
-                  builder: (_) => const SettingsHubScreen(),
+                  builder: (_) => SettingsHubScreen(
+                    accountDeletionBuilder: buildAccountDeletionSettings,
+                  ),
                 ),
               ),
             ),
