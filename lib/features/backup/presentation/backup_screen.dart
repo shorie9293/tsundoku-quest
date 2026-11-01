@@ -17,6 +17,7 @@ import 'package:tsundoku_quest/features/backup/data/backup_repository.dart';
 import 'package:tsundoku_quest/features/backup/domain/backup_csv.dart';
 import 'package:tsundoku_quest/features/backup/domain/backup_exporter.dart';
 import 'package:tsundoku_quest/features/backup/domain/backup_models.dart';
+import 'package:tsundoku_quest/features/backup/domain/csv_bom.dart';
 import 'package:tsundoku_quest/features/backup/presentation/backup_keys.dart';
 
 /// 共有ゲートウェイ（試練ではフェイク注入）
@@ -42,7 +43,9 @@ class SharePlusBackupGateway implements BackupShareGateway {
       ShareParams(
         files: [
           XFile.fromData(
-            Uint8List.fromList(body.codeUnits),
+            // codeUnits(UTF-16) 切り詰めは日本語を破壊するため utf8.encode 必須。
+            // CSV は Excel 対策で BOM 付き UTF-8 とする。
+            Uint8List.fromList(shareFileBytes(mimeType: mimeType, body: body)),
             mimeType: mimeType,
             name: fileName,
           ),
