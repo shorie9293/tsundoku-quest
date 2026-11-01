@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
@@ -12,16 +13,28 @@ class RakutenApi {
   final String _appId;
   final String _accessKey;
 
+  /// 通信の打ち切り時間。応答が無いまま Future が永久に未完になるのを防ぐ。
+  final Duration _timeout;
+
   static const String _endpoint =
       'https://openapi.rakuten.co.jp/services/api/BooksTotal/Search/20170404';
+
+  /// 既定の打ち切り時間。
+  static const Duration defaultTimeout = Duration(seconds: 10);
 
   RakutenApi({
     required String appId,
     required String accessKey,
     http.Client? client,
+    Duration timeout = defaultTimeout,
   })  : _client = client ?? http.Client(),
         _appId = appId,
-        _accessKey = accessKey;
+        _accessKey = accessKey,
+        _timeout = timeout {
+    if (timeout <= Duration.zero) {
+      throw ArgumentError.value(timeout, 'timeout', '打ち切り時間は正の値であること');
+    }
+  }
 
   /// キーワード検索
   Future<List<Book>> search(String query) async {
@@ -41,7 +54,7 @@ class RakutenApi {
           'Referer': 'https://tsundoquest.netlify.app',
           'Origin': 'https://tsundoquest.netlify.app',
         },
-      );
+      ).timeout(_timeout);
       if (response.statusCode != 200) return [];
 
       final body =
@@ -55,6 +68,9 @@ class RakutenApi {
         final i = item['Item'] as Map<String, dynamic>;
         return _parseItem(i);
       }).toList();
+    } on TimeoutException {
+      // 時間切れは「0件」ではない。呼び出し側が失敗として扱えるよう投げ直す。
+      rethrow;
     } catch (_) {
       return [];
     }
@@ -77,7 +93,7 @@ class RakutenApi {
           'Referer': 'https://tsundoquest.netlify.app',
           'Origin': 'https://tsundoquest.netlify.app',
         },
-      );
+      ).timeout(_timeout);
       if (response.statusCode != 200) return null;
 
       final body =
@@ -89,6 +105,8 @@ class RakutenApi {
 
       final i = items.first['Item'] as Map<String, dynamic>;
       return _parseItem(i);
+    } on TimeoutException {
+      rethrow;
     } catch (_) {
       return null;
     }

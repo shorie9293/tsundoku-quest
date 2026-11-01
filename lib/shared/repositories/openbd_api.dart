@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
@@ -10,9 +11,21 @@ import 'package:tsundoku_quest/domain/models/book.dart';
 class OpenBDApi {
   final http.Client _client;
 
+  /// 通信の打ち切り時間。応答が無いまま Future が永久に未完になるのを防ぐ。
+  final Duration _timeout;
+
   static const String _endpoint = 'https://api.openbd.jp/v1/get';
 
-  OpenBDApi({http.Client? client}) : _client = client ?? http.Client();
+  /// 既定の打ち切り時間。
+  static const Duration defaultTimeout = Duration(seconds: 8);
+
+  OpenBDApi({http.Client? client, Duration timeout = defaultTimeout})
+      : _client = client ?? http.Client(),
+        _timeout = timeout {
+    if (timeout <= Duration.zero) {
+      throw ArgumentError.value(timeout, 'timeout', '打ち切り時間は正の値であること');
+    }
+  }
 
   /// ISBN によるルックアップ
   Future<Book?> lookupByIsbn(String isbn) async {
@@ -21,7 +34,7 @@ class OpenBDApi {
     );
 
     try {
-      final response = await _client.get(uri);
+      final response = await _client.get(uri).timeout(_timeout);
       if (response.statusCode != 200) return null;
 
       final List<dynamic> body =
@@ -33,6 +46,9 @@ class OpenBDApi {
 
       final data = item as Map<String, dynamic>;
       return _parseItem(data);
+    } on TimeoutException {
+      // 時間切れは「該当なし」ではない。失敗として投げ直す。
+      rethrow;
     } catch (_) {
       return null;
     }

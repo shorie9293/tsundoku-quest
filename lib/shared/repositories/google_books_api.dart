@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -18,15 +19,28 @@ class GoogleBooksApi {
   /// （テストダブルの `implements GoogleBooksApi` を壊さないよう private 保持）
   final bool _throwOnError;
 
+  /// 通信の打ち切り時間。圏外・無応答で Future が永久に完了しないのを防ぐ。
+  /// 試練から注入できるよう既定値は定数に置く。
+  final Duration _timeout;
+
   static const String _endpoint = 'https://www.googleapis.com/books/v1/volumes';
+
+  /// 既定の打ち切り時間（書誌検索は体感優先で8秒）。
+  static const Duration defaultTimeout = Duration(seconds: 8);
 
   GoogleBooksApi({
     required String apiKey,
     http.Client? client,
     bool throwOnError = false,
+    Duration timeout = defaultTimeout,
   })  : _client = client ?? http.Client(),
         _apiKey = apiKey,
-        _throwOnError = throwOnError;
+        _throwOnError = throwOnError,
+        _timeout = timeout {
+    if (timeout <= Duration.zero) {
+      throw ArgumentError.value(timeout, 'timeout', '打ち切り時間は正の値であること');
+    }
+  }
 
   /// キーワード検索
   Future<List<Book>> search(String query) async {
@@ -38,7 +52,7 @@ class GoogleBooksApi {
     });
 
     try {
-      final response = await _client.get(uri);
+      final response = await _client.get(uri).timeout(_timeout);
       if (response.statusCode != 200) {
         if (_throwOnError) {
           throw GoogleBooksException(
@@ -57,6 +71,13 @@ class GoogleBooksApi {
       return items
           .map((item) => _parseItem(item as Map<String, dynamic>))
           .toList();
+    } on TimeoutException catch (e) {
+      // 圏外・無応答は「失敗」であって「0件」ではない。時間切れを型で示す。
+      throw GoogleBooksException(
+        'Google Books が時間内に応答しませんでした',
+        isTimeout: true,
+        cause: e,
+      );
     } catch (_) {
       if (_throwOnError) rethrow;
       return [];
@@ -73,7 +94,7 @@ class GoogleBooksApi {
     });
 
     try {
-      final response = await _client.get(uri);
+      final response = await _client.get(uri).timeout(_timeout);
       if (response.statusCode != 200) {
         if (_throwOnError) {
           throw GoogleBooksException(
@@ -90,6 +111,12 @@ class GoogleBooksApi {
       if (items == null || items.isEmpty) return null;
 
       return _parseItem(items.first as Map<String, dynamic>);
+    } on TimeoutException catch (e) {
+      throw GoogleBooksException(
+        'Google Books が時間内に応答しませんでした',
+        isTimeout: true,
+        cause: e,
+      );
     } catch (_) {
       if (_throwOnError) rethrow;
       return null;
@@ -151,10 +178,23 @@ class GoogleBooksException implements Exception {
   final String message;
   final int? statusCode;
 
-  GoogleBooksException(this.message, {this.statusCode});
+  /// 打ち切り時間の超過（圏外・無応答・DNS不達）で発生したことを示す。
+  /// 「0件」と取り違えないための目印。
+  final bool isTimeout;
+
+  /// 元の例外（[TimeoutException] 等）。
+  final Object? cause;
+
+  GoogleBooksException(
+    this.message, {
+    this.statusCode,
+    this.isTimeout = false,
+    this.cause,
+  });
 
   @override
-  String toString() => 'GoogleBooksException($message)';
+  String toString() =>
+      'GoogleBooksException($message${isTimeout ? ', timeout' : ''})';
 }
 
 /// 失敗と0件を分離する読み込み用 API。
@@ -174,7 +214,7 @@ extension GoogleBooksLoadApi on GoogleBooksApi {
     });
 
     try {
-      final response = await _client.get(uri);
+      final response = await _client.get(uri).timeout(_timeout);
       if (response.statusCode != 200) {
         return LoadResult.failure(
           'Google Books に接続できませんでした（HTTP ${response.statusCode}）',
@@ -199,6 +239,22 @@ extension GoogleBooksLoadApi on GoogleBooksApi {
         books.add(_parseItem(item));
       }
       return LoadResult.success(books);
+    } on TimeoutException catch (e) {
+      return LoadResult.failure(
+        'Google Books が時間内に応答しませんでした（時間切れ）',
+        cause: GoogleBooksException(
+          'Google Books が時間内に応答しませんでした',
+          isTimeout: true,
+          cause: e,
+        ),
+      );
+    } on GoogleBooksException catch (e) {
+      return LoadResult.failure(
+        e.isTimeout
+            ? 'Google Books が時間内に応答しませんでした（時間切れ）'
+            : 'Google Books との通信に失敗しました',
+        cause: e,
+      );
     } catch (e) {
       return LoadResult.failure('Google Books との通信に失敗しました', cause: e);
     }
@@ -214,7 +270,7 @@ extension GoogleBooksLoadApi on GoogleBooksApi {
     });
 
     try {
-      final response = await _client.get(uri);
+      final response = await _client.get(uri).timeout(_timeout);
       if (response.statusCode != 200) {
         return LoadResult.failure(
           'Google Books に接続できませんでした（HTTP ${response.statusCode}）',
@@ -236,6 +292,15 @@ extension GoogleBooksLoadApi on GoogleBooksApi {
         );
       }
       return LoadResult.success(_parseItem(first));
+    } on TimeoutException catch (e) {
+      return LoadResult.failure(
+        'Google Books が時間内に応答しませんでした（時間切れ）',
+        cause: GoogleBooksException(
+          'Google Books が時間内に応答しませんでした',
+          isTimeout: true,
+          cause: e,
+        ),
+      );
     } catch (e) {
       return LoadResult.failure('Google Books との通信に失敗しました', cause: e);
     }
