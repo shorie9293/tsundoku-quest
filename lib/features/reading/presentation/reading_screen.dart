@@ -16,6 +16,8 @@ import '../../../../domain/models/user_book.dart';
 import '../../../../domain/models/war_trophy.dart';
 import '../../bookshelf/data/daily_mission_provider.dart';
 import '../data/reading_session_repository_provider.dart';
+import '../data/quick_memo_draft_store.dart';
+import '../domain/quick_memo.dart';
 import '../../history/data/reading_forecast_service.dart';
 import '../../history/presentation/widgets/reading_forecast_card.dart';
 import '../../../../domain/models/reading_session.dart';
@@ -25,7 +27,23 @@ import 'widgets/completion_effect.dart';
 /// 読書中画面
 class ReadingScreen extends ConsumerStatefulWidget {
   final String? id;
-  const ReadingScreen({super.key, this.id});
+
+  /// クイックメモ下書きの保存先（未指定なら SharedPreferences）
+  final QuickMemoDraftStore? memoDraftStore;
+
+  /// 入力から下書き保存までのデバウンス（試練では短縮して注入する）
+  final Duration memoDebounce;
+
+  /// 下書きの更新時刻に使う時計（試練では固定値を注入する）
+  final DateTime Function()? now;
+
+  const ReadingScreen({
+    super.key,
+    this.id,
+    this.memoDraftStore,
+    this.memoDebounce = const Duration(milliseconds: 800),
+    this.now,
+  });
 
   @override
   ConsumerState<ReadingScreen> createState() => _ReadingScreenState();
@@ -57,15 +75,90 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
   Timer? _tipTimer;
   Future<List<ReadingSession>>? _forecastSessions;
 
+  // ── クイックメモ下書き（#201） ──
+  late final QuickMemoDraftStore _memoDraftStore;
+  Timer? _memoDebounceTimer;
+  String _lastSavedMemoBody = '';
+
+  DateTime _memoNow() => widget.now?.call() ?? DateTime.now();
+
   @override
   void initState() {
     super.initState();
+    _memoDraftStore =
+        widget.memoDraftStore ?? SharedPreferencesQuickMemoDraftStore();
     _currentTipIndex = randomTipIndex();
     _startTipRotation();
     _loadForecastSessions();
+    unawaited(_restoreMemoDraft());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _startSession();
     });
+  }
+
+  /// 画面再入時に前回の下書きを復元する（入力済みなら上書きしない）。
+  Future<void> _restoreMemoDraft() async {
+    final id = widget.id;
+    if (id == null) return;
+    try {
+      final draft = await _memoDraftStore.load(id);
+      if (!mounted || draft == null || draft.isEmpty || draft.body.isEmpty) {
+        return;
+      }
+      if (_memoController.text.isNotEmpty) return; // 利用者の入力を尊重
+      _memoController.text = draft.body;
+      _lastSavedMemoBody = draft.body;
+    } catch (_) {
+      // 下書き復元の失敗で読書を妨げない
+    }
+  }
+
+  /// 入力のたびにデバウンスし、止まったら下書きを保存する。
+  void _onMemoChanged(String _) {
+    _memoDebounceTimer?.cancel();
+    _memoDebounceTimer = Timer(widget.memoDebounce, _flushMemoDraft);
+  }
+
+  /// 現在の入力内容を下書きへ書き出す（dispose からも呼ぶ即時版）。
+  void _flushMemoDraft() {
+    final id = widget.id;
+    if (id == null) return;
+    final body = QuickMemoPolicy.normalize(_memoController.text);
+    if (!QuickMemoPolicy.shouldPersist(
+      previousBody: _lastSavedMemoBody,
+      nextBody: body,
+    )) {
+      return;
+    }
+    unawaited(_writeMemoDraft(id, body));
+  }
+
+  Future<void> _writeMemoDraft(String id, String body) async {
+    try {
+      if (body.isEmpty) {
+        await _memoDraftStore.clear(id);
+      } else {
+        await _memoDraftStore.save(
+          id,
+          QuickMemoDraft.create(body, now: _memoNow()),
+        );
+      }
+      _lastSavedMemoBody = body;
+    } catch (_) {
+      // 保存失敗時は _lastSavedMemoBody を進めない＝次回も再試行される
+    }
+  }
+
+  /// 戦利品カード（読書メモ検索の参照先）へ渡した後だけ下書きを消す。
+  Future<void> _clearMemoDraftAfterSave(String savedBody) async {
+    final id = widget.id;
+    if (id == null || savedBody.isEmpty) return;
+    try {
+      await _memoDraftStore.clear(id);
+      _lastSavedMemoBody = '';
+    } catch (_) {
+      // 消去失敗時は下書きを残す（二重消失より安全）
+    }
   }
 
   /// 読了予測用にセッション履歴を読み込む（Hive/Supabase どちらでも失敗時は空）。
@@ -474,14 +567,22 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
     // デイリーミッション：読了達成チェック
     _updateDailyMissionBookComplete();
 
+    // クイックメモを既存の読書メモ保存経路（戦利品カード）へ合流させる（#201）
+    final memoBody = QuickMemoPolicy.normalize(_memoController.text);
+    final learnings = _learningControllers
+        .map((c) => c.text.trim())
+        .where((t) => t.isNotEmpty)
+        .toList();
+    if (QuickMemoPolicy.shouldAttachToTrophy(memoBody) &&
+        !learnings.contains(memoBody)) {
+      learnings.add(memoBody);
+    }
+
     final trophy = WarTrophy(
       id: 'trophy-${DateTime.now().millisecondsSinceEpoch}',
       userBookId: widget.id!,
       userId: 'local-user',
-      learnings: _learningControllers
-          .map((c) => c.text.trim())
-          .where((t) => t.isNotEmpty)
-          .toList(),
+      learnings: learnings,
       action: _actionController.text.trim(),
       favoriteQuote: _quoteController.text.trim().isEmpty
           ? null
@@ -489,6 +590,8 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
       createdAt: DateTime.now().toUtc().toIso8601String(),
     );
     ref.read(warTrophyProvider.notifier).addTrophy(trophy);
+    // 戦利品へ渡した後だけ下書きを消す（失敗時は残す）
+    unawaited(_clearMemoDraftAfterSave(memoBody));
     ref.read(bookDataProvider.notifier).updateUserBook(
           id: widget.id!,
           status: BookStatus.completed,
@@ -517,6 +620,9 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
   void dispose() {
     _timer?.cancel();
     _tipTimer?.cancel();
+    // デバウンス待ちの入力を取りこぼさない（コントローラ破棄前に読む）
+    _memoDebounceTimer?.cancel();
+    _flushMemoDraft();
     try {
       _endSessionIfNeeded();
     } catch (_) {
@@ -739,6 +845,7 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
           TextField(
             key: AppKeys.readingMemo,
             controller: _memoController,
+            onChanged: _onMemoChanged,
             decoration:
                 const InputDecoration(hintText: 'メモ...', labelText: 'クイックメモ'),
             maxLines: 2,
