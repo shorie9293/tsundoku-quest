@@ -61,6 +61,12 @@ void main() {
   }
 
   Future<Set<String>> pumpHub(WidgetTester tester) async {
+    // 11項目すべてが遅延構築で描かれるよう縦長の面にする。
+    tester.view.physicalSize = const Size(900, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
     final built = buildHub();
     await tester.pumpWidget(MaterialApp(home: built.hub));
     await tester.pumpAndSettle();
@@ -72,7 +78,8 @@ void main() {
 
     expect(find.byKey(AppKeys.settingsHubScreen), findsOneWidget);
     expect(find.text('設定'), findsOneWidget);
-    expect(find.byType(ListTile), findsNWidgets(10));
+    // 「遊び方・ヘルプ」追加により 10 → 11（既存項目は不変）。
+    expect(find.byType(ListTile), findsNWidgets(11));
 
     const labels = <String>[
       '不具合の報告',
@@ -85,6 +92,7 @@ void main() {
       'バックアップ',
       '自動バックアップ',
       'アプリについて',
+      '遊び方・ヘルプ',
     ];
     for (final label in labels) {
       expect(find.text(label), findsOneWidget);
@@ -154,7 +162,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(AppKeys.settingsHubScreen), findsOneWidget);
-    expect(find.byType(ListTile), findsNWidgets(10));
+    expect(find.byType(ListTile), findsNWidgets(11));
   });
 
   testWidgets('テーマ設定画面の導線から設定ハブへ到達できる', (tester) async {

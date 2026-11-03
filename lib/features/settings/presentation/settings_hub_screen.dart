@@ -23,6 +23,7 @@ import 'package:tsundoku_quest/features/backup/data/backup_repository.dart';
 import 'package:tsundoku_quest/features/backup/domain/backup_exporter.dart';
 import 'package:tsundoku_quest/features/backup/domain/backup_models.dart';
 import 'package:tsundoku_quest/features/backup/presentation/backup_screen.dart';
+import 'package:tsundoku_quest/features/help/presentation/help_screen.dart';
 import 'package:tsundoku_quest/features/reminders/data/reminder_providers.dart';
 import 'package:tsundoku_quest/features/reminders/presentation/quiet_hours_settings_screen.dart';
 import 'package:tsundoku_quest/features/reminders/data/notification_permission_requester.dart';
@@ -52,6 +53,7 @@ class SettingsHubScreen extends StatelessWidget {
     this.autoBackupBuilder = buildAutoBackupSettings,
     this.aboutBuilder = buildAboutSettings,
     this.crashLogBuilder = buildCrashLogSettings,
+    this.helpBuilder = buildHelpSettings,
     this.accountDeletionBuilder,
   });
 
@@ -67,6 +69,9 @@ class SettingsHubScreen extends StatelessWidget {
 
   /// 不具合の報告（端末内クラッシュログ）の遷移先。
   final WidgetBuilder crashLogBuilder;
+
+  /// 「遊び方・ヘルプ」の遷移先（既定は [HelpScreen]）。
+  final WidgetBuilder helpBuilder;
 
   /// アカウント削除（退会）の遷移先。
   ///
@@ -136,6 +141,12 @@ class SettingsHubScreen extends StatelessWidget {
           icon: Icons.info_outline,
           label: 'アプリについて',
           builder: aboutBuilder,
+        ),
+        _SettingsHubItem(
+          id: 'help',
+          icon: Icons.help_outline,
+          label: '遊び方・ヘルプ',
+          builder: helpBuilder,
         ),
         if (accountDeletionBuilder case final builder?)
           _SettingsHubItem(
@@ -301,6 +312,9 @@ Widget buildAutoBackupSettings(BuildContext context) => Consumer(
     );
 
 Widget buildAboutSettings(BuildContext context) => const AboutScreen();
+
+/// 遊び方・ヘルプ（チュートリアル文言の読み返し）。
+Widget buildHelpSettings(BuildContext context) => const HelpScreen();
 
 /// 不具合の報告（端末内クラッシュログの閲覧・コピー）。
 Widget buildCrashLogSettings(BuildContext context) => const CrashLogScreen();

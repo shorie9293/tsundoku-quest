@@ -228,6 +228,14 @@ class AppKeys {
   static const Key readingForecastLabel = Key('txt_reading_forecast');
   static const Key readingForecastPace = Key('txt_reading_pace');
 
+  // ━━━ 遊び方・ヘルプ ━━━
+  static const Key helpScreen = Key('screen_help');
+  static const Key helpSearchField = Key('field_help_search');
+  static const Key helpTopicList = Key('list_help_topics');
+  static const Key helpEmptyMessage = Key('txt_help_empty');
+  static Key helpTopic(String id) => Key('item_help_$id');
+  static Key helpSectionTitle(String id) => Key('txt_help_section_$id');
+
   // ━━━ 設定ハブ ━━━
   static const Key settingsHubScreen = Key('screen_settings_hub');
   static const Key settingsHubEntry = Key('btn_settings_hub_entry');
