@@ -1,9 +1,9 @@
-import 'package:flutter/foundation.dart';
 import 'package:tsundoku_quest/domain/models/book.dart';
 import 'package:tsundoku_quest/shared/load_state.dart';
 import 'package:tsundoku_quest/shared/repositories/rakuten_api.dart';
 import 'package:tsundoku_quest/shared/repositories/openbd_api.dart';
 import 'package:tsundoku_quest/shared/repositories/google_books_api.dart';
+import 'package:tsundoku_quest/core/logging/app_logger.dart';
 
 /// 書籍検索で全APIが失敗した場合の例外
 class SearchException implements Exception {
@@ -45,7 +45,7 @@ class BookSearchService {
       final rakutenResults = await _rakuten.search(query);
       if (rakutenResults.isNotEmpty) return rakutenResults;
     } catch (e) {
-      debugPrint('⚠️ 楽天API 検索失敗: $e');
+      appLog.warn('⚠️ 楽天API 検索失敗: $e');
       errors.add(e);
     }
 
@@ -57,7 +57,7 @@ class BookSearchService {
         final openbdResult = await _openbd.lookupByIsbn(cleaned);
         if (openbdResult != null) return [openbdResult];
       } catch (e) {
-        debugPrint('⚠️ OpenBD API 検索失敗: $e');
+        appLog.warn('⚠️ OpenBD API 検索失敗: $e');
         errors.add(e);
       }
     }
@@ -66,7 +66,7 @@ class BookSearchService {
     try {
       return await _googleBooks.search(query);
     } catch (e) {
-      debugPrint('⚠️ Google Books API 検索失敗: $e');
+      appLog.warn('⚠️ Google Books API 検索失敗: $e');
       errors.add(e);
     }
 
@@ -106,7 +106,7 @@ class BookSearchService {
       final rakutenResult = await _rakuten.lookupByIsbn(cleaned);
       if (rakutenResult != null) return rakutenResult;
     } catch (e) {
-      debugPrint('⚠️ 楽天API ISBN検索失敗: $e');
+      appLog.warn('⚠️ 楽天API ISBN検索失敗: $e');
       errors.add(e);
     }
 
@@ -115,7 +115,7 @@ class BookSearchService {
       final openbdResult = await _openbd.lookupByIsbn(cleaned);
       if (openbdResult != null) return openbdResult;
     } catch (e) {
-      debugPrint('⚠️ OpenBD API ISBN検索失敗: $e');
+      appLog.warn('⚠️ OpenBD API ISBN検索失敗: $e');
       errors.add(e);
     }
 
@@ -123,7 +123,7 @@ class BookSearchService {
     try {
       return await _googleBooks.lookupByIsbn(cleaned);
     } catch (e) {
-      debugPrint('⚠️ Google Books API ISBN検索失敗: $e');
+      appLog.warn('⚠️ Google Books API ISBN検索失敗: $e');
       errors.add(e);
     }
 

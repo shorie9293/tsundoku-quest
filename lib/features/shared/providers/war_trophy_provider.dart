@@ -5,6 +5,7 @@ import 'package:tsundoku_quest/domain/repositories/war_trophy_repository.dart';
 import 'package:tsundoku_quest/features/bookshelf/data/war_trophy_repository_provider.dart';
 import 'package:tsundoku_quest/features/shared/data/tsundoku_reward_event_exporter.dart';
 import 'package:tsundoku_quest/features/shared/providers/reward_event_exporter_provider.dart';
+import 'package:tsundoku_quest/core/logging/app_logger.dart';
 
 /// 戦利品を管理するStateNotifier
 ///
@@ -34,16 +35,16 @@ class WarTrophyNotifier extends StateNotifier<List<WarTrophy>> {
   /// Supabase から戦利品一覧を取得して state を更新する
   Future<void> fetchTrophies() async {
     if (_repository == null) {
-      debugPrint('🏆 [WarTrophy] fetchTrophies: リポジトリなし');
+      appLog.debug('🏆 [WarTrophy] fetchTrophies: リポジトリなし');
       return;
     }
     try {
-      debugPrint('🏆 [WarTrophy] fetchTrophies: Supabaseから取得開始...');
+      appLog.debug('🏆 [WarTrophy] fetchTrophies: Supabaseから取得開始...');
       final trophies = await _repository.getMyTrophies();
-      debugPrint('🏆 [WarTrophy] fetchTrophies: ${trophies.length}件取得');
+      appLog.debug('🏆 [WarTrophy] fetchTrophies: ${trophies.length}件取得');
       state = trophies;
     } catch (e, stack) {
-      debugPrint('🏆 [WarTrophy] fetchTrophies 失敗: $e\n$stack');
+      appLog.warn('🏆 [WarTrophy] fetchTrophies 失敗: $e\n$stack');
     }
   }
 
@@ -91,7 +92,7 @@ class WarTrophyNotifier extends StateNotifier<List<WarTrophy>> {
       try {
         await _repository.deleteTrophiesByUserBook(userBookId);
       } catch (e) {
-        debugPrint('🏆 [WarTrophy] 削除同期失敗: $e');
+        appLog.warn('🏆 [WarTrophy] 削除同期失敗: $e');
       }
     }
   }
@@ -116,7 +117,7 @@ class WarTrophyNotifier extends StateNotifier<List<WarTrophy>> {
         await _repository.createTrophy(trophy);
       }
     } catch (e) {
-      debugPrint('🏆 [WarTrophy] Supabase同期失敗: $e');
+      appLog.warn('🏆 [WarTrophy] Supabase同期失敗: $e');
     }
   }
 }

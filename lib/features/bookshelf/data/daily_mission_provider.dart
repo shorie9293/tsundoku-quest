@@ -6,6 +6,7 @@ import 'package:tsundoku_quest/core/infrastructure/hive/box_manager.dart';
 import 'package:tsundoku_quest/features/shared/data/tsundoku_reward_event_exporter.dart';
 import 'package:tsundoku_quest/features/shared/providers/reward_event_exporter_provider.dart';
 import '../domain/daily_mission.dart';
+import 'package:tsundoku_quest/core/logging/app_logger.dart';
 
 /// デイリーミッション状態
 class DailyMissionState {
@@ -79,7 +80,7 @@ class DailyMissionNotifier extends StateNotifier<DailyMissionState> {
           }
         }
       } catch (e) {
-        debugPrint('⚠️ [DailyMission] Hive 読み込み失敗: $e');
+        appLog.warn('⚠️ [DailyMission] Hive 読み込み失敗: $e');
       }
     }
 
@@ -105,7 +106,7 @@ class DailyMissionNotifier extends StateNotifier<DailyMissionState> {
         }
       }
     } catch (e) {
-      debugPrint('⚠️ [DailyMission] SharedPreferences 読み込み失敗: $e');
+      appLog.warn('⚠️ [DailyMission] SharedPreferences 読み込み失敗: $e');
     }
 
     // 新規生成（日付が変わったらフラグリセット）
@@ -125,7 +126,7 @@ class DailyMissionNotifier extends StateNotifier<DailyMissionState> {
         await box.put(_hiveMissionsKey, state.missions);
         await box.flush();
       } catch (e) {
-        debugPrint('⚠️ [DailyMission] Hive 保存失敗: $e');
+        appLog.warn('⚠️ [DailyMission] Hive 保存失敗: $e');
       }
     }
 
@@ -136,7 +137,7 @@ class DailyMissionNotifier extends StateNotifier<DailyMissionState> {
       await prefs.setString(_prefsKey, missionsJson);
       await prefs.setString(_prefsKeyDate, state.date.toIso8601String());
     } catch (e) {
-      debugPrint('⚠️ [DailyMission] SharedPreferences 保存失敗: $e');
+      appLog.warn('⚠️ [DailyMission] SharedPreferences 保存失敗: $e');
     }
   }
 

@@ -6,10 +6,10 @@ library;
 
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:tsundoku_quest/core/infrastructure/hive/box_manager.dart';
 import 'package:tsundoku_quest/features/goals/domain/daily_reading_goal.dart';
+import 'package:tsundoku_quest/core/logging/app_logger.dart';
 
 abstract class DailyReadingGoalRepository {
   Future<DailyReadingGoal> load();
@@ -46,7 +46,7 @@ class HiveDailyReadingGoalRepository implements DailyReadingGoalRepository {
       }
       return DailyReadingGoal.fromJson(decoded);
     } catch (e) {
-      debugPrint('[DailyReadingGoalRepo] load failed: $e');
+      appLog.warn('[DailyReadingGoalRepo] load failed: $e');
       return const DailyReadingGoal.empty();
     }
   }

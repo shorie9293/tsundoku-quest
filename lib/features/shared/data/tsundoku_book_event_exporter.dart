@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:tsundoku_quest/core/logging/app_logger.dart';
 
 /// 蔵書追加イベントを共有ストレージにJSONとして書き出すエクスポーター
 ///
@@ -40,8 +41,7 @@ class TsundokuBookEventExporter {
       await file.writeAsString(jsonEncode(json));
     } catch (e) {
       // 共有ストレージ書込はオプション機能。失敗は握りつぶす（ログのみ）。
-      // ignore: avoid_print
-      print('TsundokuBookEventExporter: 書き込み失敗（無視）: $e');
+      appLog.warn('TsundokuBookEventExporter: 書き込み失敗（無視）: $e');
     }
   }
 }

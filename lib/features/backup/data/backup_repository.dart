@@ -7,7 +7,6 @@
 /// （既存 id は上書きしない）。
 library;
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import 'package:tsundoku_quest/core/infrastructure/hive/box_manager.dart';
@@ -18,6 +17,7 @@ import 'package:tsundoku_quest/features/backup/domain/backup_models.dart';
 import 'package:tsundoku_quest/features/backup/domain/backup_merge.dart';
 import 'package:tsundoku_quest/features/goals/data/reading_goal_repository.dart';
 import 'package:tsundoku_quest/features/goals/domain/reading_goal.dart';
+import 'package:tsundoku_quest/core/logging/app_logger.dart';
 
 /// バックアップ収集・復元の抽象
 abstract class BackupRepository {
@@ -61,7 +61,7 @@ class HiveBackupRepository implements BackupRepository {
           );
         }
       } catch (e) {
-        debugPrint('[BackupRepo] goal load failed (skipped): $e');
+        appLog.warn('[BackupRepo] goal load failed (skipped): $e');
       }
     }
 

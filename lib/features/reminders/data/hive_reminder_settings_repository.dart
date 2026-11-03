@@ -1,11 +1,11 @@
 /// Hive implementation of ReminderSettingsRepository
 library;
 
-import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:tsundoku_quest/core/infrastructure/hive/box_manager.dart';
 import 'package:tsundoku_quest/domain/models/reading_reminder_settings.dart';
 import 'reminder_settings_repository.dart';
+import 'package:tsundoku_quest/core/logging/app_logger.dart';
 
 class HiveReminderSettingsRepository implements ReminderSettingsRepository {
   final BoxManagerInterface _boxManager;
@@ -27,7 +27,7 @@ class HiveReminderSettingsRepository implements ReminderSettingsRepository {
       final box = await _getBox();
       return await BoxHelper.loadSingle(box) ?? const ReadingReminderSettings();
     } catch (e) {
-      debugPrint('[ReminderRepo] load failed: $e');
+      appLog.warn('[ReminderRepo] load failed: $e');
       return const ReadingReminderSettings();
     }
   }
@@ -38,7 +38,7 @@ class HiveReminderSettingsRepository implements ReminderSettingsRepository {
       final box = await _getBox();
       await BoxHelper.saveSingle(box, settings);
     } catch (e) {
-      debugPrint('[ReminderRepo] save failed: $e');
+      appLog.warn('[ReminderRepo] save failed: $e');
     }
   }
 }

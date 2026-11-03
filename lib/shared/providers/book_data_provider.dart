@@ -12,6 +12,7 @@ import 'package:tsundoku_quest/features/shared/data/tsundoku_book_event_exporter
 import 'package:tsundoku_quest/features/shared/data/tsundoku_book_completion_exporter.dart';
 import 'package:tsundoku_quest/features/shared/providers/reward_event_exporter_provider.dart';
 import 'package:tsundoku_quest/features/shared/providers/war_trophy_provider.dart';
+import 'package:tsundoku_quest/core/logging/app_logger.dart';
 
 /// 読了ページ数マイルストーン閾値（1冊あたり）
 const _bookPagesMilestones = [50, 100, 200, 500, 1000];
@@ -104,21 +105,21 @@ class BookDataNotifier extends StateNotifier<BookDataState> {
     // （レースコンディション防止: 非同期の Supabase INSERT が完了していない状態で
     //   fetchBooks() が空データを返すと、インメモリのユーザーデータが上書き消失する）
     if (_initialFetchDone && state.userBooks.isNotEmpty) {
-      debugPrint('📦 [BookData] fetchBooks: 既に初期データあり→スキップ');
+      appLog.debug('📦 [BookData] fetchBooks: 既に初期データあり→スキップ');
       return;
     }
     if (_repository == null) {
-      debugPrint('📦 [BookData] fetchBooks: リポジトリなし');
+      appLog.debug('📦 [BookData] fetchBooks: リポジトリなし');
       return;
     }
     state = state.copyWith(isLoading: true, errorMessage: () => null);
     try {
-      debugPrint('📦 [BookData] fetchBooks: Supabaseから取得開始...');
+      appLog.debug('📦 [BookData] fetchBooks: Supabaseから取得開始...');
       final books = await _repository.getMyBooks();
-      debugPrint('📦 [BookData] fetchBooks: ${books.length}件取得');
+      appLog.debug('📦 [BookData] fetchBooks: ${books.length}件取得');
       state = state.copyWith(userBooks: books, isLoading: false);
     } catch (e, stack) {
-      debugPrint('📦 [BookData] fetchBooks 失敗: $e\n$stack');
+      appLog.warn('📦 [BookData] fetchBooks 失敗: $e\n$stack');
       state = state.copyWith(
         isLoading: false,
         errorMessage: () => '蔵書の取得に失敗しました: $e',
@@ -129,15 +130,15 @@ class BookDataNotifier extends StateNotifier<BookDataState> {
   /// Supabase に蔵書追加（裏で非同期実行、UIは即時反映）
   Future<void> _syncAddToSupabase(UserBook userBook) async {
     if (_repository == null) {
-      debugPrint('📦 [BookData] リポジトリなし（オフラインモード）');
+      appLog.debug('📦 [BookData] リポジトリなし（オフラインモード）');
       return;
     }
     try {
-      debugPrint('📦 [BookData] Supabase保存開始: ${userBook.bookId}');
+      appLog.debug('📦 [BookData] Supabase保存開始: ${userBook.bookId}');
       await _repository.addBook(userBook);
-      debugPrint('📦 [BookData] Supabase保存成功: ${userBook.bookId}');
+      appLog.debug('📦 [BookData] Supabase保存成功: ${userBook.bookId}');
     } catch (e, stack) {
-      debugPrint('📦 [BookData] Supabase保存失敗: $e\n$stack');
+      appLog.warn('📦 [BookData] Supabase保存失敗: $e\n$stack');
       state = state.copyWith(
         errorMessage: () => 'Supabase保存失敗（端末内のみ反映）: $e',
       );

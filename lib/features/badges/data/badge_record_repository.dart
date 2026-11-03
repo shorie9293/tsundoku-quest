@@ -6,9 +6,9 @@ library;
 
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:tsundoku_quest/core/infrastructure/hive/box_manager.dart';
+import 'package:tsundoku_quest/core/logging/app_logger.dart';
 
 /// バッジ獲得記録の集合（id → 獲得日時 ISO8601 文字列）
 class BadgeRecordSet {
@@ -108,7 +108,7 @@ class HiveBadgeRecordRepository implements BadgeRecordRepository {
       }
       return BadgeRecordSet.fromJson(decoded);
     } catch (e) {
-      debugPrint('[BadgeRecordRepo] load failed: $e');
+      appLog.warn('[BadgeRecordRepo] load failed: $e');
       return const BadgeRecordSet();
     }
   }

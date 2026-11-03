@@ -6,11 +6,11 @@ library;
 
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:tsundoku_quest/core/infrastructure/hive/box_manager.dart';
 import 'package:tsundoku_quest/domain/models/book_shelf.dart';
 import 'package:tsundoku_quest/domain/repositories/shelf_repository.dart';
+import 'package:tsundoku_quest/core/logging/app_logger.dart';
 
 class HiveShelfRepository implements ShelfRepository {
   final BoxManagerInterface _boxManager;
@@ -35,7 +35,7 @@ class HiveShelfRepository implements ShelfRepository {
       shelves.sort((a, b) => a.createdAt.compareTo(b.createdAt));
       return shelves;
     } catch (e) {
-      debugPrint('[HiveShelfRepo] listShelves failed: $e');
+      appLog.warn('[HiveShelfRepo] listShelves failed: $e');
       return [];
     }
   }

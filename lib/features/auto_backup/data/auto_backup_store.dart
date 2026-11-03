@@ -6,9 +6,9 @@ library;
 
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:tsundoku_quest/features/auto_backup/domain/auto_backup_policy.dart';
+import 'package:tsundoku_quest/core/logging/app_logger.dart';
 
 /// 保管庫の抽象（試練では InMemory 実装で置換する）
 abstract interface class AutoBackupStore {
@@ -94,7 +94,7 @@ class FileAutoBackupStore implements AutoBackupStore {
       try {
         createdAt = (await entity.stat()).modified;
       } catch (e) {
-        debugPrint('[AutoBackup] stat failed ($name): $e');
+        appLog.warn('[AutoBackup] stat failed ($name): $e');
         createdAt = DateTime.fromMillisecondsSinceEpoch(0);
       }
       entries.add(AutoBackupEntry(fileName: name, createdAt: createdAt));
@@ -117,7 +117,7 @@ class FileAutoBackupStore implements AutoBackupStore {
       if (!await file.exists()) return null;
       return await file.readAsString();
     } catch (e) {
-      debugPrint('[AutoBackup] read failed ($fileName): $e');
+      appLog.warn('[AutoBackup] read failed ($fileName): $e');
       return null;
     }
   }

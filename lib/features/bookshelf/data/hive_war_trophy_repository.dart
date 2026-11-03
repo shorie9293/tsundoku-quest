@@ -3,11 +3,11 @@
 /// Uses the 'war_trophies_box' Hive box for WarTrophy persistence.
 library;
 
-import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:tsundoku_quest/domain/models/war_trophy.dart';
 import 'package:tsundoku_quest/domain/repositories/war_trophy_repository.dart';
 import 'package:tsundoku_quest/core/infrastructure/hive/box_manager.dart';
+import 'package:tsundoku_quest/core/logging/app_logger.dart';
 
 class HiveWarTrophyRepository implements WarTrophyRepository {
   final BoxManagerInterface _boxManager;
@@ -30,7 +30,7 @@ class HiveWarTrophyRepository implements WarTrophyRepository {
       all.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       return all;
     } catch (e) {
-      debugPrint('[HiveWarTrophyRepo] getMyTrophies failed: $e');
+      appLog.warn('[HiveWarTrophyRepo] getMyTrophies failed: $e');
       return [];
     }
   }
@@ -62,7 +62,7 @@ class HiveWarTrophyRepository implements WarTrophyRepository {
       await box.deleteAll(targets);
       await box.flush();
     } catch (e) {
-      debugPrint('[HiveWarTrophyRepo] deleteTrophiesByUserBook failed: $e');
+      appLog.warn('[HiveWarTrophyRepo] deleteTrophiesByUserBook failed: $e');
     }
   }
 

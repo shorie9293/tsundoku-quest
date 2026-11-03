@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:tsundoku_quest/features/shared/data/tsundoku_reward_event_exporter.dart';
+import 'package:tsundoku_quest/core/logging/app_logger.dart';
 
 /// 認証状態の変化を [TsundokuRewardEventExporter.userId] へ反映する薄い部品。
 ///
@@ -38,12 +38,12 @@ class RewardEventUserLinker {
         },
         onError: (Object e) {
           // 認証ストリームのエラーでアプリを落とさない
-          debugPrint('⚠️ [RewardEventUserLinker] 認証ストリームのエラー: $e');
+          appLog.warn('⚠️ [RewardEventUserLinker] 認証ストリームのエラー: $e');
         },
         cancelOnError: false,
       );
     } catch (e) {
-      debugPrint('⚠️ [RewardEventUserLinker] 購読開始失敗: $e');
+      appLog.warn('⚠️ [RewardEventUserLinker] 購読開始失敗: $e');
       _subscription = null;
     }
   }
@@ -92,7 +92,7 @@ class RewardEventUserLinker {
       return linker;
     } catch (e) {
       // Supabase 未初期化 — 何もしない
-      debugPrint('ℹ️ [RewardEventUserLinker] Supabase未初期化のため未接続: $e');
+      appLog.debug('ℹ️ [RewardEventUserLinker] Supabase未初期化のため未接続: $e');
       return null;
     }
   }

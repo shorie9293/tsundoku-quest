@@ -6,11 +6,11 @@ library;
 
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:tsundoku_quest/core/infrastructure/hive/box_manager.dart';
 import 'package:tsundoku_quest/domain/models/reading_queue_entry.dart';
 import 'package:tsundoku_quest/features/reading_queue/domain/reading_queue_service.dart';
+import 'package:tsundoku_quest/core/logging/app_logger.dart';
 
 abstract class ReadingQueueRepository {
   Future<List<ReadingQueueEntry>> loadEntries();
@@ -48,7 +48,7 @@ class HiveReadingQueueRepository implements ReadingQueueRepository {
       if (map is! Map<String, dynamic>) return null;
       return ReadingQueueEntry.fromJson(map);
     } catch (e) {
-      debugPrint('[ReadingQueueRepo] skipping broken entry: $e');
+      appLog.debug('[ReadingQueueRepo] skipping broken entry: $e');
       return null;
     }
   }
@@ -59,7 +59,7 @@ class HiveReadingQueueRepository implements ReadingQueueRepository {
       final box = await _getBox();
       return ReadingQueueService.normalize(_readAll(box));
     } catch (e) {
-      debugPrint('[ReadingQueueRepo] load failed: $e');
+      appLog.warn('[ReadingQueueRepo] load failed: $e');
       return const [];
     }
   }

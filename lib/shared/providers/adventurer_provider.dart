@@ -8,6 +8,7 @@ import 'package:tsundoku_quest/features/shared/data/adventurer_progress_reposito
 import 'package:tsundoku_quest/features/shared/data/tsundoku_reward_event_exporter.dart';
 import 'package:tsundoku_quest/features/shared/providers/reward_event_exporter_provider.dart';
 import 'xp_calculator.dart';
+import 'package:tsundoku_quest/core/logging/app_logger.dart';
 
 /// XPマイルストーン閾値
 const _xpMilestones = [100, 500, 1000, 5000, 10000, 50000, 100000];
@@ -50,7 +51,7 @@ class AdventurerNotifier extends StateNotifier<AdventurerStats> {
       _localProgress = progress;
       state = progress.applyTo(state);
     } catch (e) {
-      debugPrint('⚠️ 冒険者ステータスの復元失敗: $e');
+      appLog.warn('⚠️ 冒険者ステータスの復元失敗: $e');
     }
   }
 
@@ -61,7 +62,7 @@ class AdventurerNotifier extends StateNotifier<AdventurerStats> {
     final progress = AdventurerProgress.fromStats(state);
     _localProgress = progress;
     repository.save(progress).catchError((Object e) {
-      debugPrint('⚠️ 冒険者ステータスの保存失敗: $e');
+      appLog.warn('⚠️ 冒険者ステータスの保存失敗: $e');
     });
   }
 
@@ -76,7 +77,7 @@ class AdventurerNotifier extends StateNotifier<AdventurerStats> {
       state = progress.applyTo(stats);
     }).catchError((error, stackTrace) {
       // Supabase が使えない場合はローカルの積み上げを保ったまま
-      debugPrint('⚠️ Supabase から冒険者ステータス取得失敗: $error\n$stackTrace');
+      appLog.warn('⚠️ Supabase から冒険者ステータス取得失敗: $error\n$stackTrace');
       state = _copyWith(errorMessage: 'サーバーに接続できません（オフラインモード）');
     });
   }

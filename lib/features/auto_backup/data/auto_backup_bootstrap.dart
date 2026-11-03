@@ -6,10 +6,10 @@ library;
 
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:tsundoku_quest/features/auto_backup/data/auto_backup_store.dart';
 import 'package:tsundoku_quest/features/auto_backup/domain/auto_backup_policy.dart';
 import 'package:tsundoku_quest/features/auto_backup/domain/auto_backup_service.dart';
+import 'package:tsundoku_quest/core/logging/app_logger.dart';
 
 /// 起動時に1回だけ自動バックアップを予約する（await しない）。
 void scheduleAutoBackup({
@@ -25,18 +25,18 @@ void scheduleAutoBackup({
     unawaited(
       service.run(buildJson).then((result) {
         if (result.ran) {
-          debugPrint('[AutoBackup] 書き込み完了: ${result.fileName}'
+          appLog.debug('[AutoBackup] 書き込み完了: ${result.fileName}'
               '${result.pruned.isEmpty ? '' : ' / 整理: ${result.pruned.join(', ')}'}');
         } else if (result.error != null) {
-          debugPrint('[AutoBackup] 失敗（起動は継続）: ${result.error}');
+          appLog.warn('[AutoBackup] 失敗（起動は継続）: ${result.error}');
         } else {
-          debugPrint('[AutoBackup] スキップ（24時間未経過）');
+          appLog.debug('[AutoBackup] スキップ（24時間未経過）');
         }
       }).catchError((Object e, StackTrace st) {
-        debugPrint('[AutoBackup] 想定外の失敗（起動は継続）: $e\n$st');
+        appLog.warn('[AutoBackup] 想定外の失敗（起動は継続）: $e\n$st');
       }),
     );
   } catch (e) {
-    debugPrint('[AutoBackup] 起動時の配線失敗（起動は継続）: $e');
+    appLog.warn('[AutoBackup] 起動時の配線失敗（起動は継続）: $e');
   }
 }

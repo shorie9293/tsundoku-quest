@@ -6,11 +6,11 @@
 /// 例外はすべて捕まえて ok:false に落とす（UI を壊さない）。
 library;
 
-import 'package:flutter/foundation.dart';
 import 'package:tsundoku_quest/features/auto_backup/data/auto_backup_store.dart';
 import 'package:tsundoku_quest/features/auto_backup/domain/auto_backup_policy.dart';
 import 'package:tsundoku_quest/features/auto_backup/domain/auto_backup_presenter.dart';
 import 'package:tsundoku_quest/features/auto_backup/domain/auto_backup_restorer.dart';
+import 'package:tsundoku_quest/core/logging/app_logger.dart';
 
 /// 自動バックアップからの復元
 class AutoBackupRestorerImpl implements AutoBackupRestorer {
@@ -56,7 +56,7 @@ class AutoBackupRestorerImpl implements AutoBackupRestorer {
         safetyFileName: safetyFileName,
       );
     } catch (e) {
-      debugPrint('[AutoBackup] restore failed ($fileName): $e');
+      appLog.warn('[AutoBackup] restore failed ($fileName): $e');
       return AutoBackupRestoreResult(
         ok: false,
         message: '復元に失敗しました: $e',

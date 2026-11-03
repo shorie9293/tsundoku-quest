@@ -23,6 +23,7 @@ import '../../history/presentation/widgets/reading_forecast_card.dart';
 import '../../../../domain/models/reading_session.dart';
 import 'package:takamagahara_ui/takamagahara_ui.dart' hide AppKeys;
 import 'widgets/completion_effect.dart';
+import 'package:tsundoku_quest/core/logging/app_logger.dart';
 
 /// 読書中画面
 class ReadingScreen extends ConsumerStatefulWidget {
@@ -239,7 +240,7 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
         }
       }
     } catch (e) {
-      debugPrint('⚠️ [ReadingScreen] タイマー復元失敗: $e');
+      appLog.warn('⚠️ [ReadingScreen] タイマー復元失敗: $e');
     }
 
     // 読書開始 → ステータスを reading に遷移
@@ -250,7 +251,7 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
             startedAt: DateTime.now().toUtc().toIso8601String(),
           );
     } catch (e) {
-      debugPrint('⚠️ [ReadingScreen] ステータス更新失敗: $e');
+      appLog.warn('⚠️ [ReadingScreen] ステータス更新失敗: $e');
     }
   }
 
@@ -276,7 +277,7 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
         try {
           ref.read(adventurerProvider.notifier).addXp(xp);
         } catch (e) {
-          debugPrint('⚠️ [ReadingScreen] XP付与失敗: $e');
+          appLog.warn('⚠️ [ReadingScreen] XP付与失敗: $e');
         }
       }
     }
@@ -291,7 +292,7 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
       final totalMinutes = _elapsedSeconds ~/ 60;
       await repo.endSession(sessionId, endPage, totalMinutes);
     } catch (e) {
-      debugPrint('⚠️ [ReadingScreen] セッション終了失敗（Supabase未接続/オフライン）: $e');
+      appLog.warn('⚠️ [ReadingScreen] セッション終了失敗（Supabase未接続/オフライン）: $e');
     }
 
     try {
@@ -301,7 +302,7 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
       final today = DateTime.now().toUtc().toIso8601String().substring(0, 10);
       adventurer.addReadingDate(today);
     } catch (e) {
-      debugPrint('⚠️ [ReadingScreen] 統計更新失敗: $e');
+      appLog.warn('⚠️ [ReadingScreen] 統計更新失敗: $e');
     }
 
     // UserBookのtotalReadingMinutesも永続化
@@ -315,7 +316,7 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
               );
         }
       } catch (e) {
-        debugPrint('⚠️ [ReadingScreen] UserBook更新失敗: $e');
+        appLog.warn('⚠️ [ReadingScreen] UserBook更新失敗: $e');
       }
     }
   }
@@ -334,7 +335,7 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
       try {
         ref.read(adventurerProvider.notifier).addXp(xp);
       } catch (e) {
-        debugPrint('⚠️ [ReadingScreen] XP付与失敗: $e');
+        appLog.warn('⚠️ [ReadingScreen] XP付与失敗: $e');
       }
     }
 
@@ -352,7 +353,7 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
               );
         }
       } catch (e) {
-        debugPrint('⚠️ [ReadingScreen] 進捗保存失敗: $e');
+        appLog.warn('⚠️ [ReadingScreen] 進捗保存失敗: $e');
       }
     }
 
@@ -362,7 +363,7 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
       final today = DateTime.now().toUtc().toIso8601String().substring(0, 10);
       ref.read(adventurerProvider.notifier).addReadingDate(today);
     } catch (e) {
-      debugPrint('⚠️ [ReadingScreen] 統計更新失敗: $e');
+      appLog.warn('⚠️ [ReadingScreen] 統計更新失敗: $e');
     }
 
     // Supabaseのreading_sessionsに現在の累積読書時間を保存
@@ -375,7 +376,7 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
         final repo = ref.read(readingSessionRepositoryProvider);
         repo.endSession(_sessionId!, endPage, totalMinutes);
       } catch (e) {
-        debugPrint('⚠️ [ReadingScreen] 進捗のSupabase保存失敗: $e');
+        appLog.warn('⚠️ [ReadingScreen] 進捗のSupabase保存失敗: $e');
       }
     }
   }
@@ -424,7 +425,7 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
       await prefs.setString(_prefsKeyBookId, widget.id!);
       await prefs.setInt(_prefsKeyElapsedSeconds, _elapsedSeconds);
     } catch (e) {
-      debugPrint('⚠️ [ReadingScreen] タイマー保存失敗: $e');
+      appLog.warn('⚠️ [ReadingScreen] タイマー保存失敗: $e');
     }
   }
 
@@ -440,7 +441,7 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
         await prefs.remove(_prefsKeyElapsedSeconds);
       }
     } catch (e) {
-      debugPrint('⚠️ [ReadingScreen] タイマー状態クリア失敗: $e');
+      appLog.warn('⚠️ [ReadingScreen] タイマー状態クリア失敗: $e');
     }
   }
 
@@ -466,7 +467,7 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
         });
       }
     } catch (e) {
-      debugPrint('⚠️ [ReadingScreen] デイリーミッション更新失敗: $e');
+      appLog.warn('⚠️ [ReadingScreen] デイリーミッション更新失敗: $e');
     }
   }
 
@@ -479,7 +480,7 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
         }
       });
     } catch (e) {
-      debugPrint('⚠️ [ReadingScreen] デイリーミッション読了更新失敗: $e');
+      appLog.warn('⚠️ [ReadingScreen] デイリーミッション読了更新失敗: $e');
     }
   }
 
@@ -560,7 +561,7 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
       try {
         ref.read(adventurerProvider.notifier).addXp(completionXp);
       } catch (e) {
-        debugPrint('⚠️ [ReadingScreen] 読了XP付与失敗: $e');
+        appLog.warn('⚠️ [ReadingScreen] 読了XP付与失敗: $e');
       }
     }
 

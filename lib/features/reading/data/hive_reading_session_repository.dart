@@ -3,12 +3,12 @@
 /// Uses the 'reading_sessions_box' Hive box for session persistence.
 library;
 
-import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:tsundoku_quest/domain/models/reading_session.dart';
 import 'package:tsundoku_quest/domain/repositories/reading_session_repository.dart';
 import 'package:tsundoku_quest/core/infrastructure/hive/box_manager.dart';
 import 'package:uuid/uuid.dart';
+import 'package:tsundoku_quest/core/logging/app_logger.dart';
 
 class HiveReadingSessionRepository implements ReadingSessionRepository {
   final BoxManagerInterface _boxManager;
@@ -36,7 +36,7 @@ class HiveReadingSessionRepository implements ReadingSessionRepository {
           .toList()
         ..sort((a, b) => b.startedAt.compareTo(a.startedAt));
     } catch (e) {
-      debugPrint('[HiveReadingSessionRepo] getByUserBook failed: $e');
+      appLog.warn('[HiveReadingSessionRepo] getByUserBook failed: $e');
       return [];
     }
   }
@@ -49,7 +49,7 @@ class HiveReadingSessionRepository implements ReadingSessionRepository {
       all.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       return all.take(limit).toList();
     } catch (e) {
-      debugPrint('[HiveReadingSessionRepo] getRecentSessions failed: $e');
+      appLog.warn('[HiveReadingSessionRepo] getRecentSessions failed: $e');
       return [];
     }
   }
@@ -69,7 +69,7 @@ class HiveReadingSessionRepository implements ReadingSessionRepository {
       final result = dateSet.toList()..sort((a, b) => b.compareTo(a));
       return result;
     } catch (e) {
-      debugPrint('[HiveReadingSessionRepo] getAllReadingDates failed: $e');
+      appLog.warn('[HiveReadingSessionRepo] getAllReadingDates failed: $e');
       return [];
     }
   }
@@ -83,7 +83,7 @@ class HiveReadingSessionRepository implements ReadingSessionRepository {
         (sum, s) => sum + (s.durationMinutes ?? 0),
       );
     } catch (e) {
-      debugPrint('[HiveReadingSessionRepo] getTotalReadingMinutes failed: $e');
+      appLog.warn('[HiveReadingSessionRepo] getTotalReadingMinutes failed: $e');
       return 0;
     }
   }
@@ -167,7 +167,7 @@ class HiveReadingSessionRepository implements ReadingSessionRepository {
         (sum, s) => sum + (s.durationMinutes ?? 0),
       );
     } catch (e) {
-      debugPrint('[HiveReadingSessionRepo] getTotalReadingMinutesAll failed: $e');
+      appLog.warn('[HiveReadingSessionRepo] getTotalReadingMinutesAll failed: $e');
       return 0;
     }
   }
@@ -185,7 +185,7 @@ class HiveReadingSessionRepository implements ReadingSessionRepository {
         return sum;
       });
     } catch (e) {
-      debugPrint('[HiveReadingSessionRepo] getTotalPagesReadAll failed: $e');
+      appLog.warn('[HiveReadingSessionRepo] getTotalPagesReadAll failed: $e');
       return 0;
     }
   }
@@ -214,7 +214,7 @@ class HiveReadingSessionRepository implements ReadingSessionRepository {
       }
       return dailyMinutes;
     } catch (e) {
-      debugPrint('[HiveReadingSessionRepo] getWeeklyReadingMinutes failed: $e');
+      appLog.warn('[HiveReadingSessionRepo] getWeeklyReadingMinutes failed: $e');
       return List.filled(7, 0);
     }
   }

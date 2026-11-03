@@ -5,10 +5,10 @@ library;
 
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:tsundoku_quest/core/infrastructure/hive/box_manager.dart';
 import 'package:tsundoku_quest/features/goals/domain/reading_goal.dart';
+import 'package:tsundoku_quest/core/logging/app_logger.dart';
 
 abstract class ReadingGoalRepository {
   Future<ReadingGoal> load();
@@ -43,7 +43,7 @@ class HiveReadingGoalRepository implements ReadingGoalRepository {
       if (decoded is! Map<String, dynamic>) return const ReadingGoal.empty();
       return ReadingGoal.fromJson(decoded);
     } catch (e) {
-      debugPrint('[ReadingGoalRepo] load failed: $e');
+      appLog.warn('[ReadingGoalRepo] load failed: $e');
       return const ReadingGoal.empty();
     }
   }

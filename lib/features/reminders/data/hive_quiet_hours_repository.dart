@@ -7,12 +7,12 @@ library;
 
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:tsundoku_quest/core/infrastructure/hive/box_manager.dart';
 import 'package:tsundoku_quest/features/reminders/domain/quiet_hours_settings.dart';
 
 import 'quiet_hours_repository.dart';
+import 'package:tsundoku_quest/core/logging/app_logger.dart';
 
 class HiveQuietHoursRepository implements QuietHoursRepository {
   HiveQuietHoursRepository(this._boxManager, {this.openIfMissing = true});
@@ -46,7 +46,7 @@ class HiveQuietHoursRepository implements QuietHoursRepository {
     } catch (e) {
       // Hive 未初期化・path 未設定などはここで握り潰し null を返す
       // （通知経路が例外やハングで止まらない）。
-      debugPrint('[QuietHoursRepo] open failed: $e');
+      appLog.warn('[QuietHoursRepo] open failed: $e');
       return null;
     }
   }
@@ -65,7 +65,7 @@ class HiveQuietHoursRepository implements QuietHoursRepository {
       }
       return QuietHoursSettings.fromJson(decoded);
     } catch (e) {
-      debugPrint('[QuietHoursRepo] load failed: $e');
+      appLog.warn('[QuietHoursRepo] load failed: $e');
       return QuietHoursSettings.defaults();
     }
   }
@@ -79,7 +79,7 @@ class HiveQuietHoursRepository implements QuietHoursRepository {
       await box.flush();
     } catch (e) {
       // 保存失敗は握り潰す（設定画面を壊さない）。
-      debugPrint('[QuietHoursRepo] save failed: $e');
+      appLog.warn('[QuietHoursRepo] save failed: $e');
     }
   }
 }

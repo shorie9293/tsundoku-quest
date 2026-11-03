@@ -55,6 +55,7 @@ import 'features/history/data/reading_statistics_provider.dart';
 import 'features/history/data/weekly_reading_provider.dart';
 import 'features/goals/data/reading_goal_provider.dart';
 import 'features/bookshelf/data/daily_mission_provider.dart';
+import 'package:tsundoku_quest/core/logging/app_logger.dart';
 
 /// アプリ完全終了状態から起動した場合の初期ディープリンクを保持
 Uri? _pendingInitialDeepLink;
@@ -96,7 +97,7 @@ void wireRewardEventExporter({
     // Supabase 未初期化時は tryCreateForSupabase が内部で握りつぶして null を返す
     RewardEventUserLinker.tryCreateForSupabase(exporter);
   } catch (e) {
-    debugPrint('⚠️ 報酬イベント書き出しの配線失敗（アプリは継続）: $e');
+    appLog.warn('⚠️ 報酬イベント書き出しの配線失敗（アプリは継続）: $e');
   }
 }
 
@@ -127,14 +128,14 @@ void main() {
     },
     (Object error, StackTrace stack) {
       CrashLogger().record(error, stack, kind: 'zone');
-      debugPrint('💀 ゾーン未捕捉例外: $error');
+      appLog.error('💀 ゾーン未捕捉例外: $error');
     },
   );
 }
 
 /// アプリ本体の初期化（従来の main() の中身そのまま）。
 Future<void> bootstrap() async {
-  debugPrint('🔵 main() 開始');
+  appLog.debug('🔵 main() 開始');
   WidgetsFlutterBinding.ensureInitialized();
 
   // ━━━ Firebase 運用監視基盤（Crashlytics クラッシュ検知 + Analytics KPI計測）━━━
@@ -142,10 +143,10 @@ Future<void> bootstrap() async {
     await Firebase.initializeApp();
     // Analytics: セッション開始を記録し DAU/定着率のKPI計測を有効化
     unawaited(FirebaseAnalytics.instance.logAppOpen());
-    debugPrint('✅ Firebase 初期化完了');
+    appLog.debug('✅ Firebase 初期化完了');
   } catch (e) {
     // テスト環境や Firebase 未設定時はアプリ起動を妨げず継続する
-    debugPrint('⚠️ Firebase初期化失敗（アプリは継続）: $e');
+    appLog.warn('⚠️ Firebase初期化失敗（アプリは継続）: $e');
   }
 
   const supabaseUrl = SupabaseConfig.url;
@@ -154,15 +155,15 @@ Future<void> bootstrap() async {
   if (supabaseUrl.isNotEmpty && supabaseKey.isNotEmpty) {
     try {
       await Supabase.initialize(url: supabaseUrl, anonKey: supabaseKey);
-      debugPrint('✅ Supabase 初期化完了');
+      appLog.debug('✅ Supabase 初期化完了');
       // 認証は Google ネイティブ認証（google_sign_in 7.x）に一本化。
       // 未ログイン時は GoRouter redirect が /login へ導くため、
       // ここでの匿名サインインは行わない（匿名認証廃止）。
     } catch (e) {
-      debugPrint('⚠️ Supabase初期化失敗（オフラインモード）: $e');
+      appLog.warn('⚠️ Supabase初期化失敗（オフラインモード）: $e');
     }
   } else {
-    debugPrint('⚠️ SUPABASE_URL/SUPABASE_ANON_KEY 未設定（オフラインモード）');
+    appLog.debug('⚠️ SUPABASE_URL/SUPABASE_ANON_KEY 未設定（オフラインモード）');
   }
 
   // ① Widgetツリー内の例外を捕捉
@@ -186,7 +187,7 @@ Future<void> bootstrap() async {
 
   // ③ ゾーン外の非同期エラー（Platformレベル）
   PlatformDispatcher.instance.onError = (error, stack) {
-    debugPrint('💀 捕捉不能エラー: $error\n$stack');
+    appLog.error('💀 捕捉不能エラー: $error\n$stack');
     try {
       FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
     } catch (_) {
@@ -214,9 +215,9 @@ Future<void> bootstrap() async {
         Hive.registerAdapter(ReadingReminderAdapter());
       },
     );
-    debugPrint('✅ Hive 初期化完了');
+    appLog.debug('✅ Hive 初期化完了');
   } catch (e) {
-    debugPrint('⚠️ Hive 初期化失敗（オフライン永続化不可）: $e');
+    appLog.warn('⚠️ Hive 初期化失敗（オフライン永続化不可）: $e');
   }
 
   // ── データ移行（初回起動時のみ）──
@@ -237,7 +238,7 @@ Future<void> bootstrap() async {
     },
   );
 
-  debugPrint('🚀 runApp 開始...');
+  appLog.debug('🚀 runApp 開始...');
   // ━━━ アプリ間送客用ディープリンク受信基盤 ━━━
   // app://cross-reward?source=<送客元>&reward=<報酬タイプ>
   final appLinks = AppLinks();
@@ -246,8 +247,7 @@ Future<void> bootstrap() async {
   try {
     _pendingInitialDeepLink = await appLinks.getInitialLink();
   } catch (e) {
-    // ignore: avoid_print
-    print('[main] Error getting initial deep link: $e');
+    appLog.warn('[main] Error getting initial deep link: $e');
   }
 
   // バックグラウンド→フォアグラウンド復帰時のリンクをリッスン
@@ -288,11 +288,11 @@ Future<void> bootstrap() async {
                   container.read(reminderSettingsProvider.notifier).load();
               unawaited(
                 reschedule.catchError((Object e) {
-                  debugPrint('⚠️ 日付跨ぎの通知再スケジュール失敗（アプリは継続）: $e');
+                  appLog.warn('⚠️ 日付跨ぎの通知再スケジュール失敗（アプリは継続）: $e');
                 }),
               );
             } catch (e) {
-              debugPrint('⚠️ 日付跨ぎの通知再スケジュール失敗（アプリは継続）: $e');
+              appLog.warn('⚠️ 日付跨ぎの通知再スケジュール失敗（アプリは継続）: $e');
             }
           },
           child: ErrorBoundary(child: const TsundokuQuestApp()),
@@ -300,7 +300,7 @@ Future<void> bootstrap() async {
       ),
     ),
   );
-  debugPrint('🏁 runApp 完了');
+  appLog.debug('🏁 runApp 完了');
 }
 
 /// 初回起動時の Hive データ移行を実行する
@@ -324,7 +324,7 @@ Future<void> _runHiveMigration() async {
               .order('created_at', ascending: false);
           return response.map((json) => UserBook.fromSupabase(json)).toList();
         } catch (e) {
-          debugPrint('[HiveMigration] UserBook fetch failed: $e');
+          appLog.warn('[HiveMigration] UserBook fetch failed: $e');
           return [];
         }
       },
@@ -341,25 +341,25 @@ Future<void> _runHiveMigration() async {
               .map((json) => ReadingSession.fromSupabase(json))
               .toList();
         } catch (e) {
-          debugPrint('[HiveMigration] ReadingSession fetch failed: $e');
+          appLog.warn('[HiveMigration] ReadingSession fetch failed: $e');
           return [];
         }
       },
     );
 
     final result = await migrationService.migrate();
-    debugPrint(
+    appLog.debug(
       '[HiveMigration] 結果: '
       'completed=${result.completed}, skipped=${result.skipped}, '
       'books=${result.booksMigrated}, sessions=${result.sessionsMigrated}, '
       'tutorial=${result.tutorialMigrated}',
     );
     if (result.error != null) {
-      debugPrint('[HiveMigration] エラー: ${result.error}');
+      appLog.warn('[HiveMigration] エラー: ${result.error}');
     }
   } catch (e) {
     // 移行失敗はアプリ起動を妨げない
-    debugPrint('[HiveMigration] 移行全体が失敗: $e');
+    appLog.warn('[HiveMigration] 移行全体が失敗: $e');
   }
 }
 
@@ -369,13 +369,12 @@ Future<void> _runHiveMigration() async {
 ///   app://cross-reward?source=<送客元>&reward=<報酬タイプ>
 ///   app://open                       （送客元アプリからのホーム起動導線）
 void _handleDeepLink(Uri uri) {
-  // ignore: avoid_print
-  print('[main] Deep link received: $uri');
+  appLog.debug('[main] Deep link received: $uri');
 
   // 送客元アプリからのホーム起動導線（app://open）。
   // 起動先はホーム（'/'）のため、単に受信を確認してホーム表示へそのまま進む。
   if (DeepLinkService.isAppOpenLink(uri)) {
-    debugPrint('[main] Open app from sender (app://open)');
+    appLog.debug('[main] Open app from sender (app://open)');
     return;
   }
 
@@ -384,7 +383,7 @@ void _handleDeepLink(Uri uri) {
 
   // 送客元現世と報酬タイプを記録（受信基盤の具現化）。
   // 報酬付与は既存の報酬サービス等が担うため、ここでは受信を確認する。
-  debugPrint(
+  appLog.debug(
       '[main] Cross reward: source=${link.source}, reward=${link.reward}');
 }
 
@@ -409,7 +408,7 @@ class _TsundokuQuestAppState extends ConsumerState<TsundokuQuestApp> {
         ref.read(textScaleProvider.notifier).load().catchError((_) {}),
       );
     } catch (e) {
-      debugPrint('⚠️ 文字サイズ設定の読み込み失敗: $e');
+      appLog.warn('⚠️ 文字サイズ設定の読み込み失敗: $e');
     }
     // 保存済みのテーマモード設定を読み込む（失敗しても起動を妨げない）
     try {
@@ -417,7 +416,7 @@ class _TsundokuQuestAppState extends ConsumerState<TsundokuQuestApp> {
         ref.read(themeModeProvider.notifier).load().catchError((_) {}),
       );
     } catch (e) {
-      debugPrint('⚠️ テーマモード設定の読み込み失敗: $e');
+      appLog.warn('⚠️ テーマモード設定の読み込み失敗: $e');
     }
     // 保存済みの「動きを減らす」設定を読み込む（失敗しても起動を妨げない）
     try {
@@ -425,7 +424,7 @@ class _TsundokuQuestAppState extends ConsumerState<TsundokuQuestApp> {
         ref.read(reduceMotionProvider.notifier).load().catchError((_) {}),
       );
     } catch (e) {
-      debugPrint('⚠️ 動きを減らす設定の読み込み失敗: $e');
+      appLog.warn('⚠️ 動きを減らす設定の読み込み失敗: $e');
     }
     // 接続状態の変化を監視し、オンライン復帰時に自動リトライ
     ref.listenManual(isOnlineProvider, (prev, next) {
@@ -450,11 +449,11 @@ class _TsundokuQuestAppState extends ConsumerState<TsundokuQuestApp> {
             repo.syncLocalSessionsToRemote();
           }
         } catch (e) {
-          debugPrint('⚠️ 読書セッション同期失敗: $e');
+          appLog.warn('⚠️ 読書セッション同期失敗: $e');
         }
       } else if (next == false) {
         // オフライン検知（ログのみ）
-        debugPrint('📡 [App] オフライン状態を検知');
+        appLog.debug('📡 [App] オフライン状態を検知');
       }
     });
   }
@@ -482,7 +481,7 @@ class _TsundokuQuestAppState extends ConsumerState<TsundokuQuestApp> {
       await notifier.loadProgress();
       notifier.loadFromRepository(ref.read(adventurerRepositoryProvider));
     } catch (e) {
-      debugPrint('⚠️ 冒険者ステータスの再取得失敗: $e');
+      appLog.warn('⚠️ 冒険者ステータスの再取得失敗: $e');
     }
   }
 
@@ -567,11 +566,11 @@ class _AppStartupInitializerState
 
           await ref.read(reminderSettingsProvider.notifier).load();
         } catch (e) {
-          debugPrint('⚠️ リマインダー初期化失敗: $e');
+          appLog.warn('⚠️ リマインダー初期化失敗: $e');
         }
       });
     } catch (e) {
-      debugPrint('⚠️ リマインダー初期化失敗: $e');
+      appLog.warn('⚠️ リマインダー初期化失敗: $e');
     }
   }
 
@@ -585,7 +584,7 @@ class _AppStartupInitializerState
       final repository = ref.read(adventurerRepositoryProvider);
       ref.read(adventurerProvider.notifier).loadFromRepository(repository);
     } catch (e) {
-      debugPrint('⚠️ 冒険者ステータスの初期ロード失敗: $e');
+      appLog.warn('⚠️ 冒険者ステータスの初期ロード失敗: $e');
     }
   }
 
@@ -605,7 +604,7 @@ class _AppStartupInitializerState
         await repo.syncLocalSessionsToRemote();
       }
     } catch (e) {
-      debugPrint('⚠️ 起動時読書セッション同期失敗: $e');
+      appLog.warn('⚠️ 起動時読書セッション同期失敗: $e');
     }
   }
 
@@ -620,7 +619,7 @@ class _AppStartupInitializerState
         GoRouter.of(context).push('/tutorial');
       }
     } catch (e) {
-      debugPrint('⚠️ チュートリアル判定失敗: $e');
+      appLog.warn('⚠️ チュートリアル判定失敗: $e');
     }
   }
 

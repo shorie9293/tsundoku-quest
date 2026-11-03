@@ -15,11 +15,11 @@
 ///     上記2つの移行が完了すれば自動的に再計算される。
 library;
 
-import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tsundoku_quest/core/infrastructure/hive/box_manager.dart';
 import 'package:tsundoku_quest/domain/models/user_book.dart';
 import 'package:tsundoku_quest/domain/models/reading_session.dart';
+import 'package:tsundoku_quest/core/logging/app_logger.dart';
 
 /// 移行結果
 ///
@@ -115,19 +115,19 @@ class HiveMigrationService {
     try {
       // 0. 既に完了済みならスキップ
       if (!await isMigrationNeeded()) {
-        debugPrint('[HiveMigration] 移行済みフラグ検出 → スキップ');
+        appLog.debug('[HiveMigration] 移行済みフラグ検出 → スキップ');
         result.skipped = true;
         result.completed = true;
         return result;
       }
 
-      debugPrint('[HiveMigration] === データ移行を開始 ===');
+      appLog.debug('[HiveMigration] === データ移行を開始 ===');
 
       // 1. BoxManager が Box を開いていることを保証
       try {
         await _boxManager.openAllBoxes();
       } catch (e) {
-        debugPrint('[HiveMigration] Box open 失敗: $e');
+        appLog.warn('[HiveMigration] Box open 失敗: $e');
       }
 
       // 2. Supabase → Hive: UserBook
@@ -143,14 +143,14 @@ class HiveMigrationService {
       await _markComplete();
       result.completed = true;
 
-      debugPrint(
+      appLog.debug(
         '[HiveMigration] === 移行完了: '
         'books=${result.booksMigrated}(${result.booksSkipped ? "skip" : "ok"}), '
         'sessions=${result.sessionsMigrated}(${result.sessionsSkipped ? "skip" : "ok"}), '
         'tutorial=${result.tutorialMigrated ? "ok" : "skip"} ===',
       );
     } catch (e, stack) {
-      debugPrint('[HiveMigration] 移行全体で致命的エラー: $e\n$stack');
+      appLog.error('[HiveMigration] 移行全体で致命的エラー: $e\n$stack');
       result.error = e.toString();
     }
 
@@ -164,7 +164,7 @@ class HiveMigrationService {
   /// UserBook を Supabase → Hive に移行
   Future<void> _migrateUserBooks(MigrationResult result) async {
     if (_onFetchUserBooks == null) {
-      debugPrint('[HiveMigration] UserBook fetch callback なし → スキップ');
+      appLog.debug('[HiveMigration] UserBook fetch callback なし → スキップ');
       result.booksSkipped = true;
       return;
     }
@@ -174,14 +174,14 @@ class HiveMigrationService {
 
       // 既存データチェック（冪等性）
       if (box.isNotEmpty) {
-        debugPrint('[HiveMigration] books_box 既存データあり → スキップ');
+        appLog.debug('[HiveMigration] books_box 既存データあり → スキップ');
         result.booksSkipped = true;
         return;
       }
 
-      debugPrint('[HiveMigration] Supabase → Hive: UserBook 移行中...');
+      appLog.debug('[HiveMigration] Supabase → Hive: UserBook 移行中...');
       final books = await _onFetchUserBooks();
-      debugPrint('[HiveMigration] Supabase から ${books.length} 件の UserBook を取得');
+      appLog.debug('[HiveMigration] Supabase から ${books.length} 件の UserBook を取得');
 
       int migrated = 0;
       for (final book in books) {
@@ -189,14 +189,14 @@ class HiveMigrationService {
           await box.put(book.id, book);
           migrated++;
         } catch (e) {
-          debugPrint('[HiveMigration] UserBook put 失敗 (id=${book.id}): $e');
+          appLog.warn('[HiveMigration] UserBook put 失敗 (id=${book.id}): $e');
         }
       }
       await box.flush();
       result.booksMigrated = migrated;
-      debugPrint('[HiveMigration] UserBook: $migrated 件を Hive に保存');
+      appLog.debug('[HiveMigration] UserBook: $migrated 件を Hive に保存');
     } catch (e) {
-      debugPrint('[HiveMigration] UserBook 移行失敗: $e');
+      appLog.warn('[HiveMigration] UserBook 移行失敗: $e');
       result.booksError = e.toString();
     }
   }
@@ -204,7 +204,7 @@ class HiveMigrationService {
   /// ReadingSession を Supabase → Hive に移行
   Future<void> _migrateReadingSessions(MigrationResult result) async {
     if (_onFetchReadingSessions == null) {
-      debugPrint('[HiveMigration] ReadingSession fetch callback なし → スキップ');
+      appLog.debug('[HiveMigration] ReadingSession fetch callback なし → スキップ');
       result.sessionsSkipped = true;
       return;
     }
@@ -214,14 +214,14 @@ class HiveMigrationService {
 
       // 既存データチェック（冪等性）
       if (box.isNotEmpty) {
-        debugPrint('[HiveMigration] reading_sessions_box 既存データあり → スキップ');
+        appLog.debug('[HiveMigration] reading_sessions_box 既存データあり → スキップ');
         result.sessionsSkipped = true;
         return;
       }
 
-      debugPrint('[HiveMigration] Supabase → Hive: ReadingSession 移行中...');
+      appLog.debug('[HiveMigration] Supabase → Hive: ReadingSession 移行中...');
       final sessions = await _onFetchReadingSessions();
-      debugPrint('[HiveMigration] Supabase から ${sessions.length} 件の ReadingSession を取得');
+      appLog.debug('[HiveMigration] Supabase から ${sessions.length} 件の ReadingSession を取得');
 
       int migrated = 0;
       for (final session in sessions) {
@@ -229,14 +229,14 @@ class HiveMigrationService {
           await box.put(session.id, session);
           migrated++;
         } catch (e) {
-          debugPrint('[HiveMigration] ReadingSession put 失敗 (id=${session.id}): $e');
+          appLog.warn('[HiveMigration] ReadingSession put 失敗 (id=${session.id}): $e');
         }
       }
       await box.flush();
       result.sessionsMigrated = migrated;
-      debugPrint('[HiveMigration] ReadingSession: $migrated 件を Hive に保存');
+      appLog.debug('[HiveMigration] ReadingSession: $migrated 件を Hive に保存');
     } catch (e) {
-      debugPrint('[HiveMigration] ReadingSession 移行失敗: $e');
+      appLog.warn('[HiveMigration] ReadingSession 移行失敗: $e');
       result.sessionsError = e.toString();
     }
   }
@@ -255,12 +255,12 @@ class HiveMigrationService {
         await box.put('operation_seen', operationSeen);
         await box.flush();
         result.tutorialMigrated = true;
-        debugPrint('[HiveMigration] Tutorial 状態を移行: lore=$loreSeen, op=$operationSeen');
+        appLog.debug('[HiveMigration] Tutorial 状態を移行: lore=$loreSeen, op=$operationSeen');
       } else {
-        debugPrint('[HiveMigration] tutorial_box 既存データあり → スキップ');
+        appLog.debug('[HiveMigration] tutorial_box 既存データあり → スキップ');
       }
     } catch (e) {
-      debugPrint('[HiveMigration] Tutorial 移行失敗: $e');
+      appLog.warn('[HiveMigration] Tutorial 移行失敗: $e');
     }
   }
 
@@ -269,9 +269,9 @@ class HiveMigrationService {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(_migrationCompletedKey, true);
-      debugPrint('[HiveMigration] 完了フラグを設定');
+      appLog.debug('[HiveMigration] 完了フラグを設定');
     } catch (e) {
-      debugPrint('[HiveMigration] 完了フラグ設定失敗: $e');
+      appLog.warn('[HiveMigration] 完了フラグ設定失敗: $e');
     }
   }
 }

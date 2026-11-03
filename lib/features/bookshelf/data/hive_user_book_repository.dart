@@ -4,11 +4,11 @@
 /// Books (the catalog entries) are stored alongside UserBooks.
 library;
 
-import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:tsundoku_quest/domain/models/user_book.dart';
 import 'package:tsundoku_quest/domain/repositories/user_book_repository.dart';
 import 'package:tsundoku_quest/core/infrastructure/hive/box_manager.dart';
+import 'package:tsundoku_quest/core/logging/app_logger.dart';
 
 class HiveUserBookRepository implements UserBookRepository {
   final BoxManagerInterface _boxManager;
@@ -31,7 +31,7 @@ class HiveUserBookRepository implements UserBookRepository {
       final box = await _getBox();
       return BoxHelper.loadCollection(box);
     } catch (e) {
-      debugPrint('[HiveUserBookRepo] getMyBooks failed: $e');
+      appLog.warn('[HiveUserBookRepo] getMyBooks failed: $e');
       return [];
     }
   }
@@ -43,7 +43,7 @@ class HiveUserBookRepository implements UserBookRepository {
       final all = BoxHelper.loadCollection(box);
       return all.where((ub) => ub.status == status).toList();
     } catch (e) {
-      debugPrint('[HiveUserBookRepo] getByStatus failed: $e');
+      appLog.warn('[HiveUserBookRepo] getByStatus failed: $e');
       return [];
     }
   }
@@ -54,7 +54,7 @@ class HiveUserBookRepository implements UserBookRepository {
       final box = await _getBox();
       return box.get(id);
     } catch (e) {
-      debugPrint('[HiveUserBookRepo] getById failed: $e');
+      appLog.warn('[HiveUserBookRepo] getById failed: $e');
       return null;
     }
   }

@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/foundation.dart';
 
 import 'crash_log_service.dart';
+import 'package:tsundoku_quest/core/logging/app_logger.dart';
 
 /// 未捕捉例外の受け皿を、既存ハンドラを壊さずに設置する。
 ///
@@ -43,9 +44,8 @@ bool installCrashGuard({CrashLogger? logger}) {
     return false;
   };
 
-  if (kDebugMode) {
-    debugPrint('🛡️ CrashGuard 設置完了（FlutterError / PlatformDispatcher）');
-  }
+  // 開発時のみ流れる（appLog 側が isDebug を判定する）
+  appLog.debug('🛡️ CrashGuard 設置完了（FlutterError / PlatformDispatcher）');
   return true;
 }
 

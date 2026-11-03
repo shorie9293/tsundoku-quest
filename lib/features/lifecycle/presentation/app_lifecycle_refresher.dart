@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 
 import '../domain/day_rollover_detector.dart';
+import 'package:tsundoku_quest/core/logging/app_logger.dart';
 
 /// 前面復帰（resumed）時に日付跨ぎを検出し、[onRollover] を1回だけ走らせる。
 ///
@@ -60,7 +61,7 @@ class _AppLifecycleRefresherState extends State<AppLifecycleRefresher>
       final now = (widget.now ?? DateTime.now)();
       result = widget.detector.check(now);
     } catch (e) {
-      debugPrint('⚠️ 日付跨ぎの判定に失敗（アプリは継続）: $e');
+      appLog.warn('⚠️ 日付跨ぎの判定に失敗（アプリは継続）: $e');
       return;
     }
     if (result != DayRolloverResult.rolledOver) return;
@@ -74,7 +75,7 @@ class _AppLifecycleRefresherState extends State<AppLifecycleRefresher>
       await widget.onRollover();
     } catch (e, stackTrace) {
       // 再計算の失敗でアプリを落とさない
-      debugPrint('⚠️ 日付跨ぎの再計算に失敗（アプリは継続）: $e\n$stackTrace');
+      appLog.warn('⚠️ 日付跨ぎの再計算に失敗（アプリは継続）: $e\n$stackTrace');
     } finally {
       _running = false;
     }

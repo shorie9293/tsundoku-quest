@@ -1,9 +1,9 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:tsundoku_quest/core/infrastructure/hive/box_manager.dart';
 import 'package:tsundoku_quest/domain/models/reading_session.dart';
 import 'package:tsundoku_quest/domain/repositories/reading_session_repository.dart';
+import 'package:tsundoku_quest/core/logging/app_logger.dart';
 
 /// Supabase 失敗時に Hive へフォールバックする読書セッションリポジトリ。
 ///
@@ -68,11 +68,11 @@ class FallbackReadingSessionRepository implements ReadingSessionRepository {
           await box.delete(rawId);
           await box.flush();
         } catch (e) {
-          debugPrint('⚠️ [FallbackSession] 同期失敗（次回再試行）: $e');
+          appLog.warn('⚠️ [FallbackSession] 同期失敗（次回再試行）: $e');
         }
       }
     } catch (e) {
-      debugPrint('⚠️ [FallbackSession] 同期処理失敗: $e');
+      appLog.warn('⚠️ [FallbackSession] 同期処理失敗: $e');
     } finally {
       _isSyncing = false;
     }
@@ -83,7 +83,7 @@ class FallbackReadingSessionRepository implements ReadingSessionRepository {
     try {
       return await _primary.startSession(userBookId, startPage);
     } catch (e) {
-      debugPrint('⚠️ [FallbackSession] startSession 失敗、ローカルに退避: $e');
+      appLog.warn('⚠️ [FallbackSession] startSession 失敗、ローカルに退避: $e');
       final session = await _local.startSession(userBookId, startPage);
       // ローカル発セッションであることを示すプレフィックス付きIDで上書き保存
       // （元の session.id キーは保持する。endSession が sessionId を剥がして

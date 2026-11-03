@@ -6,11 +6,11 @@ library;
 
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:tsundoku_quest/core/infrastructure/hive/box_manager.dart';
 import 'package:tsundoku_quest/core/infrastructure/hive/hive_initializer.dart';
 import 'package:tsundoku_quest/domain/models/adventurer_progress.dart';
+import 'package:tsundoku_quest/core/logging/app_logger.dart';
 
 abstract class AdventurerProgressRepository {
   Future<AdventurerProgress> load();
@@ -40,7 +40,7 @@ class HiveAdventurerProgressRepository implements AdventurerProgressRepository {
       _box = await _boxManager.getBox<String>(BoxNames.adventurer);
       return _box;
     } catch (e) {
-      debugPrint('[AdventurerProgressRepo] box open failed: $e');
+      appLog.warn('[AdventurerProgressRepo] box open failed: $e');
       return null;
     }
   }
@@ -58,7 +58,7 @@ class HiveAdventurerProgressRepository implements AdventurerProgressRepository {
       }
       return AdventurerProgress.fromJson(decoded);
     } catch (e) {
-      debugPrint('[AdventurerProgressRepo] load failed: $e');
+      appLog.warn('[AdventurerProgressRepo] load failed: $e');
       return AdventurerProgress.beginner();
     }
   }
@@ -71,7 +71,7 @@ class HiveAdventurerProgressRepository implements AdventurerProgressRepository {
       await box.put(statsKey, jsonEncode(progress.toJson()));
       await box.flush();
     } catch (e) {
-      debugPrint('[AdventurerProgressRepo] save failed: $e');
+      appLog.warn('[AdventurerProgressRepo] save failed: $e');
     }
   }
 }

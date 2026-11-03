@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../domain/models/book.dart';
 import '../../../domain/models/user_book.dart';
 import '../../../domain/repositories/user_book_repository.dart';
+import 'package:tsundoku_quest/core/logging/app_logger.dart';
 
 /// ネットワークエラー時に投げられるカスタム例外
 class NetworkException implements Exception {
@@ -33,7 +34,7 @@ class SupabaseUserBookRepository implements UserBookRepository {
           .map((json) => UserBook.fromSupabase(json))
           .toList();
     } catch (e) {
-      debugPrint('⚠️ Supabase getMyBooks 失敗: $e');
+      appLog.warn('⚠️ Supabase getMyBooks 失敗: $e');
       throw _wrapError(e);
     }
   }
@@ -50,7 +51,7 @@ class SupabaseUserBookRepository implements UserBookRepository {
           .map((json) => UserBook.fromSupabase(json))
           .toList();
     } catch (e) {
-      debugPrint('⚠️ Supabase getByStatus 失敗: $e');
+      appLog.warn('⚠️ Supabase getByStatus 失敗: $e');
       throw _wrapError(e);
     }
   }
@@ -66,7 +67,7 @@ class SupabaseUserBookRepository implements UserBookRepository {
       if (response == null) return null;
       return UserBook.fromSupabase(response);
     } catch (e) {
-      debugPrint('⚠️ Supabase getById 失敗: $e');
+      appLog.warn('⚠️ Supabase getById 失敗: $e');
       throw _wrapError(e);
     }
   }
@@ -125,7 +126,7 @@ class SupabaseUserBookRepository implements UserBookRepository {
           .single();
       return UserBook.fromSupabase(response);
     } catch (e) {
-      debugPrint('⚠️ Supabase addBook 失敗: $e');
+      appLog.warn('⚠️ Supabase addBook 失敗: $e');
       throw _wrapError(e);
     }
   }
@@ -178,7 +179,7 @@ class SupabaseUserBookRepository implements UserBookRepository {
           .single();
       return UserBook.fromSupabase(response);
     } catch (e) {
-      debugPrint('⚠️ Supabase updateBook 失敗: $e');
+      appLog.warn('⚠️ Supabase updateBook 失敗: $e');
       throw _wrapError(e);
     }
   }
@@ -188,7 +189,7 @@ class SupabaseUserBookRepository implements UserBookRepository {
     try {
       await _client.from('user_books').delete().eq('id', id);
     } catch (e) {
-      debugPrint('⚠️ Supabase deleteBook 失敗: $e');
+      appLog.warn('⚠️ Supabase deleteBook 失敗: $e');
       throw _wrapError(e);
     }
   }

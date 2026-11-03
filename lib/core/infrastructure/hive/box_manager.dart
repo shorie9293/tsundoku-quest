@@ -6,8 +6,8 @@
 /// 参照: 高天原神書 hive-persistence-blueprint §4 (Repository 実装パターン)
 library;
 
-import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
+import 'package:tsundoku_quest/core/logging/app_logger.dart';
 
 // ════════════════════════════════════════════
 // Box 名定数 — 全 Box の名前空間管理
@@ -126,17 +126,17 @@ class HiveBoxManager implements BoxManagerInterface {
       return box;
     } catch (e) {
       // 型不一致等で open に失敗 → 破損フラグを立て raw データ退避を試行
-      debugPrint('[HiveBoxManager] Box "$name" open failed: $e');
+      appLog.warn('[HiveBoxManager] Box "$name" open failed: $e');
       _corruptionFlags[name] = true;
 
       // ★ 型なし Box で開き直し、raw データ読出しを試行（§4.2）
       try {
         final rawBox = await Hive.openBox<dynamic>(name);
         _boxes[name] = rawBox;
-        debugPrint('[HiveBoxManager] Box "$name" opened as raw (untyped)');
+        appLog.debug('[HiveBoxManager] Box "$name" opened as raw (untyped)');
         return rawBox as Box<T>;
       } catch (e2) {
-        debugPrint('[HiveBoxManager] Box "$name" raw open also failed: $e2');
+        appLog.warn('[HiveBoxManager] Box "$name" raw open also failed: $e2');
         rethrow;
       }
     }
@@ -150,7 +150,7 @@ class HiveBoxManager implements BoxManagerInterface {
       try {
         await getBox(name);
       } catch (e) {
-        debugPrint('[HiveBoxManager] Failed to open box "$name": $e');
+        appLog.warn('[HiveBoxManager] Failed to open box "$name": $e');
         // 1つの Box の失敗で全停止しない
       }
     }
@@ -181,7 +181,7 @@ class HiveBoxManager implements BoxManagerInterface {
       await box.clear();
       await box.flush();
     } catch (e) {
-      debugPrint('[HiveBoxManager] Failed to clear box "$name": $e');
+      appLog.warn('[HiveBoxManager] Failed to clear box "$name": $e');
       rethrow;
     }
   }
@@ -213,7 +213,7 @@ class BoxHelper {
     try {
       return box.getAt(0);
     } catch (e) {
-      debugPrint('[BoxHelper] loadSingle failed: $e');
+      appLog.warn('[BoxHelper] loadSingle failed: $e');
       rethrow;
     }
   }

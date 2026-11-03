@@ -1,0 +1,10 @@
+0
+# 本番ログ垂れ流し静的ゲートの上限値（1行目のみが数値として読まれる）。
+# 意味: lib 配下の .dart に許される raw な `print(` / `debugPrint(` の総数。
+#
+# 移行前: 164 件（2026-11 時点、5現世で最多）
+# 移行後: 0 件（全 164 件を core/logging/app_logger.dart の appLog 経由へ）
+#
+# ログを出したいときは raw print ではなく `appLog.debug/info/warn/error` を使う。
+# やむを得ず増やす場合は test/core/logging/print_gate_test.dart が赤くなるため、
+# この値を「実測値」へ更新する（値を上げる変更はレビューで理由を残すこと）。

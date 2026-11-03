@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tsundoku_quest/features/shared/providers/war_trophy_provider.dart';
+import 'package:tsundoku_quest/core/logging/app_logger.dart';
 
 /// アプリ起動時に Supabase から表示用データをロードする。
 ///
@@ -12,8 +13,7 @@ Future<void> loadStartupData(ProviderContainer container) async {
   } catch (e) {
     // 起動を妨げない。オフライン時はインメモリデータで動作する。
     assert(() {
-      // ignore: avoid_print
-      print('⚠️ [Startup] 戦利品ロード失敗: $e');
+      appLog.warn('⚠️ [Startup] 戦利品ロード失敗: $e');
       return true;
     }());
   }
