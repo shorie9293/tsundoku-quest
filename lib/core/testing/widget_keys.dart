@@ -321,6 +321,7 @@ class AppKeys {
 
   // ━━━ アプリロック ━━━
   static const Key appLockGate = Key('widget_app_lock_gate');
+  static const Key appLockGateScreen = Key('screen_app_lock_gate');
   static const Key appLockLockedMessage = Key('txt_app_lock_locked');
   static const Key appLockPasscodeField = Key('field_app_lock_passcode');
   static const Key appLockUnlockButton = Key('btn_app_lock_unlock');
@@ -336,4 +337,7 @@ class AppKeys {
 
   // ━━━ 読書キュー（読書画面への導線） ━━━
   static const Key readingQueueStartFromCard = Key('card_reading_queue_start');
+
+  /// アプリロック: 復帰時再施錠の猶予ドロップダウン。
+  static const Key appLockGraceDropdown = Key('ddl_app_lock_grace');
 }

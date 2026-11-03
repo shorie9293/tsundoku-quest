@@ -94,4 +94,25 @@ class _ThrowingAppLockRepository implements AppLockRepository {
 
   @override
   bool verifyPasscode(String passcode) => false;
+
+  @override
+  int getRelockGraceSeconds() => 0;
+
+  @override
+  Future<void> setRelockGraceSeconds(int seconds) async {}
+
+  @override
+  int getFailedAttempts() => 0;
+
+  @override
+  Future<void> setFailedAttempts(int attempts) async {}
+
+  @override
+  DateTime? getLockedUntil() => null;
+
+  @override
+  Future<void> setLockedUntil(DateTime? until) async {}
+
+  @override
+  Future<void> resetAttempts() async {}
 }

@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../testing/widget_keys.dart';
 import 'app_lock_repository.dart';
 import 'app_lock_service.dart';
+import 'lock_reload_policy.dart';
 
 /// 設定画面: パスコードによるアプリロックの有効化/無効化。
 class AppLockSettingsScreen extends StatefulWidget {
@@ -20,6 +21,7 @@ class _AppLockSettingsScreenState extends State<AppLockSettingsScreen> {
   final _passcodeController = TextEditingController();
   final _confirmController = TextEditingController();
   String? _error;
+  int _graceSeconds = 0;
 
   @override
   void initState() {
@@ -28,23 +30,33 @@ class _AppLockSettingsScreenState extends State<AppLockSettingsScreen> {
   }
 
   Future<void> _init() async {
+    AppLockService? service;
+    var graceSeconds = 0;
     try {
       final repo = widget.repository ??
           SharedPreferencesAppLockRepository(
             await SharedPreferences.getInstance(),
           );
-      final service = AppLockService(repo);
-      final enabled = service.isLocked;
-      if (!mounted) return;
-      setState(() {
-        _service = service;
-        _enabled = enabled;
-      });
-    } catch (e) {
+      service = AppLockService(repo);
+      service.isLocked;
+      graceSeconds = service.relockGrace.inSeconds;
+    } catch (_) {
       // fail-open: 読込失敗時は無効扱いで画面を表示
-      if (!mounted) return;
-      setState(() => _enabled = false);
+      service = null;
     }
+    if (!mounted) return;
+    setState(() {
+      _service = service;
+      _enabled = service?.isLocked ?? false;
+      _graceSeconds = graceSeconds;
+    });
+  }
+
+  Future<void> _setGrace(int seconds) async {
+    final service = _service;
+    if (service == null) return;
+    setState(() => _graceSeconds = seconds);
+    await service.setRelockGrace(Duration(seconds: seconds));
   }
 
   @override
@@ -90,32 +102,62 @@ class _AppLockSettingsScreenState extends State<AppLockSettingsScreen> {
           ? const Center(child: CircularProgressIndicator())
           : _enabled
               ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.lock, size: 48),
-                      const Text('アプリロック有効'),
-                      const SizedBox(height: 16),
-                      FilledButton(
-                        key: AppKeys.appLockDisableButton,
-                        onPressed: _disable,
-                        child: const Text('無効にする'),
-                      ),
-                    ],
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.lock, size: 48),
+                        const Text('アプリロック有効'),
+                        const SizedBox(height: 24),
+                        DropdownButton<int>(
+                          key: AppKeys.appLockGraceDropdown,
+                          value: LockReloadPolicy.graceOptionsSeconds
+                                  .contains(_graceSeconds)
+                              ? _graceSeconds
+                              : null,
+                          hint: const Text('復帰時に再施錠'),
+                          items: [
+                            for (final seconds
+                                in LockReloadPolicy.graceOptionsSeconds)
+                              DropdownMenuItem<int>(
+                                value: seconds,
+                                child: Text(
+                                  '復帰時に再施錠: '
+                                  '${LockReloadPolicy.graceLabel(seconds)}',
+                                ),
+                              ),
+                          ],
+                          onChanged: (value) {
+                            if (value == null) return;
+                            _setGrace(value);
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        FilledButton(
+                          key: AppKeys.appLockDisableButton,
+                          onPressed: _disable,
+                          child: const Text('無効にする'),
+                        ),
+                      ],
+                    ),
                   ),
                 )
               : Padding(
                   padding: const EdgeInsets.all(24),
                   child: Column(
                     children: [
-                      TextField(
-                        key: AppKeys.appLockNewPasscodeField,
-                        controller: _passcodeController,
-                        keyboardType: TextInputType.number,
-                        maxLength: 4,
-                        obscureText: true,
-                        decoration: const InputDecoration(
-                          labelText: '新しいパスコード（4桁）',
+                      KeyedSubtree(
+                        key: AppKeys.appLockPasscodeField,
+                        child: TextField(
+                          key: AppKeys.appLockNewPasscodeField,
+                          controller: _passcodeController,
+                          keyboardType: TextInputType.number,
+                          maxLength: 4,
+                          obscureText: true,
+                          decoration: const InputDecoration(
+                            labelText: '新しいパスコード（4桁）',
+                          ),
                         ),
                       ),
                       TextField(
