@@ -246,6 +246,7 @@ void main() {
           ),
           // 通知タップ経路の追加に伴い payload も照合対象へ（意図は従来どおり）
           payload: any(named: 'payload'),
+          matchDateTimeComponents: any(named: 'matchDateTimeComponents'),
         ),
       ).thenAnswer((_) async {});
 
@@ -274,6 +275,7 @@ void main() {
           ),
           // 通知タップ経路の追加に伴い payload も照合対象へ（意図は従来どおり）
           payload: any(named: 'payload'),
+          matchDateTimeComponents: any(named: 'matchDateTimeComponents'),
         ),
       ).captured;
       final scheduled = captured.single as DateTime;
@@ -321,6 +323,7 @@ void main() {
           ),
           // 通知タップ経路の追加に伴い payload も照合対象へ（意図は従来どおり）
           payload: any(named: 'payload'),
+          matchDateTimeComponents: any(named: 'matchDateTimeComponents'),
         ),
       );
     });
@@ -340,6 +343,7 @@ void main() {
           ),
           // 通知タップ経路の追加に伴い payload も照合対象へ（意図は従来どおり）
           payload: any(named: 'payload'),
+          matchDateTimeComponents: any(named: 'matchDateTimeComponents'),
         ),
       ).thenAnswer((_) async {});
 
@@ -368,6 +372,7 @@ void main() {
           ),
           // 通知タップ経路の追加に伴い payload も照合対象へ（意図は従来どおり）
           payload: any(named: 'payload'),
+          matchDateTimeComponents: any(named: 'matchDateTimeComponents'),
         ),
       ).captured;
       final scheduled = captured.single as DateTime;

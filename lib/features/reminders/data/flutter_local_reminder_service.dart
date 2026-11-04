@@ -16,11 +16,19 @@ class FlutterLocalReminderService implements LocalNotificationScheduler {
     DateTime Function()? clock,
     this.onRouteSelected,
     Set<String>? allowedRoutes,
+    Future<bool> Function()? exactAlarmAllowed,
   })  : _guard = guard,
         _clock = clock,
+        _exactAlarmAllowed = exactAlarmAllowed,
         allowedRoutes = allowedRoutes ?? NotificationRoutes.all;
 
   final FlutterLocalNotificationsPlugin _plugin;
+
+  /// 正確アラーム（exact alarm）予約が許可されているかの照会シーム。
+  ///
+  /// null なら [_defaultExactAlarmAllowed]（Android の権限照会）を使う。
+  /// 試練・非対応環境では注入して差し替える。
+  final Future<bool> Function()? _exactAlarmAllowed;
 
   /// 静穏時間ガード。null なら [QuietHoursGuardWiring] の既定生成点を使う
   /// （試練・未初期化環境では「静穏時間なし」に落ちる）。
@@ -51,6 +59,34 @@ class FlutterLocalReminderService implements LocalNotificationScheduler {
   /// 明示注入が無ければ既定生成点から一度だけ生成する。
   QuietHoursGuard get _effectiveGuard =>
       _guard ??= QuietHoursGuardWiring.create();
+
+  /// 予約モードの決定。正確アラーム権限があれば exact、無ければ inexact。
+  ///
+  /// 権限要求・ダイアログ表示はしない（照会のみ）。失敗は inexact に落とす。
+  Future<AndroidScheduleMode> _getScheduleMode() async {
+    var allowed = false;
+    final seam = _exactAlarmAllowed;
+    try {
+      allowed = seam != null ? await seam() : await _defaultExactAlarmAllowed();
+    } catch (_) {
+      allowed = false;
+    }
+    return allowed
+        ? AndroidScheduleMode.exactAllowWhileIdle
+        : AndroidScheduleMode.inexactAllowWhileIdle;
+  }
+
+  /// 既定の権限照会。非 Android・例外・null は false（起動を妨げない）。
+  Future<bool> _defaultExactAlarmAllowed() async {
+    try {
+      final android = _plugin.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+      if (android == null) return false;
+      return await android.canScheduleExactNotifications() ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
 
   @override
   Future<void> initialize() async {
@@ -135,6 +171,8 @@ class FlutterLocalReminderService implements LocalNotificationScheduler {
     }
     scheduledDate = tz.TZDateTime.from(resolved, tz.local);
 
+    final scheduleMode = await _getScheduleMode();
+
     await _plugin.zonedSchedule(
       _reminderId,
       '積読のお知らせ',
@@ -150,9 +188,12 @@ class FlutterLocalReminderService implements LocalNotificationScheduler {
         ),
         iOS: DarwinNotificationDetails(),
       ),
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      androidScheduleMode: scheduleMode,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
+      // 毎日繰り返し（時刻コンポーネント一致）＝アプリ未起動でも鳴る。
+      // 同一IDへの上書き予約なので重複せず、cancel も挟まない。
+      matchDateTimeComponents: DateTimeComponents.time,
       // タップ時の遷移先。予約時刻・繰り返し・ID・静穏時間の扱いは不変。
       payload: NotificationRouteResolver.buildPayload(reminderRoute),
     );

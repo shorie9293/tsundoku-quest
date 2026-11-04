@@ -234,6 +234,7 @@ void main() {
             named: 'uiLocalNotificationDateInterpretation',
           ),
           payload: any(named: 'payload'),
+          matchDateTimeComponents: any(named: 'matchDateTimeComponents'),
         ),
       ).thenAnswer((_) async {});
 
@@ -251,6 +252,7 @@ void main() {
             named: 'uiLocalNotificationDateInterpretation',
           ),
           payload: captureAny(named: 'payload'),
+          matchDateTimeComponents: any(named: 'matchDateTimeComponents'),
         ),
       ).captured.single as String?;
 
