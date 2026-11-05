@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:takamagahara_ui/takamagahara_ui.dart' hide AppKeys;
 
 import 'package:tsundoku_quest/core/testing/widget_keys.dart';
+import 'package:tsundoku_quest/features/auto_backup/data/auto_backup_status_store.dart';
 import 'package:tsundoku_quest/features/settings/data/theme_mode_provider.dart';
 import 'package:tsundoku_quest/features/settings/domain/theme_mode_setting.dart';
 import 'package:tsundoku_quest/features/settings/presentation/settings_hub_screen.dart';
@@ -37,6 +38,7 @@ class ThemeModeSettingsScreen extends ConsumerWidget {
                 MaterialPageRoute<void>(
                   builder: (_) => SettingsHubScreen(
                     accountDeletionBuilder: buildAccountDeletionSettings,
+                    autoBackupStatusStore: FileAutoBackupStatusStore(),
                   ),
                 ),
               ),

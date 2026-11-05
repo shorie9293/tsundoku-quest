@@ -47,6 +47,7 @@ import 'features/shared/data/tsundoku_reward_event_exporter.dart';
 import 'features/shared/data/reward_event_user_linker.dart';
 import 'features/shared/providers/reward_event_exporter_provider.dart';
 import 'features/auto_backup/data/auto_backup_bootstrap.dart';
+import 'features/auto_backup/data/auto_backup_status_store.dart';
 import 'features/backup/data/backup_repository.dart';
 import 'features/goals/data/reading_goal_repository.dart';
 import 'features/lifecycle/domain/day_rollover_detector.dart';
@@ -236,6 +237,8 @@ Future<void> bootstrap() async {
       final data = await autoBackupRepository.collect();
       return const JsonEncoder.withIndent('  ').convert(data.toJson());
     },
+    // 失敗の可視化（最終成功・連続失敗）の記録先。既定と同じだが意図を明示する。
+    statusStore: FileAutoBackupStatusStore(),
   );
 
   appLog.debug('🚀 runApp 開始...');

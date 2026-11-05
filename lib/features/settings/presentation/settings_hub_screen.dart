@@ -16,8 +16,10 @@ import 'package:tsundoku_quest/features/auth/domain/auth_state.dart';
 import 'package:tsundoku_quest/features/auth/presentation/auth_provider.dart';
 import 'package:tsundoku_quest/features/auto_backup/data/auto_backup_restorer_impl.dart';
 import 'package:tsundoku_quest/features/auto_backup/data/auto_backup_sharer_impl.dart';
+import 'package:tsundoku_quest/features/auto_backup/data/auto_backup_status_store.dart';
 import 'package:tsundoku_quest/features/auto_backup/data/auto_backup_store.dart';
 import 'package:tsundoku_quest/features/auto_backup/domain/auto_backup_service.dart';
+import 'package:tsundoku_quest/features/auto_backup/domain/auto_backup_status.dart';
 import 'package:tsundoku_quest/features/auto_backup/presentation/auto_backup_screen.dart';
 import 'package:tsundoku_quest/features/backup/data/backup_repository.dart';
 import 'package:tsundoku_quest/features/backup/domain/backup_exporter.dart';
@@ -55,6 +57,7 @@ class SettingsHubScreen extends StatelessWidget {
     this.crashLogBuilder = buildCrashLogSettings,
     this.helpBuilder = buildHelpSettings,
     this.accountDeletionBuilder,
+    this.autoBackupStatusStore,
   });
 
   final WidgetBuilder themeModeBuilder;
@@ -77,6 +80,11 @@ class SettingsHubScreen extends StatelessWidget {
   ///
   /// null のときは項目自体を出さない（退会導線を持たない構成・既存試練の後方互換）。
   final WidgetBuilder? accountDeletionBuilder;
+
+  /// 自動バックアップの状態の読み出し元。
+  ///
+  /// null のときは従来どおりの静的な項目（状態を読みに行かない）。
+  final AutoBackupStatusStore? autoBackupStatusStore;
 
   /// 一覧の定義（並び順がそのまま表示順）。
   List<_SettingsHubItem> get _items => [
@@ -165,29 +173,87 @@ class SettingsHubScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final statusStore = autoBackupStatusStore;
     return Scaffold(
       key: AppKeys.settingsHubScreen,
       appBar: AppBar(title: const Text('設定')),
       body: ListView(
         children: [
           for (final item in _items)
-            SemanticHelper.interactive(
-              testId: 'item_settings_hub_${item.id}',
-              label: item.label,
-              child: ListTile(
-                key: AppKeys.settingsHubItem(item.id),
-                leading: Icon(item.icon),
-                title: item.showCrashCount
-                    ? _CrashLogLabel(label: item.label)
-                    : Text(item.label),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => _open(context, item),
-              ),
-            ),
+            if (statusStore != null && item.id == 'auto_backup')
+              // 設定ハブ自体は StatelessWidget のまま、非同期の読み出しだけを子へ閉じ込める。
+              _AutoBackupStatusItem(
+                store: statusStore,
+                builder: (status) => _buildTile(context, item, status: status),
+              )
+            else
+              _buildTile(context, item),
         ],
       ),
     );
   }
+
+  Widget _buildTile(
+    BuildContext context,
+    _SettingsHubItem item, {
+    AutoBackupStatus? status,
+  }) {
+    final degraded = status?.isDegraded == true;
+    return SemanticHelper.interactive(
+      testId: 'item_settings_hub_${item.id}',
+      label: item.label,
+      child: ListTile(
+        key: AppKeys.settingsHubItem(item.id),
+        leading: Icon(degraded ? Icons.warning_amber_outlined : item.icon),
+        title: item.showCrashCount
+            ? _CrashLogLabel(label: item.label)
+            : Text(item.label),
+        subtitle: degraded
+            ? Text(
+                '自動バックアップに失敗しています'
+                '（${status!.consecutiveFailures}回連続）',
+              )
+            : null,
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => _open(context, item),
+      ),
+    );
+  }
+}
+
+/// 自動バックアップの状態を読み出して項目を組み立てる小さな器。
+class _AutoBackupStatusItem extends StatefulWidget {
+  const _AutoBackupStatusItem({required this.store, required this.builder});
+
+  final AutoBackupStatusStore store;
+  final Widget Function(AutoBackupStatus? status) builder;
+
+  @override
+  State<_AutoBackupStatusItem> createState() => _AutoBackupStatusItemState();
+}
+
+class _AutoBackupStatusItemState extends State<_AutoBackupStatusItem> {
+  AutoBackupStatus? _status;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    AutoBackupStatus? status;
+    try {
+      status = await widget.store.load();
+    } catch (_) {
+      status = null;
+    }
+    if (!mounted) return;
+    setState(() => _status = status);
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.builder(_status);
 }
 
 class _SettingsHubItem {
@@ -283,6 +349,7 @@ Widget buildAutoBackupSettings(BuildContext context) => Consumer(
       builder: (context, ref, _) {
         final repository = ref.watch(backupRepositoryProvider);
         final store = FileAutoBackupStore();
+        final statusStore = FileAutoBackupStatusStore();
 
         Future<String> buildJson() async {
           final data = await repository.collect();
@@ -291,6 +358,7 @@ Widget buildAutoBackupSettings(BuildContext context) => Consumer(
 
         return AutoBackupScreen(
           store: store,
+          statusStore: statusStore,
           restorer: AutoBackupRestorerImpl(
             store: store,
             buildCurrentJson: buildJson,
@@ -305,7 +373,8 @@ Widget buildAutoBackupSettings(BuildContext context) => Consumer(
           ),
           sharer: FileAutoBackupSharer(),
           onBackupNow: () async {
-            await AutoBackupService(store: store).run(buildJson);
+            await AutoBackupService(store: store, statusStore: statusStore)
+                .run(buildJson);
           },
         );
       },

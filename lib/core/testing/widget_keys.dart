@@ -338,6 +338,12 @@ class AppKeys {
   // ━━━ 読書キュー（読書画面への導線） ━━━
   static const Key readingQueueStartFromCard = Key('card_reading_queue_start');
 
+  // ━━━ 自動バックアップの状態表示 ━━━
+  static const Key autoBackupLastSuccess = Key('auto_backup_last_success');
+  static const Key autoBackupFailureBanner =
+      Key('auto_backup_failure_banner');
+  static const Key autoBackupRetry = Key('auto_backup_retry');
+
   /// アプリロック: 復帰時再施錠の猶予ドロップダウン。
   static const Key appLockGraceDropdown = Key('ddl_app_lock_grace');
 }

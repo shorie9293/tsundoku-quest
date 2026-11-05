@@ -5,8 +5,10 @@
 /// いかなる例外も握り、起動を妨げない。
 library;
 
+import 'package:tsundoku_quest/features/auto_backup/data/auto_backup_status_store.dart';
 import 'package:tsundoku_quest/features/auto_backup/data/auto_backup_store.dart';
 import 'package:tsundoku_quest/features/auto_backup/domain/auto_backup_policy.dart';
+import 'package:tsundoku_quest/features/auto_backup/domain/auto_backup_status.dart';
 
 /// 実行結果
 class AutoBackupResult {
@@ -38,13 +40,43 @@ class AutoBackupResult {
 class AutoBackupService {
   final AutoBackupStore store;
   final AutoBackupPolicy policy;
+
+  /// 試行結果（最終成功・連続失敗）の記録先（null なら記録しない）
+  final AutoBackupStatusStore? statusStore;
+
   final DateTime Function() _now;
 
   AutoBackupService({
     required this.store,
     this.policy = const AutoBackupPolicy(),
+    this.statusStore,
     DateTime Function()? now,
   }) : _now = now ?? DateTime.now;
+
+  /// 保存済みの状態を読み出す（記録先が無ければ null）
+  Future<AutoBackupStatus?> loadStatus() async {
+    final store = statusStore;
+    if (store == null) return null;
+    try {
+      return await store.load();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// 状態の更新を1箇所に集約する（失敗しても本処理を壊さない）
+  Future<void> _record(
+    AutoBackupStatus Function(AutoBackupStatus current) update,
+  ) async {
+    final store = statusStore;
+    if (store == null) return;
+    try {
+      final current = await store.load() ?? AutoBackupStatus.initial;
+      await store.save(update(current));
+    } catch (_) {
+      // 記録の失敗は握る（バックアップ本体の成否とは別問題）
+    }
+  }
 
   /// 自動バックアップを1回試行する。
   ///
@@ -70,12 +102,15 @@ class AutoBackupService {
         await store.delete(entry.fileName);
       }
 
+      await _record((current) => current.recordSuccess(now));
+
       return AutoBackupResult(
         ran: true,
         fileName: fileName,
         pruned: [for (final e in stale) e.fileName],
       );
     } catch (e) {
+      await _record((current) => current.recordFailure(_now(), e));
       return AutoBackupResult(ran: false, error: e);
     }
   }

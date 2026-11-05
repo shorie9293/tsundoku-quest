@@ -6,6 +6,7 @@ library;
 
 import 'dart:async';
 
+import 'package:tsundoku_quest/features/auto_backup/data/auto_backup_status_store.dart';
 import 'package:tsundoku_quest/features/auto_backup/data/auto_backup_store.dart';
 import 'package:tsundoku_quest/features/auto_backup/domain/auto_backup_policy.dart';
 import 'package:tsundoku_quest/features/auto_backup/domain/auto_backup_service.dart';
@@ -16,11 +17,13 @@ void scheduleAutoBackup({
   required Future<String> Function() buildJson,
   AutoBackupStore? store,
   AutoBackupPolicy policy = const AutoBackupPolicy(),
+  AutoBackupStatusStore? statusStore,
 }) {
   try {
     final service = AutoBackupService(
       store: store ?? FileAutoBackupStore(),
       policy: policy,
+      statusStore: statusStore ?? FileAutoBackupStatusStore(),
     );
     unawaited(
       service.run(buildJson).then((result) {
