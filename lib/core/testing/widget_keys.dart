@@ -346,4 +346,23 @@ class AppKeys {
 
   /// アプリロック: 復帰時再施錠の猶予ドロップダウン。
   static const Key appLockGraceDropdown = Key('ddl_app_lock_grace');
+
+  // ━━━ アプリロック: パスコード忘却時の回復（#211） ━━━
+  /// ロック画面の「パスコードをお忘れですか？」。
+  static const Key appLockForgotButton = Key('btn_app_lock_forgot');
+
+  /// 回復ダイアログの確認語入力欄。
+  static const Key appLockRecoveryConfirmField =
+      Key('field_app_lock_recovery_confirm');
+
+  /// 回復ダイアログの実行ボタン。
+  static const Key appLockRecoveryConfirmButton =
+      Key('btn_app_lock_recovery_confirm');
+
+  /// 回復ダイアログの取消ボタン。
+  static const Key appLockRecoveryCancelButton =
+      Key('btn_app_lock_recovery_cancel');
+
+  /// 回復ダイアログのエラー表示。
+  static const Key appLockRecoveryError = Key('txt_app_lock_recovery_error');
 }
