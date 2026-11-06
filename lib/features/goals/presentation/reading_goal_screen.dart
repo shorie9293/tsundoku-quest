@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tsundoku_quest/core/theme/app_theme.dart';
 import 'package:tsundoku_quest/core/testing/widget_keys.dart';
+import 'package:tsundoku_quest/core/text/japanese_number.dart';
 import 'package:tsundoku_quest/features/goals/data/reading_goal_provider.dart';
 import 'package:tsundoku_quest/features/goals/domain/reading_goal.dart';
 
@@ -146,7 +147,7 @@ class _ReadingGoalScreenState extends ConsumerState<ReadingGoalScreen> {
   }
 
   int _parseTarget(TextEditingController controller) {
-    final value = int.tryParse(controller.text.trim()) ?? 0;
+    final value = JapaneseNumber.tryParseInt(controller.text.trim()) ?? 0;
     return value > 0 ? value : 0;
   }
 

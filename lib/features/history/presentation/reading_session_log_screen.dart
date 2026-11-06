@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../../core/testing/widget_keys.dart';
+import '../../../../core/text/japanese_number.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../domain/models/reading_session.dart';
 import '../../../../domain/models/user_book.dart';
@@ -295,10 +296,11 @@ class _SessionFormDialogState extends State<_SessionFormDialog> {
   }
 
   Future<void> _save() async {
-    final duration = int.tryParse(_durationController.text) ?? 0;
-    final startPage = int.tryParse(_startPageController.text) ?? -1;
+    final duration = JapaneseNumber.tryParseInt(_durationController.text) ?? 0;
+    final startPage = JapaneseNumber.tryParseInt(_startPageController.text) ?? -1;
     final endPageText = _endPageController.text.trim();
-    final endPage = endPageText.isEmpty ? null : int.tryParse(endPageText);
+    final endPage =
+        endPageText.isEmpty ? null : JapaneseNumber.tryParseInt(endPageText);
     final userBookId = _selectedBookId ?? '';
 
     final validation = ReadingSessionEditorService.validate(

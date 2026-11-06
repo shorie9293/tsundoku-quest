@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:takamagahara_ui/takamagahara_ui.dart' hide AppKeys;
 
 import 'package:tsundoku_quest/core/testing/widget_keys.dart';
+import 'package:tsundoku_quest/core/text/japanese_number.dart';
 import 'package:tsundoku_quest/domain/models/reading_session.dart';
 import 'package:tsundoku_quest/features/goals/data/daily_reading_goal_provider.dart';
 import 'package:tsundoku_quest/features/goals/domain/daily_reading_goal_service.dart';
@@ -67,7 +68,7 @@ class _DailyReadingGoalScreenState
 
   Future<void> _saveFromField() async {
     final raw = _targetController.text.trim();
-    final value = int.tryParse(raw);
+    final value = JapaneseNumber.tryParseInt(raw);
     if (value == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('分数を数値で入力してください')),

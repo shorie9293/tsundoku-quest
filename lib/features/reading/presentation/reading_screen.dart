@@ -7,6 +7,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/testing/widget_keys.dart';
 import '../../../../core/constants/reading_tips.dart';
 import '../../../../core/haptics.dart';
+import '../../../../core/text/japanese_number.dart';
 import '../../../../core/widgets/dungeon_background.dart';
 import '../../../../shared/providers/book_data_provider.dart';
 import '../../../../shared/providers/adventurer_provider.dart';
@@ -267,7 +268,7 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
     if (durationMinutes <= 0) return;
 
     final endPage = _pageController.text.isNotEmpty
-        ? int.tryParse(_pageController.text) ?? _book?.currentPage ?? 0
+        ? JapaneseNumber.tryParseInt(_pageController.text) ?? _book?.currentPage ?? 0
         : _book?.currentPage ?? 0;
 
     // 読書時間に応じたXPを付与 (分×2)
@@ -371,7 +372,7 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
       try {
         final totalMinutes = _elapsedSeconds ~/ 60;
         final endPage = _pageController.text.isNotEmpty
-            ? int.tryParse(_pageController.text) ?? _book?.currentPage ?? 0
+            ? JapaneseNumber.tryParseInt(_pageController.text) ?? _book?.currentPage ?? 0
             : _book?.currentPage ?? 0;
         final repo = ref.read(readingSessionRepositoryProvider);
         repo.endSession(_sessionId!, endPage, totalMinutes);
@@ -392,7 +393,7 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
       _isRunning = !_isRunning;
       if (_isRunning) {
         _startPage = _pageController.text.isNotEmpty
-            ? int.tryParse(_pageController.text) ?? _book?.currentPage ?? 0
+            ? JapaneseNumber.tryParseInt(_pageController.text) ?? _book?.currentPage ?? 0
             : _book?.currentPage ?? 0;
         _sessionStartTime = DateTime.now();
         _timer = Timer.periodic(const Duration(seconds: 1), (_) {
@@ -485,7 +486,7 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
   }
 
   void _updatePage(String value) {
-    final page = int.tryParse(value) ?? 0;
+    final page = JapaneseNumber.tryParseInt(value) ?? 0;
     if (widget.id != null && _book != null) {
       ref.read(bookDataProvider.notifier).updateUserBook(
             id: widget.id!,
@@ -553,7 +554,7 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
 
     // 読了XPを付与（200 + ページ数）
     final pagesRead = _pageController.text.isNotEmpty
-        ? (int.tryParse(_pageController.text) ?? 0) - _startPage
+        ? (JapaneseNumber.tryParseInt(_pageController.text) ?? 0) - _startPage
         : 0;
     final completionXp = calculateXp(
         type: 'complete_book', pages: pagesRead > 0 ? pagesRead : null);
