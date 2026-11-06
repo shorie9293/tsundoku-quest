@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import 'package:tsundoku_quest/core/text/kana_fold.dart';
+
 import '../data/reading_notes_provider.dart';
 
 /// 並び替え順
@@ -117,18 +119,28 @@ class ReadingNoteQueryService {
     return sb.toString().toLowerCase().replaceAll(RegExp(r'\s+'), ' ').trim();
   }
 
+  /// 検索用の正規化: [normalize] にかな表記の統一（[foldKana]）を重ねたもの。
+  ///
+  /// ひらがな・半角カナをカタカナへ寄せるため、
+  /// 「グリム童話」に対する 'ぐりむ' や 'ｸﾞﾘﾑ' の検索が一致する。
+  /// クエリ側・対象側の両方に適用すること。
+  static String normalizeForSearch(String raw) => foldKana(normalize(raw));
+
   /// 書名 か いずれかの学び か 行動 か 引用 に検索語を含む（正規化後の部分一致）。
   /// 空/空白のみの検索語なら全件。
   static bool matchesText(ReadingNoteItem note, String text) {
-    final q = normalize(text);
+    final q = normalizeForSearch(text);
     if (q.isEmpty) return true;
-    if (note.bookTitle != null && normalize(note.bookTitle!).contains(q)) {
+    if (note.bookTitle != null &&
+        normalizeForSearch(note.bookTitle!).contains(q)) {
       return true;
     }
-    if (note.learnings.any((l) => normalize(l).contains(q))) return true;
-    if (normalize(note.action).contains(q)) return true;
+    if (note.learnings.any((l) => normalizeForSearch(l).contains(q))) {
+      return true;
+    }
+    if (normalizeForSearch(note.action).contains(q)) return true;
     final quote = note.favoriteQuote;
-    if (quote != null && normalize(quote).contains(q)) return true;
+    if (quote != null && normalizeForSearch(quote).contains(q)) return true;
     return false;
   }
 
