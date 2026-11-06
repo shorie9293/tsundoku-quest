@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import 'package:tsundoku_quest/core/text/japanese_collation.dart';
 import 'package:tsundoku_quest/core/text/kana_fold.dart';
 
 import '../data/reading_notes_provider.dart';
@@ -200,7 +201,8 @@ class ReadingNoteQueryService {
           } else if (bt == null) {
             return -1;
           } else {
-            r = at.compareTo(bt);
+            // コードポイント順ではなく日本語かな順（近似五十音順）
+            r = compareJapaneseTitles(at, bt);
           }
         case ReadingNoteSortOrder.learningCountDesc:
           r = b.learnings.length.compareTo(a.learnings.length);

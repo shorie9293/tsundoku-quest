@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import 'package:tsundoku_quest/core/text/japanese_collation.dart';
 import 'package:tsundoku_quest/core/text/kana_fold.dart';
 import 'package:tsundoku_quest/domain/models/user_book.dart';
 
@@ -170,7 +171,8 @@ class LibraryQueryService {
           } else if (bn == null) {
             return -_byId(a, b);
           } else {
-            r = an.compareTo(bn);
+            // コードポイント順ではなく日本語かな順（近似五十音順）
+            r = compareJapaneseTitles(an, bn);
           }
         case LibrarySortOrder.authorAsc:
           final aa = _firstAuthor(a);
