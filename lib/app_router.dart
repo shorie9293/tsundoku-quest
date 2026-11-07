@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/widgets/app_scaffold.dart';
+import 'features/bookshelf/data/query_preferences.dart';
 import 'features/bookshelf/presentation/bookshelf_screen.dart';
 import 'features/bookshelf/presentation/library_search_screen.dart';
 import 'features/bookshelf/presentation/stagnant_books_screen.dart';
@@ -155,7 +156,9 @@ class AppRouter {
         ),
         GoRoute(
           path: '/library-search',
-          builder: (context, state) => const LibrarySearchScreen(),
+          builder: (context, state) => const LibrarySearchScreen(
+            queryPreferences: SharedPreferencesLibraryQueryPreferencesStore(),
+          ),
         ),
         GoRoute(
           path: '/reading-queue',

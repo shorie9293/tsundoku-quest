@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -9,6 +11,7 @@ import '../../../domain/models/book_shelf.dart';
 import '../../../domain/models/user_book.dart';
 import '../../../shared/providers/book_data_provider.dart';
 import '../../shelves/data/shelf_controller.dart';
+import '../data/query_preferences.dart';
 import '../domain/library_query.dart';
 import 'widgets/book_card.dart';
 import 'widgets/edit_book_modal.dart';
@@ -21,10 +24,14 @@ class LibrarySearchScreen extends ConsumerStatefulWidget {
   /// 試練用注入（null の場合は Provider から取得）
   final List<BookShelf>? shelvesOverride;
 
+  /// 検索条件の保存先。null なら永続化しない（既存挙動と同一）
+  final LibraryQueryPreferencesStore? queryPreferences;
+
   const LibrarySearchScreen({
     super.key,
     this.booksOverride,
     this.shelvesOverride,
+    this.queryPreferences,
   });
 
   @override
@@ -36,9 +43,15 @@ class _LibrarySearchScreenState extends ConsumerState<LibrarySearchScreen> {
   LibraryQuery _query = const LibraryQuery();
   final TextEditingController _textController = TextEditingController();
 
+  /// ユーザーが一度でも操作したか（非同期復元に上書きされないための番人）
+  bool _userTouched = false;
+
   @override
   void initState() {
     super.initState();
+    if (widget.queryPreferences != null) {
+      unawaited(_restoreQuery());
+    }
     if (widget.shelvesOverride == null) {
       try {
         ref.read(shelfControllerProvider.notifier).load();
@@ -49,14 +62,59 @@ class _LibrarySearchScreenState extends ConsumerState<LibrarySearchScreen> {
     }
   }
 
+  Future<void> _restoreQuery() async {
+    final store = widget.queryPreferences;
+    if (store == null) return;
+    LibraryQuery? loaded;
+    try {
+      loaded = await store.load();
+    } catch (_) {
+      return; // 復元失敗は既定条件のまま（画面を壊さない）
+    }
+    if (!mounted || loaded == null) return;
+    final restored = loaded;
+    if (_userTouched) return;
+    setState(() => _query = restored);
+    if (_textController.text != restored.text) {
+      _textController.value = TextEditingValue(
+        text: restored.text,
+        selection: TextSelection.collapsed(offset: restored.text.length),
+      );
+    }
+  }
+
+  void _persist() {
+    final store = widget.queryPreferences;
+    if (store == null) return;
+    unawaited(_saveQuietly(store));
+  }
+
+  Future<void> _saveQuietly(LibraryQueryPreferencesStore store) async {
+    try {
+      await store.save(_query);
+    } catch (_) {
+      // 永続化失敗は無音（検索操作を妨げない）
+    }
+  }
+
   @override
   void dispose() {
+    _persist();
     _textController.dispose();
     super.dispose();
   }
 
+  /// 絞り込み・並び順の変更（即保存）
   void _updateQuery(LibraryQuery next) {
+    _userTouched = true;
     setState(() => _query = next);
+    _persist();
+  }
+
+  /// 検索語の変更（入力中は保存しない。確定・dispose で保存）
+  void _updateText(String value) {
+    _userTouched = true;
+    setState(() => _query = _query.copyWith(text: value));
   }
 
   void _clearSearchText() {
@@ -107,8 +165,11 @@ class _LibrarySearchScreenState extends ConsumerState<LibrarySearchScreen> {
               child: TextField(
                 key: AppKeys.librarySearchField,
                 controller: _textController,
-                onChanged: (value) =>
-                    _updateQuery(_query.copyWith(text: value)),
+                onChanged: _updateText,
+                onSubmitted: (value) {
+                  _userTouched = true;
+                  _persist();
+                },
                 decoration: InputDecoration(
                   hintText: '書名・著者で検索',
                   prefixIcon: const Icon(Icons.search),

@@ -12,6 +12,7 @@ import '../../share_card/domain/share_card_data.dart';
 import '../../share_card/domain/share_card_service.dart';
 import '../../share_card/presentation/share_card_screen.dart';
 import '../../shelves/data/shelf_controller.dart';
+import '../../bookshelf/data/query_preferences.dart';
 import '../../bookshelf/presentation/book_list_screen.dart';
 import '../../goals/presentation/reading_goal_screen.dart';
 import '../../goals/presentation/daily_reading_goal_screen.dart';
@@ -410,7 +411,10 @@ class _ReadingNotesSection extends ConsumerWidget {
                   icon: const Icon(Icons.search),
                   tooltip: '感想を検索',
                   onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-                      builder: (_) => const ReadingNoteSearchScreen())),
+                      builder: (_) => const ReadingNoteSearchScreen(
+                            queryPreferences:
+                                SharedPreferencesReadingNoteQueryPreferencesStore(),
+                          ))),
                 ),
               ),
             ],
