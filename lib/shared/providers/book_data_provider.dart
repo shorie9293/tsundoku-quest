@@ -195,12 +195,18 @@ class BookDataNotifier extends StateNotifier<BookDataState> {
   // ═══════════════════════════════════════════
 
   /// 蔵書を追加。Supabase連携時は裏で非同期保存。
-  void addUserBook(UserBook userBook) {
+  ///
+  /// [index] を指定すると、その位置へ挿入する（一括削除の Undo で元の
+  /// 並び順を取り戻すため）。範囲外はクランプされ、既存 ID の更新時は無視される。
+  void addUserBook(UserBook userBook, {int? index}) {
     // 1. 即時UI反映（インメモリ）
     final updated = state.userBooks.toList();
     final existingIndex = updated.indexWhere((ub) => ub.id == userBook.id);
     if (existingIndex >= 0) {
       updated[existingIndex] = userBook;
+    } else if (index != null) {
+      final clamped = index.clamp(0, updated.length);
+      updated.insert(clamped, userBook);
     } else {
       updated.add(userBook);
     }

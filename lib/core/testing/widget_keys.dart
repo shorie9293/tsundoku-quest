@@ -217,6 +217,17 @@ class AppKeys {
   static const Key stagnantBooksEmpty = Key('txt_stagnant_empty');
   static Key stagnantBooksRow(String id) => Key('row_stagnant_' + id);
 
+  // ━━━ 本棚 一括選択（選択モード） ━━━
+  static const Key bulkSelectionBar = Key('bar_bulk_selection');
+  static const Key bulkSelectAllButton = Key('btn_bulk_select_all');
+  static const Key bulkClearSelectionButton = Key('btn_bulk_clear_selection');
+  static const Key bulkMoveToShelfButton = Key('btn_bulk_move_to_shelf');
+  static const Key bulkDeleteButton = Key('btn_bulk_delete');
+  static const Key bulkShelfPicker = Key('dlg_bulk_shelf_picker');
+  static const Key bulkShelfEmpty = Key('txt_bulk_shelf_empty');
+  static Key bookCardCheckbox(String bookId) => Key('chk_book_card_' + bookId);
+  static Key bulkShelfOption(String shelfId) => Key('item_bulk_shelf_' + shelfId);
+
   // ━━━ 汎用 ━━━
   static const Key backButton = Key('btn_back');
   static const Key closeButton = Key('btn_close');

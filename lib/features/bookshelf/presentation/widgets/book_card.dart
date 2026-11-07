@@ -10,12 +10,25 @@ class BookCard extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback? onDelete;
 
+  /// 一括選択モードで選択されているか（既定 false＝通常表示）。
+  final bool selected;
+
+  /// 一括選択モード中か。true の間はスワイプ削除を無効化し、
+  /// 選択チェックアイコンを表示する。
+  final bool selectionMode;
+
+  /// 長押し時のコールバック（一括選択モードへの入口）。
+  final VoidCallback? onLongPress;
+
   const BookCard({
     super.key,
     required this.book,
     required this.onTap,
     required this.onEdit,
     this.onDelete,
+    this.selected = false,
+    this.selectionMode = false,
+    this.onLongPress,
   });
 
   Color get _statusColor {
@@ -80,27 +93,44 @@ class BookCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Dismissible(
       key: ValueKey('delete_${book.id}'),
-      direction: DismissDirection.endToStart,
+      direction:
+          selectionMode ? DismissDirection.none : DismissDirection.endToStart,
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 24),
         color: Colors.red,
         child: const Icon(Icons.delete, color: Colors.white),
       ),
-      confirmDismiss: (_) => _confirmDelete(context),
+      confirmDismiss: selectionMode ? null : (_) => _confirmDelete(context),
       onDismissed: (_) => onDelete?.call(),
       child: GestureDetector(
         onTap: onTap,
+        onLongPress: onLongPress,
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: AppTheme.cardBackground,
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppTheme.border),
+            border: Border.all(
+              color: selected ? AppTheme.accent : AppTheme.border,
+              width: selected ? 2 : 1,
+            ),
           ),
           child: Row(
             children: [
+              if (selectionMode)
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: Icon(
+                    selected
+                        ? Icons.check_circle
+                        : Icons.radio_button_unchecked,
+                    key: AppKeys.bookCardCheckbox(book.id),
+                    size: 20,
+                    color: selected ? AppTheme.accent : AppTheme.textSecondary,
+                  ),
+                ),
               // Cover image or placeholder
               ClipRRect(
                 borderRadius: BorderRadius.circular(4),
@@ -202,7 +232,9 @@ class BookCard extends StatelessWidget {
                               ...List.generate(
                                 5,
                                 (i) => Icon(
-                                  i < book.rating! ? Icons.star : Icons.star_border,
+                                  i < book.rating!
+                                      ? Icons.star
+                                      : Icons.star_border,
                                   size: 12,
                                   color: AppTheme.badge,
                                 ),
