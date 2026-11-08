@@ -1,12 +1,21 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tsundoku_quest/domain/models/book.dart';
 import 'package:tsundoku_quest/domain/models/user_book.dart';
 import 'package:tsundoku_quest/domain/models/war_trophy.dart';
+import 'package:tsundoku_quest/domain/repositories/shelf_repository.dart';
 import 'package:tsundoku_quest/domain/repositories/user_book_repository.dart';
 import 'package:tsundoku_quest/domain/repositories/reading_session_repository.dart';
+import 'package:tsundoku_quest/features/bookshelf/data/book_deletion_service.dart';
 import 'package:tsundoku_quest/features/bookshelf/data/user_book_repository_provider.dart';
+import 'package:tsundoku_quest/features/bookshelf/domain/book_deletion_plan.dart';
+import 'package:tsundoku_quest/features/reading/data/quick_memo_draft_store.dart';
 import 'package:tsundoku_quest/features/reading/data/reading_session_repository_provider.dart';
+import 'package:tsundoku_quest/features/reading_queue/data/reading_queue_provider.dart';
+import 'package:tsundoku_quest/features/reading_queue/data/reading_queue_repository.dart';
+import 'package:tsundoku_quest/features/shelves/data/shelf_repository_provider.dart';
 import 'package:tsundoku_quest/features/shared/data/tsundoku_reward_event_exporter.dart';
 import 'package:tsundoku_quest/features/shared/data/tsundoku_book_event_exporter.dart';
 import 'package:tsundoku_quest/features/shared/data/tsundoku_book_completion_exporter.dart';
@@ -72,6 +81,9 @@ class BookDataNotifier extends StateNotifier<BookDataState> {
   /// Riverpod の循環参照を避けるため provider 側から注入する。
   void Function(String userBookId)? _trophyCleanup;
 
+  /// 本削除時の連鎖削除（セッション/棚/キュー/メモ下書き）
+  final BookDeletionService? _deletionService;
+
   /// 戦利品クリーンアップコールバックを設定する（provider 構築時に一度だけ呼ぶ）。
   // ignore: avoid_setters_without_getters
   set trophyCleanup(void Function(String userBookId)? callback) =>
@@ -89,10 +101,13 @@ class BookDataNotifier extends StateNotifier<BookDataState> {
   /// [bookEventExporter] が指定された場合、蔵書追加時に book_added イベントを
   /// 共有ストレージに書き出す（kozuchi アプリ連携用）。
   /// [completionExporter] が指定された場合、読了時に専用ファイルへの書き出しを行う（kozuchi金運バフ用）。
-  BookDataNotifier([this._repository, this._sessionRepository, TsundokuRewardEventExporter? rewardExporter, TsundokuBookEventExporter? bookEventExporter, TsundokuBookCompletionExporter? completionExporter])
+  /// [deletionService] が指定された場合、蔵書削除時に孤児データ（セッション/棚/
+  /// 読書キュー/メモ下書き）を裏で連鎖削除する。
+  BookDataNotifier([this._repository, this._sessionRepository, TsundokuRewardEventExporter? rewardExporter, TsundokuBookEventExporter? bookEventExporter, TsundokuBookCompletionExporter? completionExporter, BookDeletionService? deletionService])
       : _rewardExporter = rewardExporter,
         _bookEventExporter = bookEventExporter,
         _completionExporter = completionExporter,
+        _deletionService = deletionService,
         super(BookDataState(isLoading: _repository != null));
 
   // ═══════════════════════════════════════════
@@ -301,8 +316,35 @@ class BookDataNotifier extends StateNotifier<BookDataState> {
     // 紐づく戦利品（読書感想）も後片付け（足跡画面の「不明な本」残存防止）
     _trophyCleanup?.call(id);
 
+    // 孤児データ（セッション/棚/読書キュー/メモ下書き）を裏で連鎖削除
+    _runDeletionCleanup(id);
+
     // 裏でSupabase削除
     _syncDeleteFromSupabase(id);
+  }
+
+  /// 連鎖削除を投げっぱなしで実行する（UIを待たせず、例外も外へ出さない）。
+  ///
+  /// 呼出元（画面操作・試練）の zone を汚さないよう専用 zone で隔離する。
+  /// 永続化層が未初期化の環境（headless 試練等）では Hive/SharedPreferences が
+  /// 非同期に失敗し得るが、その失敗はここで握り、UI と既存試練を巻き込まない。
+  void _runDeletionCleanup(String userBookId) {
+    final service = _deletionService;
+    if (service == null) return;
+    unawaited(runZonedGuarded(
+      () async {
+        try {
+          await service.run(BookDeletionPlan.forBook(userBookId));
+        } catch (e, stack) {
+          // service は throw しない契約だが、念のため握る
+          appLog.warn('📦 [BookData] 連鎖削除で想定外の失敗: $e\n$stack');
+        }
+      },
+      (e, stack) {
+        // 永続化層の非同期失敗（Hive未初期化等）は隔離して記録のみ
+        appLog.warn('📦 [BookData] 連鎖削除の非同期失敗を隔離: $e\n$stack');
+      },
+    ));
   }
 
   UserBook? getUserBook(String id) {
@@ -355,18 +397,43 @@ final bookDataProvider =
   } catch (_) {
     // Supabase未初期化（テスト環境）→ リポジトリなしで動作
   }
+  ShelfRepository? shelfRepository;
+  try {
+    shelfRepository = ref.read(shelfRepositoryProvider);
+  } catch (_) {
+    // Hive未初期化（テスト環境）→ 棚掃除なしで動作
+  }
+  ReadingQueueRepository? readingQueueRepository;
+  try {
+    readingQueueRepository = ref.read(readingQueueRepositoryProvider);
+  } catch (_) {
+    // Hive未初期化（テスト環境）→ キュー掃除なしで動作
+  }
   TsundokuRewardEventExporter? rewardExporter;
   try {
     rewardExporter = ref.read(tsundokuRewardEventExporterProvider);
   } catch (_) {
     // Supabase未初期化（テスト環境）→ 書き出しなしで動作
   }
+  // 蔵書削除時の連鎖削除（孤児データ掃除）。
+  // 戦利品は既存の trophyCleanup 経路（removeUserBook 内の直接呼出）が担うため、
+  // service の trophies ステップには渡さない（二重削除の防止）。
+  final deletionService = BookDeletionService(
+    loadSessions: sessionRepository?.getByUserBook,
+    deleteSession: sessionRepository?.deleteSession,
+    loadShelves: shelfRepository?.listShelves,
+    removeBookFromShelf: shelfRepository?.removeBookFromShelf,
+    loadQueue: readingQueueRepository?.loadEntries,
+    saveQueue: readingQueueRepository?.saveEntries,
+    draftStore: SharedPreferencesQuickMemoDraftStore(),
+  );
   return BookDataNotifier(
     repository,
     sessionRepository,
     rewardExporter,
     const TsundokuBookEventExporter(), // kozuchi 連携用（蔵書追加）
     const TsundokuBookCompletionExporter(), // kozuchi 連携用（読了→金運バフ）
+    deletionService,
   )..trophyCleanup = (userBookId) {
       // 本削除時に紐づく戦利品（読書感想）も削除する
       try {
