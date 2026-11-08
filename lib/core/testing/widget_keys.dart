@@ -28,6 +28,7 @@ class AppKeys {
   static const Key librarySearchField = Key('txt_library_search');
   static const Key librarySearchClearButton = Key('btn_library_search_clear');
   static const Key libraryStatusFilterChips = Key('chips_library_status_filter');
+  static const Key librarySearchHistoryChips = Key('chips_library_search_history');
   static const Key libraryShelfFilterChips = Key('chips_library_shelf_filter');
   static const Key librarySortButton = Key('btn_library_sort');
   static const Key libraryResultCount = Key('txt_library_result_count');
@@ -278,6 +279,8 @@ class AppKeys {
   static const Key readingNoteSearchScreen = Key('screen_reading_note_search');
   static const Key readingNoteSearchField = Key('field_reading_note_search');
   static const Key readingNoteSearchClear = Key('btn_reading_note_search_clear');
+  static const Key readingNoteSearchHistoryChips =
+      Key('chips_reading_note_search_history');
   static const Key readingNoteSortMenu = Key('menu_reading_note_sort');
   static const Key readingNoteBookChips = Key('chips_reading_note_books');
   static const Key readingNoteContentChips = Key('chips_reading_note_content');
