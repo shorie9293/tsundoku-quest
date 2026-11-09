@@ -31,3 +31,20 @@ abstract interface class AutoBackupRestorer {
   /// [fileName] のバックアップを適用する（例外は投げない）
   Future<AutoBackupRestoreResult> restore(String fileName);
 }
+
+/// 復元オプション付きの復元役
+///
+/// [AutoBackupRestorer] を実装した上で、復元時に「設定も戻すか」を選べる。
+/// 既存のフェイク（[AutoBackupRestorer] のみ実装）を全滅させないための
+/// **追加インタフェース**であり、画面は `is` 判定で新経路へ分岐する。
+abstract interface class AutoBackupRestorerWithOptions
+    implements AutoBackupRestorer {
+  /// [fileName] のバックアップを適用する。
+  ///
+  /// [includeSettings] が false なら記録（蔵書・セッション・目標）だけ戻し、
+  /// 設定（テーマ・文字サイズ・静穏時間・リマインダー等）は触らない。
+  Future<AutoBackupRestoreResult> restoreWithOptions(
+    String fileName, {
+    bool includeSettings = true,
+  });
+}

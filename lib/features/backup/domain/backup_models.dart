@@ -8,6 +8,7 @@ library;
 
 import 'package:tsundoku_quest/domain/models/user_book.dart';
 import 'package:tsundoku_quest/domain/models/reading_session.dart';
+import 'package:tsundoku_quest/features/backup/domain/backup_settings_spec.dart';
 
 /// 読書目標のバックアップスナップショット
 ///
@@ -50,12 +51,16 @@ class ReadingGoalSnapshot {
   }
 }
 
-/// バックアップスナップショット（蔵書＋セッション＋目標）
+/// バックアップスナップショット（蔵書＋セッション＋目標＋設定）
 class BackupData {
   final String exportedAt;
   final List<UserBook> books;
   final List<ReadingSession> sessions;
   final ReadingGoalSnapshot? goal;
+
+  /// 設定の束（任意・additive）。null なら旧形式と同一の JSON になる。
+  final BackupSettingsBundle? settings;
+
   final int bookCount;
   final int sessionCount;
 
@@ -64,6 +69,7 @@ class BackupData {
     required this.books,
     this.sessions = const [],
     this.goal,
+    this.settings,
     int? bookCount,
     int? sessionCount,
   })  : bookCount = bookCount ?? books.length,
@@ -79,14 +85,22 @@ class BackupData {
     }
   }
 
-  Map<String, dynamic> toJson() => {
-        'tsundoku_quest_backup': true,
-        'version': 1,
-        'exportedAt': exportedAt,
-        'books': books.map((b) => b.toJson()).toList(),
-        'readingSessions': sessions.map((s) => s.toJson()).toList(),
-        'readingGoal': goal?.toJson(),
-      };
+  Map<String, dynamic> toJson() {
+    final json = <String, dynamic>{
+      'tsundoku_quest_backup': true,
+      'version': 1,
+      'exportedAt': exportedAt,
+      'books': books.map((b) => b.toJson()).toList(),
+      'readingSessions': sessions.map((s) => s.toJson()).toList(),
+      'readingGoal': goal?.toJson(),
+    };
+    // settings が null の時は何も足さない（旧形式と完全同一）。
+    final bundle = settings;
+    if (bundle != null) {
+      json['settings'] = bundle.toJson();
+    }
+    return json;
+  }
 
   /// 破損 JSON は例外を投げず、欠落部分を空に落とす。
   /// tsundoku_quest_backup フラグが真でない場合は null。
@@ -96,12 +110,12 @@ class BackupData {
     final version = json['version'];
     if (version is! int || version < 1) return null;
     return BackupData._loose(
-      exportedAt: json['exportedAt'] is String
-          ? json['exportedAt'] as String
-          : '',
+      exportedAt:
+          json['exportedAt'] is String ? json['exportedAt'] as String : '',
       rawBooks: json['books'],
       rawSessions: json['readingSessions'],
       rawGoal: json['readingGoal'],
+      rawSettings: json['settings'],
     );
   }
 
@@ -111,6 +125,7 @@ class BackupData {
     Object? rawBooks,
     Object? rawSessions,
     Object? rawGoal,
+    Object? rawSettings,
   }) {
     final books = <UserBook>[];
     if (rawBooks is List) {
@@ -135,11 +150,14 @@ class BackupData {
       }
     }
     final goalRaw = ReadingGoalSnapshot.fromJson(rawGoal);
+    // 設定は壊れていても null に落ちるだけで、全体の読み込みは成功させる。
+    final settingsRaw = BackupSettingsBundle.tryFromJson(rawSettings);
     return BackupData(
       exportedAt: exportedAt,
       books: books,
       sessions: sessions,
       goal: goalRaw.isConfigured ? goalRaw : null,
+      settings: settingsRaw,
     );
   }
 
@@ -153,7 +171,8 @@ class BackupData {
     if (data == null) {
       // フラグ/version 不正でもテスト互換で空スナップショットへ落とす
       // （試練は「例外を投げない」ことを要求する）
-      return BackupData._loose(exportedAt: '', rawBooks: null, rawSessions: null, rawGoal: null);
+      return BackupData._loose(
+          exportedAt: '', rawBooks: null, rawSessions: null, rawGoal: null);
     }
     return data;
   }

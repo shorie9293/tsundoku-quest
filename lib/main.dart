@@ -49,6 +49,7 @@ import 'features/shared/providers/reward_event_exporter_provider.dart';
 import 'features/auto_backup/data/auto_backup_bootstrap.dart';
 import 'features/auto_backup/data/auto_backup_status_store.dart';
 import 'features/backup/data/backup_repository.dart';
+import 'features/backup/data/backup_settings_store.dart';
 import 'features/goals/data/reading_goal_repository.dart';
 import 'features/lifecycle/domain/day_rollover_detector.dart';
 import 'features/lifecycle/presentation/app_lifecycle_refresher.dart';
@@ -231,6 +232,8 @@ Future<void> bootstrap() async {
   final autoBackupRepository = HiveBackupRepository(
     autoBackupBoxManager,
     goalRepository: HiveReadingGoalRepository(autoBackupBoxManager),
+    // 設定（テーマ・文字サイズ・静穏時間・リマインダー等）も控えに載せる。
+    settingsStore: HiveBackupSettingsStore(autoBackupBoxManager),
   );
   scheduleAutoBackup(
     buildJson: () async {

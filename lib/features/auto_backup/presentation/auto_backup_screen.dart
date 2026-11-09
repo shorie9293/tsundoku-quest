@@ -117,30 +117,59 @@ class _AutoBackupScreenState extends State<AutoBackupScreen> {
     final restorer = widget.restorer;
     if (restorer == null) return;
 
+    // 既定ON: 機種変更・再インストール後は設定も戻したいのが本筋。
+    var includeSettings = true;
+
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('復元の確認'),
-        content: const Text('このバックアップから復元しますか？現在のデータは先に自動バックアップされます'),
-        actions: [
-          TextButton(
-            key: const ValueKey('auto_backup_restore_cancel'),
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('キャンセル'),
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('復元の確認'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('このバックアップから復元しますか？現在のデータは先に自動バックアップされます'),
+              const SizedBox(height: 8),
+              CheckboxListTile(
+                key: const ValueKey('auto_backup_restore_include_settings'),
+                value: includeSettings,
+                contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
+                onChanged: (value) =>
+                    setDialogState(() => includeSettings = value ?? false),
+                title: const Text('設定も戻す（テーマ・文字サイズ・静穏時間・リマインダー）'),
+              ),
+            ],
           ),
-          FilledButton(
-            key: const ValueKey('auto_backup_restore_confirm'),
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('復元する'),
-          ),
-        ],
+          actions: [
+            TextButton(
+              key: const ValueKey('auto_backup_restore_cancel'),
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('キャンセル'),
+            ),
+            FilledButton(
+              key: const ValueKey('auto_backup_restore_confirm'),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('復元する'),
+            ),
+          ],
+        ),
       ),
     );
     if (confirmed != true) return;
 
     String message;
     try {
-      final result = await restorer.restore(row.entry.fileName);
+      final fileName = row.entry.fileName;
+      // 新インタフェースを持つ実装だけ「設定も戻す」を選べる。
+      // 旧実装（フェイク等）は従来どおりの restore に落とす。
+      final result = restorer is AutoBackupRestorerWithOptions
+          ? await restorer.restoreWithOptions(
+              fileName,
+              includeSettings: includeSettings,
+            )
+          : await restorer.restore(fileName);
       message = result.message ?? (result.ok ? '復元しました' : '復元できませんでした');
     } catch (e) {
       message = '復元に失敗しました: $e';

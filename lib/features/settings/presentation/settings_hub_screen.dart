@@ -370,6 +370,18 @@ Widget buildAutoBackupSettings(BuildContext context) => Consumer(
               }
               await repository.restore(data);
             },
+            applyBackupWithOptions: (json, includeSettings) async {
+              final decoded = backupJsonDecode(json);
+              final data = BackupData.tryFromJson(decoded);
+              if (data == null) {
+                throw const FormatException('バックアップJSONの形式が正しくありません');
+              }
+              await repository.restore(data, includeSettings: includeSettings);
+            },
+            // 設定適用後は通知を再予約する（リマインダー設定＋静穏時間ガード）。
+            // 実スケジューラが居ない試練環境では provider 側が静かに失敗する。
+            onSettingsRestored: () =>
+                ref.read(reminderSettingsProvider.notifier).load(),
           ),
           sharer: FileAutoBackupSharer(),
           onBackupNow: () async {

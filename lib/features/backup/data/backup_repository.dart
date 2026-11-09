@@ -15,6 +15,8 @@ import 'package:tsundoku_quest/domain/models/user_book.dart';
 import 'package:tsundoku_quest/domain/models/reading_session.dart';
 import 'package:tsundoku_quest/features/backup/domain/backup_models.dart';
 import 'package:tsundoku_quest/features/backup/domain/backup_merge.dart';
+import 'package:tsundoku_quest/features/backup/domain/backup_settings_spec.dart';
+import 'package:tsundoku_quest/features/backup/data/backup_settings_store.dart';
 import 'package:tsundoku_quest/features/goals/data/reading_goal_repository.dart';
 import 'package:tsundoku_quest/features/goals/domain/reading_goal.dart';
 import 'package:tsundoku_quest/core/logging/app_logger.dart';
@@ -24,7 +26,13 @@ abstract class BackupRepository {
   Future<BackupData> collect();
 
   /// 復元を実行し要約を返す。ローダ系の例外は握りつぶさない。
-  Future<BackupMergeResult> restore(BackupData data);
+  ///
+  /// [includeSettings] が false なら設定（テーマ・文字サイズ・静穏時間・
+  /// リマインダー等）には一切触れない（記録だけ戻す）。
+  Future<BackupMergeResult> restore(
+    BackupData data, {
+    bool includeSettings = true,
+  });
 }
 
 /// Hive 実装
@@ -32,8 +40,15 @@ class HiveBackupRepository implements BackupRepository {
   final BoxManagerInterface _boxManager;
   final ReadingGoalRepository? _goalRepository;
 
-  HiveBackupRepository(this._boxManager, {ReadingGoalRepository? goalRepository})
-      : _goalRepository = goalRepository;
+  /// 設定の読み書き（null なら設定は控えに載せない＝従来どおり）
+  final BackupSettingsStore? _settingsStore;
+
+  HiveBackupRepository(
+    this._boxManager, {
+    ReadingGoalRepository? goalRepository,
+    BackupSettingsStore? settingsStore,
+  })  : _goalRepository = goalRepository,
+        _settingsStore = settingsStore;
 
   Future<Box<UserBook>> _getBooksBox() =>
       _boxManager.getBox<UserBook>(BoxNames.books);
@@ -70,11 +85,28 @@ class HiveBackupRepository implements BackupRepository {
       books: books,
       sessions: sessions,
       goal: goal,
+      settings: await _collectSettings(),
     );
   }
 
+  /// 設定を許可リスト通過の上で束ねる。読めなければ null（＝従来どおり）。
+  Future<BackupSettingsBundle?> _collectSettings() async {
+    final store = _settingsStore;
+    if (store == null) return null;
+    try {
+      final raw = await store.readRaw();
+      return BackupSettingsBundle.fromRaw(raw);
+    } catch (e) {
+      appLog.warn('[BackupRepo] settings collect failed (skipped): $e');
+      return null;
+    }
+  }
+
   @override
-  Future<BackupMergeResult> restore(BackupData data) async {
+  Future<BackupMergeResult> restore(
+    BackupData data, {
+    bool includeSettings = true,
+  }) async {
     final booksBox = await _getBooksBox();
     final sessionsBox = await _getSessionsBox();
     final existingBooks = BoxHelper.loadCollection(booksBox);
@@ -103,7 +135,33 @@ class HiveBackupRepository implements BackupRepository {
       ));
     }
 
+    if (includeSettings) {
+      await _applySettings(data.settings);
+    }
+
     return result;
+  }
+
+  /// 設定を1キーずつ適用する。未知キー・型不一致・破損は個別に握って
+  /// スキップし、復元全体は落とさない。
+  Future<void> _applySettings(BackupSettingsBundle? bundle) async {
+    final store = _settingsStore;
+    if (store == null || bundle == null) return;
+
+    // 復元側でも許可リストと秘密除外を通す（改竄された控え対策）。
+    final values = selectForBackup(bundle.values);
+    for (final entry in values.entries) {
+      if (!isAcceptableSettingValue(entry.key, entry.value)) {
+        appLog
+            .warn('[BackupRepo] setting skipped (type mismatch): ${entry.key}');
+        continue;
+      }
+      try {
+        await store.writeValue(entry.key, entry.value);
+      } catch (e) {
+        appLog.warn('[BackupRepo] setting skipped (${entry.key}): $e');
+      }
+    }
   }
 }
 
@@ -113,25 +171,42 @@ class InMemoryBackupRepository implements BackupRepository {
   List<ReadingSession> sessions;
   ReadingGoalSnapshot? goal;
 
+  /// 設定の生読み書き（null なら設定を扱わない）
+  final BackupSettingsStore? settingsStore;
+
   InMemoryBackupRepository({
     List<UserBook>? books,
     List<ReadingSession>? sessions,
     this.goal,
+    this.settingsStore,
   })  : books = books ?? [],
         sessions = sessions ?? [];
 
   @override
   Future<BackupData> collect() async {
+    BackupSettingsBundle? settings;
+    final store = settingsStore;
+    if (store != null) {
+      try {
+        settings = BackupSettingsBundle.fromRaw(await store.readRaw());
+      } catch (_) {
+        settings = null;
+      }
+    }
     return BackupData(
       exportedAt: DateTime.now().toUtc().toIso8601String(),
       books: List.of(books),
       sessions: List.of(sessions),
       goal: goal,
+      settings: settings,
     );
   }
 
   @override
-  Future<BackupMergeResult> restore(BackupData data) async {
+  Future<BackupMergeResult> restore(
+    BackupData data, {
+    bool includeSettings = true,
+  }) async {
     final result = mergeBackup(
       incoming: data,
       existingBooks: books,
@@ -140,6 +215,18 @@ class InMemoryBackupRepository implements BackupRepository {
     books = [...books, ...result.newBooks];
     sessions = [...sessions, ...result.newSessions];
     if (data.goal != null) goal = data.goal;
+    final store = settingsStore;
+    final bundle = data.settings;
+    if (includeSettings && store != null && bundle != null) {
+      for (final entry in selectForBackup(bundle.values).entries) {
+        if (!isAcceptableSettingValue(entry.key, entry.value)) continue;
+        try {
+          await store.writeValue(entry.key, entry.value);
+        } catch (_) {
+          // 1キーの失敗で復元全体を落とさない
+        }
+      }
+    }
     return result;
   }
 }
@@ -149,5 +236,9 @@ final backupRepositoryProvider = Provider<BackupRepository>((ref) {
   final boxManager = ref.read(hiveBoxManagerProvider);
   // 目標リポジトリは Hive 実装を直接組み立てる（循環 DI 回避）
   final goalRepo = HiveReadingGoalRepository(boxManager);
-  return HiveBackupRepository(boxManager, goalRepository: goalRepo);
+  return HiveBackupRepository(
+    boxManager,
+    goalRepository: goalRepo,
+    settingsStore: HiveBackupSettingsStore(boxManager),
+  );
 });
