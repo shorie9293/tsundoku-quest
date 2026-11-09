@@ -8,6 +8,7 @@ library;
 import 'dart:convert';
 
 import 'package:tsundoku_quest/features/auto_backup/domain/auto_backup_policy.dart';
+import 'package:tsundoku_quest/features/auto_backup/domain/backup_restorability.dart';
 
 /// 一覧1行分の表示データ
 class AutoBackupRow {
@@ -20,15 +21,22 @@ class AutoBackupRow {
   /// 新しい順の1始まり世代番号
   final int generation;
 
-  /// 復元可能な JSON か
+  /// 復元可能な JSON か（旧来の意味。表示判定は [restorability] を使う）
   final bool restorable;
+
+  /// 復元可否の分類（一覧・実行前検証の正）
+  final BackupRestorability restorability;
 
   const AutoBackupRow({
     required this.entry,
     required this.byteSize,
     required this.generation,
     required this.restorable,
-  });
+    BackupRestorability? restorability,
+  }) : restorability = restorability ??
+            (restorable
+                ? BackupRestorability.restorableValue
+                : BackupRestorability.corruptValue);
 
   /// ローカル暦 yyyy-MM-dd HH:mm
   String get dateLabel => AutoBackupPresenter.formatDate(entry.createdAt);
@@ -113,6 +121,7 @@ class AutoBackupPresenter {
         byteSize: content == null ? 0 : utf8.encode(content).length,
         generation: i + 1,
         restorable: canRestore(content),
+        restorability: BackupRestorability.classify(content),
       ));
     }
     return rows;

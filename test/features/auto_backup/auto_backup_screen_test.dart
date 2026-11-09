@@ -40,6 +40,10 @@ class _FakeSharer implements AutoBackupSharer {
   }
 }
 
+/// tryFromJson を通る最小の正当な控え（版番号あり）
+const _validBackup =
+    '{"tsundoku_quest_backup":true,"version":1,"books":[],"readingSessions":[]}';
+
 Future<void> _settle(WidgetTester tester) async {
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 100));
@@ -59,9 +63,9 @@ void main() {
 
   setUp(() async {
     store = InMemoryAutoBackupStore(now: () => now);
-    await store.write('auto_backup_20261001.json', '{"day":1}');
-    await store.write('auto_backup_20261003.json', '{"day":3}');
-    await store.write('auto_backup_20261002.json', '{"day":2}');
+    await store.write('auto_backup_20261001.json', _validBackup);
+    await store.write('auto_backup_20261003.json', _validBackup);
+    await store.write('auto_backup_20261002.json', _validBackup);
   });
 
   testWidgets('一覧は新しい順に表示される', (tester) async {
@@ -94,7 +98,8 @@ void main() {
     expect(find.text('バックアップはまだありません'), findsOneWidget);
   });
 
-  testWidgets('壊れた JSON は復元ボタンを出さない（共有は出る）', (tester) async {
+  testWidgets('壊れた JSON・版番号なしの控えは復元ボタンを出さない（共有は出る）',
+      (tester) async {
     final broken = InMemoryAutoBackupStore(now: () => now);
     await broken.write('auto_backup_20261005.json', 'not json');
     await broken.write('auto_backup_20261004.json', '{"ok":true}');
@@ -114,11 +119,55 @@ void main() {
     expect(
         find.byKey(
             const ValueKey('auto_backup_restore_auto_backup_20261004.json')),
-        findsOneWidget);
+        findsNothing);
     expect(
         find.byKey(
             const ValueKey('auto_backup_share_auto_backup_20261005.json')),
         findsOneWidget);
+  });
+
+  testWidgets('版番号なしの控えは復元ボタンを出さず理由を可視化する', (tester) async {
+    final legacy = InMemoryAutoBackupStore(now: () => now);
+    await legacy.write('auto_backup_20261006.json',
+        '{"tsundoku_quest_backup":true,"books":[],"readingSessions":[]}');
+
+    await tester.pumpWidget(_wrap(AutoBackupScreen(
+      store: legacy,
+      now: () => now,
+      restorer: _FakeRestorer(),
+    )));
+    await _settle(tester);
+
+    expect(
+        find.byKey(
+            const ValueKey('auto_backup_restore_auto_backup_20261006.json')),
+        findsNothing);
+    expect(
+        find.byKey(
+            const ValueKey('auto_backup_restore_reason_auto_backup_20261006.json')),
+        findsOneWidget);
+    expect(find.textContaining('版番号'), findsWidgets);
+  });
+
+  testWidgets('正当な控えは復元ボタンを出す', (tester) async {
+    final good = InMemoryAutoBackupStore(now: () => now);
+    await good.write('auto_backup_20261007.json', _validBackup);
+
+    await tester.pumpWidget(_wrap(AutoBackupScreen(
+      store: good,
+      now: () => now,
+      restorer: _FakeRestorer(),
+    )));
+    await _settle(tester);
+
+    expect(
+        find.byKey(
+            const ValueKey('auto_backup_restore_auto_backup_20261007.json')),
+        findsOneWidget);
+    expect(
+        find.byKey(
+            const ValueKey('auto_backup_restore_reason_auto_backup_20261007.json')),
+        findsNothing);
   });
 
   testWidgets('未注入なら復元・共有の導線を出さない', (tester) async {
@@ -206,7 +255,7 @@ void main() {
     await _settle(tester);
 
     expect(sharer.sharedNames, ['auto_backup_20261003.json']);
-    expect(sharer.sharedBodies, ['{"day":3}']);
+    expect(sharer.sharedBodies, [_validBackup]);
   });
 
   testWidgets('onBackupNow があれば実行後に一覧を再読込する', (tester) async {

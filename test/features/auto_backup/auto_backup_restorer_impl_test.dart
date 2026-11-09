@@ -9,6 +9,10 @@ import 'package:tsundoku_quest/features/auto_backup/data/auto_backup_store.dart'
 import 'package:tsundoku_quest/features/auto_backup/domain/auto_backup_policy.dart';
 import 'package:tsundoku_quest/features/auto_backup/domain/auto_backup_restorer.dart';
 
+/// tryFromJson を通る最小の正当な控え（版番号あり）
+const _validJson =
+    '{"tsundoku_quest_backup":true,"version":1,"books":[],"readingSessions":[]}';
+
 void main() {
   group('AutoBackupRestorerImpl', () {
     late InMemoryAutoBackupStore store;
@@ -21,7 +25,7 @@ void main() {
       ops = [];
       applied = [];
       store = InMemoryAutoBackupStore(now: () => now);
-      await store.write('auto_backup_20261028.json', '{"day":28}');
+      await store.write('auto_backup_20261028.json', _validJson);
       ops.clear();
     });
 
@@ -49,9 +53,9 @@ void main() {
       expect(result.safetyFileName, 'auto_backup_20261029.json');
       expect(ops, ['build', 'apply']);
       expect(store.contentOf('auto_backup_20261029.json'), '{"current":true}');
-      expect(applied, ['{"day":28}']);
+      expect(applied, [_validJson]);
       // 復元対象は消さない
-      expect(store.contentOf('auto_backup_20261028.json'), '{"day":28}');
+      expect(store.contentOf('auto_backup_20261028.json'), _validJson);
     });
 
     test('不正 JSON は適用せず、スナップショットも書かない', () async {
@@ -62,6 +66,20 @@ void main() {
 
       expect(result.ok, isFalse);
       expect(result.message, isNotNull);
+      expect(applied, isEmpty);
+      expect(store.contentOf('auto_backup_20261029.json'), isNull);
+    });
+
+    test('版番号なしの控えは適用もスナップショット保存もしない（ok:false＋理由）', () async {
+      await store.write('auto_backup_20261026.json',
+          '{"tsundoku_quest_backup":true,"books":[],"readingSessions":[]}');
+      final restorer = build();
+
+      final result = await restorer.restore('auto_backup_20261026.json');
+
+      expect(result.ok, isFalse);
+      expect(result.message, contains('版番号が無い控えはこの版では復元できません'));
+      expect(ops, isEmpty);
       expect(applied, isEmpty);
       expect(store.contentOf('auto_backup_20261029.json'), isNull);
     });
@@ -105,7 +123,7 @@ void main() {
 /// write だけ失敗する保管庫
 class _WriteFailingStore implements AutoBackupStore {
   final Map<String, String> _contents = {
-    'auto_backup_20261028.json': '{"day":28}',
+    'auto_backup_20261028.json': _validJson,
   };
 
   @override

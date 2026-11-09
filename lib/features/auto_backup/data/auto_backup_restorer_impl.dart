@@ -15,8 +15,8 @@ import 'dart:async';
 
 import 'package:tsundoku_quest/features/auto_backup/data/auto_backup_store.dart';
 import 'package:tsundoku_quest/features/auto_backup/domain/auto_backup_policy.dart';
-import 'package:tsundoku_quest/features/auto_backup/domain/auto_backup_presenter.dart';
 import 'package:tsundoku_quest/features/auto_backup/domain/auto_backup_restorer.dart';
+import 'package:tsundoku_quest/features/auto_backup/domain/backup_restorability.dart';
 import 'package:tsundoku_quest/core/logging/app_logger.dart';
 
 /// 自動バックアップからの復元
@@ -61,11 +61,14 @@ class AutoBackupRestorerImpl implements AutoBackupRestorerWithOptions {
   }) async {
     try {
       final json = await store.read(fileName);
-      if (!AutoBackupPresenter.canRestore(json)) {
-        return const AutoBackupRestoreResult(
-          ok: false,
-          message: 'このバックアップは読み込めないか破損しています',
-        );
+      final restorability = BackupRestorability.classify(json);
+      if (!restorability.isRestorable) {
+        // 版番号なしだけは新しい理由文、破損・空は従来の文言を維持する。
+        final message =
+            restorability.state == BackupRestoreState.unsupportedVersion
+                ? restorability.reason
+                : 'このバックアップは読み込めないか破損しています';
+        return AutoBackupRestoreResult(ok: false, message: message);
       }
 
       // 復元前の現状を必ず退避（失敗したら復元しない）

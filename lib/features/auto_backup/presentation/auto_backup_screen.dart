@@ -332,14 +332,28 @@ class _AutoBackupScreenState extends State<AutoBackupScreen> {
 
   Widget _buildRow(AutoBackupRow row) {
     final fileName = row.entry.fileName;
+    final showReason = widget.restorer != null && !row.restorability.isRestorable;
     return ListTile(
       key: ValueKey('auto_backup_row_$fileName'),
       title: Text(row.displayLabel),
-      subtitle: Text(fileName),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(fileName),
+          if (showReason)
+            Text(
+              row.restorability.label,
+              key: ValueKey('auto_backup_restore_reason_$fileName'),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+            ),
+        ],
+      ),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (widget.restorer != null && row.restorable)
+          if (widget.restorer != null && row.restorability.isRestorable)
             IconButton(
               key: ValueKey('auto_backup_restore_$fileName'),
               tooltip: '復元',

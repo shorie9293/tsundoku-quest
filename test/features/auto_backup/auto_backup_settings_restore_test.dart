@@ -11,6 +11,10 @@ import 'package:tsundoku_quest/features/auto_backup/data/auto_backup_store.dart'
 import 'package:tsundoku_quest/features/auto_backup/domain/auto_backup_restorer.dart';
 import 'package:tsundoku_quest/features/auto_backup/presentation/auto_backup_screen.dart';
 
+/// tryFromJson を通る最小の正当な控え（版番号あり）
+const _validJson =
+    '{"tsundoku_quest_backup":true,"version":1,"books":[],"readingSessions":[]}';
+
 /// 設定の有無を記録する復元役（旧インタフェースのみ）
 class _LegacyRestorer implements AutoBackupRestorer {
   final List<String> restored = [];
@@ -61,7 +65,7 @@ void main() {
 
     setUp(() async {
       store = InMemoryAutoBackupStore(now: () => DateTime(2026, 11, 9, 9));
-      await store.write('auto_backup_20261108.json', '{"day":8}');
+      await store.write('auto_backup_20261108.json', _validJson);
       applied = [];
       includeFlags = [];
       rescheduleCount = 0;
@@ -97,7 +101,7 @@ void main() {
 
       expect(result.ok, isTrue);
       expect(includeFlags, [false]);
-      expect(applied, ['{"day":8}']);
+      expect(applied, [_validJson]);
     });
 
     test('既定は設定も戻す（includeSettings:true）', () async {
@@ -144,7 +148,7 @@ void main() {
           .restoreWithOptions('auto_backup_20261108.json');
 
       expect(result.ok, isTrue);
-      expect(applied, ['{"day":8}']);
+      expect(applied, [_validJson]);
       expect(includeFlags, isEmpty);
     });
   });
@@ -155,7 +159,7 @@ void main() {
 
     setUp(() async {
       store = InMemoryAutoBackupStore(now: () => now);
-      await store.write('auto_backup_20261108.json', '{"day":8}');
+      await store.write('auto_backup_20261108.json', _validJson);
     });
 
     Future<void> openDialog(

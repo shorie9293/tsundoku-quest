@@ -7,6 +7,7 @@ library;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tsundoku_quest/features/auto_backup/domain/auto_backup_policy.dart';
 import 'package:tsundoku_quest/features/auto_backup/domain/auto_backup_presenter.dart';
+import 'package:tsundoku_quest/features/auto_backup/domain/backup_restorability.dart';
 
 void main() {
   group('AutoBackupPresenter.formatDate', () {
@@ -153,6 +154,21 @@ void main() {
       );
       expect(rows[0].restorable, isTrue);
       expect(rows[1].restorable, isFalse);
+    });
+
+    test('restorability は classify の結果（restorable の旧意味は不変）', () {
+      final rows = const AutoBackupPresenter().buildRows(
+        entries: entries,
+        contents: {
+          'auto_backup_20261001.json': 'broken',
+          'auto_backup_20261003.json': '{"ok":true}',
+        },
+      );
+      expect(rows[0].restorable, isTrue);
+      expect(rows[0].restorability.isRestorable, isFalse);
+      expect(rows[0].restorability.state, BackupRestoreState.unsupportedVersion);
+      expect(rows[1].restorability.isRestorable, isFalse);
+      expect(rows[1].restorability.state, BackupRestoreState.corrupt);
     });
 
     test('displayLabel は 日時 / サイズ / 世代', () {
