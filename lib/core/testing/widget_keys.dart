@@ -358,6 +358,15 @@ class AppKeys {
       Key('auto_backup_failure_banner');
   static const Key autoBackupRetry = Key('auto_backup_retry');
 
+  // ━━━ 復元前プレビュー（内訳）━━━
+  /// 復元確認ダイアログの内訳（新規/上書き/変更なし）。
+  static const Key autoBackupRestorePreviewSummary =
+      Key('auto_backup_restore_preview_summary');
+
+  /// 復元確認ダイアログの上書き対象抜粋。
+  static const Key autoBackupRestorePreviewSamples =
+      Key('auto_backup_restore_preview_samples');
+
   /// アプリロック: 復帰時再施錠の猶予ドロップダウン。
   static const Key appLockGraceDropdown = Key('ddl_app_lock_grace');
 

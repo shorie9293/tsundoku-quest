@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
+import 'package:tsundoku_quest/features/auto_backup/domain/restore_preview.dart';
 import 'package:tsundoku_quest/features/backup/data/backup_repository.dart';
 import 'package:tsundoku_quest/features/backup/domain/backup_csv.dart';
 import 'package:tsundoku_quest/features/backup/domain/backup_exporter.dart';
@@ -121,10 +122,21 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
         setState(() => _resultMessage = 'バックアップJSONの形式が正しくありません');
         return;
       }
+      // 復元前プレビュー（取得に失敗しても復元導線は止めない）
+      RestorePreview? preview;
+      try {
+        final current = await _repository.collect();
+        preview = compose(incoming: data, existing: current);
+      } catch (_) {
+        preview = null;
+      }
       final result = await _repository.restore(data);
       setState(() {
-        _resultMessage =
+        final base =
             '復元しました（追加 蔵書${result.addedBooks}冊・セッション${result.addedSessions}回／スキップ 蔵書${result.skippedBooks}冊・セッション${result.skippedSessions}回）';
+        _resultMessage = (preview != null && preview.total > 0)
+            ? '$base\n${preview.summary}'
+            : base;
         _importController.clear();
       });
     } catch (e) {

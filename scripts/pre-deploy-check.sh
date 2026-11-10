@@ -39,6 +39,13 @@ flutter test --no-pub -j 1 \
   test/features/
 echo "✅ shard 2/3 passed"
 
+# --- Step 4b: 復元前プレビュー（新設ディレクトリの明示登録） ---
+echo ""
+echo "[4b/5] 🧪 test features/restore_preview..."
+flutter test --no-pub -j 1 \
+  test/features/restore_preview/
+echo "✅ restore_preview passed"
+
 # --- Step 5: Test shard 3/3 (domain models) ---
 echo ""
 echo "[5/5] 🧪 test shard 3/3 (domain)..."

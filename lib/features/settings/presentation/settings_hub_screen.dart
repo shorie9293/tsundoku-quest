@@ -384,6 +384,8 @@ Widget buildAutoBackupSettings(BuildContext context) => Consumer(
                 ref.read(reminderSettingsProvider.notifier).load(),
           ),
           sharer: FileAutoBackupSharer(),
+          // 復元確認の内訳プレビュー用（失敗時は画面側で非表示に落ちる）
+          collectCurrent: () => repository.collect(),
           onBackupNow: () async {
             await AutoBackupService(store: store, statusStore: statusStore)
                 .run(buildJson);

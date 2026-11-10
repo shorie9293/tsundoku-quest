@@ -14,6 +14,9 @@ import 'package:tsundoku_quest/features/auto_backup/domain/auto_backup_presenter
 import 'package:tsundoku_quest/features/auto_backup/domain/auto_backup_restorer.dart';
 import 'package:tsundoku_quest/features/auto_backup/domain/auto_backup_sharer.dart';
 import 'package:tsundoku_quest/features/auto_backup/domain/auto_backup_status.dart';
+import 'package:tsundoku_quest/features/auto_backup/domain/restore_preview.dart';
+import 'package:tsundoku_quest/features/backup/domain/backup_exporter.dart';
+import 'package:tsundoku_quest/features/backup/domain/backup_models.dart';
 
 /// 自動バックアップ一覧
 class AutoBackupScreen extends StatefulWidget {
@@ -35,6 +38,9 @@ class AutoBackupScreen extends StatefulWidget {
   /// 自動バックアップの状態の読み出し元（null なら状態表示を出さない）
   final AutoBackupStatusStore? statusStore;
 
+  /// 現状データの収集（null なら内訳プレビューを出さない）
+  final Future<BackupData> Function()? collectCurrent;
+
   /// 現在時刻（試練で固定する）
   final DateTime Function()? now;
 
@@ -46,6 +52,7 @@ class AutoBackupScreen extends StatefulWidget {
     this.sharer,
     this.onBackupNow,
     this.statusStore,
+    this.collectCurrent,
     this.now,
   });
 
@@ -113,6 +120,22 @@ class _AutoBackupScreenState extends State<AutoBackupScreen> {
         .showSnackBar(SnackBar(content: Text(message)));
   }
 
+  /// 復元前プレビューを組み立てる。取得失敗時は null（従来表示のまま）。
+  Future<RestorePreview?> _buildPreview(String fileName) async {
+    final collect = widget.collectCurrent;
+    if (collect == null) return null;
+    try {
+      final json = await widget.store.read(fileName);
+      if (json == null) return null;
+      final incoming = BackupData.tryFromJson(backupJsonDecode(json));
+      if (incoming == null) return null;
+      final existing = await collect();
+      return compose(incoming: incoming, existing: existing);
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<void> _restore(AutoBackupRow row) async {
     final restorer = widget.restorer;
     if (restorer == null) return;
@@ -120,27 +143,58 @@ class _AutoBackupScreenState extends State<AutoBackupScreen> {
     // 既定ON: 機種変更・再インストール後は設定も戻したいのが本筋。
     var includeSettings = true;
 
+    final preview = await _buildPreview(row.entry.fileName);
+    if (!mounted) return;
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           title: const Text('復元の確認'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('このバックアップから復元しますか？現在のデータは先に自動バックアップされます'),
-              const SizedBox(height: 8),
-              CheckboxListTile(
-                key: const ValueKey('auto_backup_restore_include_settings'),
-                value: includeSettings,
-                contentPadding: EdgeInsets.zero,
-                controlAffinity: ListTileControlAffinity.leading,
-                onChanged: (value) =>
-                    setDialogState(() => includeSettings = value ?? false),
-                title: const Text('設定も戻す（テーマ・文字サイズ・静穏時間・リマインダー）'),
-              ),
-            ],
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('このバックアップから復元しますか？現在のデータは先に自動バックアップされます'),
+                if (preview != null && preview.total > 0)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          preview.summary,
+                          key: AppKeys.autoBackupRestorePreviewSummary,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(preview.message),
+                        ),
+                        if (preview.samplesText case final samples?)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Text(
+                              samples,
+                              key: AppKeys.autoBackupRestorePreviewSamples,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                const SizedBox(height: 8),
+                CheckboxListTile(
+                  key: const ValueKey('auto_backup_restore_include_settings'),
+                  value: includeSettings,
+                  contentPadding: EdgeInsets.zero,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  onChanged: (value) =>
+                      setDialogState(() => includeSettings = value ?? false),
+                  title: const Text('設定も戻す（テーマ・文字サイズ・静穏時間・リマインダー）'),
+                ),
+              ],
+            ),
           ),
           actions: [
             TextButton(
