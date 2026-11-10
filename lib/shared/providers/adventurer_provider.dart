@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tsundoku_quest/core/infrastructure/shared_export_guard.dart';
 import 'package:tsundoku_quest/core/infrastructure/hive/box_manager_provider.dart';
 import 'package:tsundoku_quest/domain/models/adventurer_progress.dart';
 import 'package:tsundoku_quest/domain/models/adventurer_stats.dart';
@@ -105,19 +106,31 @@ class AdventurerNotifier extends StateNotifier<AdventurerStats> {
 
     // レベルアップ検知
     if (levelResult.level > oldLevel) {
-      _rewardExporter?.exportLevelUp(
-        newLevel: levelResult.level,
-        title: levelResult.title,
-      );
+      final rewardExporter = _rewardExporter;
+      if (rewardExporter != null) {
+        guardSharedExport(
+          rewardExporter.exportLevelUp(
+            newLevel: levelResult.level,
+            title: levelResult.title,
+          ),
+          label: 'level_up',
+        );
+      }
     }
 
     // XPマイルストーン検知
     for (final milestone in _xpMilestones) {
       if (oldTotalXp < milestone && newTotalXp >= milestone) {
-        _rewardExporter?.exportXpMilestone(
-          milestone: milestone,
-          totalXp: newTotalXp,
-        );
+        final rewardExporter = _rewardExporter;
+        if (rewardExporter != null) {
+          guardSharedExport(
+            rewardExporter.exportXpMilestone(
+              milestone: milestone,
+              totalXp: newTotalXp,
+            ),
+            label: 'xp_milestone',
+          );
+        }
       }
     }
 
@@ -153,10 +166,16 @@ class AdventurerNotifier extends StateNotifier<AdventurerStats> {
     // 読書ページ数マイルストーン検知
     for (final milestone in _pagesMilestones) {
       if (oldTotalPages < milestone && newTotalPages >= milestone) {
-        _rewardExporter?.exportPagesMilestone(
-          milestone: milestone,
-          totalPages: newTotalPages,
-        );
+        final rewardExporter = _rewardExporter;
+        if (rewardExporter != null) {
+          guardSharedExport(
+            rewardExporter.exportPagesMilestone(
+              milestone: milestone,
+              totalPages: newTotalPages,
+            ),
+            label: 'pages_milestone',
+          );
+        }
       }
     }
   }
@@ -174,7 +193,13 @@ class AdventurerNotifier extends StateNotifier<AdventurerStats> {
     // 読書継続日数マイルストーン検知
     for (final milestone in _streakMilestones) {
       if (oldStreak < milestone && current >= milestone) {
-        _rewardExporter?.exportReadingStreak(streak: milestone);
+        final rewardExporter = _rewardExporter;
+        if (rewardExporter != null) {
+          guardSharedExport(
+            rewardExporter.exportReadingStreak(streak: milestone),
+            label: 'reading_streak',
+          );
+        }
       }
     }
   }

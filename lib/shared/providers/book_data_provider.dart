@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tsundoku_quest/core/infrastructure/shared_export_guard.dart';
 import 'package:tsundoku_quest/domain/models/book.dart';
 import 'package:tsundoku_quest/domain/models/user_book.dart';
 import 'package:tsundoku_quest/domain/models/war_trophy.dart';
@@ -234,13 +235,19 @@ class BookDataNotifier extends StateNotifier<BookDataState> {
     _syncAddToSupabase(userBook);
 
     // 3. 蔵書追加イベントを共有ストレージに書き出し（kozuchi連携）
-    _bookEventExporter?.exportBookAdded(
-      bookTitle: userBook.book?.title ?? '不明',
-      bookAuthor: userBook.book?.authors.isNotEmpty == true
-          ? userBook.book!.authors.first
-          : null,
-      timestamp: DateTime.now().toUtc().toIso8601String(),
-    );
+    final bookEventExporter = _bookEventExporter;
+    if (bookEventExporter != null) {
+      guardSharedExport(
+        bookEventExporter.exportBookAdded(
+          bookTitle: userBook.book?.title ?? '不明',
+          bookAuthor: userBook.book?.authors.isNotEmpty == true
+              ? userBook.book!.authors.first
+              : null,
+          timestamp: DateTime.now().toUtc().toIso8601String(),
+        ),
+        label: 'book_added',
+      );
+    }
   }
 
   /// 蔵書を更新。Supabase連携時は裏で非同期保存。
@@ -280,26 +287,44 @@ class BookDataNotifier extends StateNotifier<BookDataState> {
 
     // 報酬イベント: 読了
     if (status == BookStatus.completed && old.status != BookStatus.completed) {
-      _rewardExporter?.exportBookCompleted(
-        bookId: old.bookId,
-        bookTitle: old.book?.title,
-      );
+      final rewardExporter = _rewardExporter;
+      if (rewardExporter != null) {
+        guardSharedExport(
+          rewardExporter.exportBookCompleted(
+            bookId: old.bookId,
+            bookTitle: old.book?.title,
+          ),
+          label: 'book_completed',
+        );
+      }
       // Kozuchi金運バフ用: 専用ファイルにも読了イベントを書き出す
-      _completionExporter?.exportBookCompleted(
-        bookId: old.bookId,
-        bookTitle: old.book?.title,
-        timestamp: DateTime.now().toUtc().toIso8601String(),
-      );
+      final completionExporter = _completionExporter;
+      if (completionExporter != null) {
+        guardSharedExport(
+          completionExporter.exportBookCompleted(
+            bookId: old.bookId,
+            bookTitle: old.book?.title,
+            timestamp: DateTime.now().toUtc().toIso8601String(),
+          ),
+          label: 'book_completed_gold_luck',
+        );
+      }
     }
 
     // 報酬イベント: ページマイルストーン（1冊あたり）
     if (currentPage != null && currentPage > old.currentPage) {
       for (final milestone in _bookPagesMilestones) {
         if (old.currentPage < milestone && currentPage >= milestone) {
-          _rewardExporter?.exportPagesMilestone(
-            milestone: milestone,
-            totalPages: currentPage,
-          );
+          final rewardExporter = _rewardExporter;
+          if (rewardExporter != null) {
+            guardSharedExport(
+              rewardExporter.exportPagesMilestone(
+                milestone: milestone,
+                totalPages: currentPage,
+              ),
+              label: 'pages_milestone',
+            );
+          }
         }
       }
     }

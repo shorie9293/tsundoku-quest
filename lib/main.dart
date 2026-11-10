@@ -1,7 +1,9 @@
 import 'dart:ui';
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -18,6 +20,7 @@ import 'core/infrastructure/hive/adapters/war_trophy_adapter.dart';
 import 'core/infrastructure/hive/adapters/reading_reminder_adapter.dart';
 import 'core/infrastructure/hive/box_manager.dart';
 import 'core/infrastructure/hive/migration_service.dart';
+import 'core/infrastructure/shared_file_store.dart';
 import 'domain/models/user_book.dart';
 import 'domain/models/reading_session.dart';
 import 'app_router.dart';
@@ -139,6 +142,26 @@ void main() {
 Future<void> bootstrap() async {
   appLog.debug('🔵 main() 開始');
   WidgetsFlutterBinding.ensureInitialized();
+
+  // ━━━ 共有ストレージ（現世をまたぐ受け渡し）の初期化 ━━━
+  // Android 実機では SAF（Storage Access Framework）の共有フォルダを使う。
+  // フォルダ未選択でも起動は妨げない（連携画面から選んでもらう）。
+  try {
+    if (Platform.isAndroid) {
+      SharedFileStore.configure(AndroidSharedFileStore());
+    } else {
+      final dir = await getApplicationDocumentsDirectory();
+      SharedFileStore.configure(
+        FileSharedFileStore(Directory('${dir.path}/takamagahara_shared')),
+      );
+    }
+    final ready = await SharedFileStore.instance.ensureDirectory();
+    appLog.info(
+      '[main] 共有ストレージ: ${ready ? '準備OK' : '未設定（連携機能は停止中）'}',
+    );
+  } catch (e) {
+    appLog.warn('[main] 共有ストレージ初期化失敗（アプリは継続）: $e');
+  }
 
   // ━━━ Firebase 運用監視基盤（Crashlytics クラッシュ検知 + Analytics KPI計測）━━━
   try {

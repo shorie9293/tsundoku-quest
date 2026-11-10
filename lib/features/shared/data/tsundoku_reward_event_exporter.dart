@@ -1,11 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:tsundoku_quest/core/infrastructure/shared_file_store.dart';
+import 'package:tsundoku_quest/core/logging/app_logger.dart';
 import 'package:uuid/uuid.dart';
 
 /// 報酬イベントを共有ストレージにJSONLとして書き出すエクスポーター
 ///
-/// Kozuchiアプリが読み取れるよう、共有ストレージにJSONLファイルを書き出す。
-/// パス: /data/local/tmp/takamagahara_shared/tsundoku_reward_events.jsonl
+/// Kozuchiアプリが読み取れるよう、共有ストレージ（[SharedFileStore]。
+/// Android 実機では SAF で選んだ共有フォルダ）にJSONLファイルを書き出す。
+/// ファイル名の契約は [SharedCrossAppFiles.tsundokuRewardEvents]。
 ///
 /// イベントタイプ:
 /// - level_up: 冒険者のレベルが上昇
@@ -16,13 +19,13 @@ import 'package:uuid/uuid.dart';
 /// - pages_milestone: 累計読書ページ数が特定のマイルストーンを達成
 /// - reading_streak: 読書継続日数が特定のマイルストーンを達成
 class TsundokuRewardEventExporter {
-  final String filePath;
+  /// 試練用の明示パス。null なら共有ストア（[SharedFileStore]）経由。
+  final String? filePath;
   String _userId;
   static const _uuid = Uuid();
 
   TsundokuRewardEventExporter({
-    this.filePath =
-        '/data/local/tmp/takamagahara_shared/tsundoku_reward_events.jsonl',
+    this.filePath,
     String? userId,
   }) : _userId = userId ?? '';
 
@@ -33,7 +36,7 @@ class TsundokuRewardEventExporter {
   String _generateEventId() => _uuid.v4();
   String _nowTimestamp() => DateTime.now().toUtc().toIso8601String();
 
-  /// JSONLに1行追記。書き込み失敗は握りつぶす（best-effort）。
+  /// 共有ストレージへ1行追記する。
   ///
   /// [metadata] は rpg-task 側の報酬計算が読む入れ子オブジェクト。
   /// 参照: rpg-task/lib/features/crossapp/data/cross_app_reward_service.dart は
@@ -43,22 +46,42 @@ class TsundokuRewardEventExporter {
   /// userId が空のまま書き出すと rpg の `CrossAppRewardEvent.fromJson` が
   /// FormatException を投げて行ごとスキップされる（=報酬ゼロ）ため、
   /// 空のときは書き出さない。認証前のイベントは捨てるのが正しい挙動。
+  ///
+  /// 共有ストア経由の失敗は [SharedStorageException] として**上位へ伝える**
+  /// （討伐・読了の本処理は呼び出し側で止めない設計は維持）。
   Future<void> _writeEvent(
     Map<String, dynamic> event, {
     Map<String, dynamic>? metadata,
   }) async {
     if (_userId.trim().isEmpty) return;
+    final payload = <String, dynamic>{
+      ...event,
+      'metadata': metadata ?? const <String, dynamic>{},
+    };
+    final line = jsonEncode(payload);
+
+    if (filePath != null) {
+      await _appendToFile(line);
+      return;
+    }
+    await SharedFileStore.instance.appendLine(
+      SharedCrossAppFiles.tsundokuRewardEvents,
+      line,
+    );
+  }
+
+  /// 試練用: 明示パスへの直書き（従来の契約を保持）。
+  ///
+  /// 失敗は投げないが、無音にもしない（[appLog.warn] を1行残す）。
+  Future<void> _appendToFile(String line) async {
     try {
-      final file = File(filePath);
+      final file = File(filePath!);
       await file.parent.create(recursive: true);
-      final payload = <String, dynamic>{
-        ...event,
-        'metadata': metadata ?? const <String, dynamic>{},
-      };
-      final line = jsonEncode(payload);
       await file.writeAsString('$line\n', mode: FileMode.append);
-    } catch (_) {
-      // Best-effort export — silently ignore write failures
+    } catch (e) {
+      appLog.warn(
+        'TsundokuRewardEventExporter: 書き込み失敗（明示パス・無視）: $e',
+      );
     }
   }
 

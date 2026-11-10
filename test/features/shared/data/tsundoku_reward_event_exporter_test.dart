@@ -65,12 +65,10 @@ void main() {
   // ──────────────────────────────────────────
 
   group('constructor', () {
-    test('should use default filePath when not specified', () {
+    test('should leave filePath null (= shared store) when not specified', () {
       final e = TsundokuRewardEventExporter(userId: 'u1');
-      expect(
-        e.filePath,
-        '/data/local/tmp/takamagahara_shared/tsundoku_reward_events.jsonl',
-      );
+      // SAF 移行: 既定は共有ストア（SharedFileStore）経由。直書きパスは持たない。
+      expect(e.filePath, isNull);
     });
 
     test('should use custom filePath when specified', () {

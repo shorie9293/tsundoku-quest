@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tsundoku_quest/core/infrastructure/shared_export_guard.dart';
 import 'package:tsundoku_quest/core/infrastructure/hive/box_manager.dart';
 import 'package:tsundoku_quest/features/shared/data/tsundoku_reward_event_exporter.dart';
 import 'package:tsundoku_quest/features/shared/providers/reward_event_exporter_provider.dart';
@@ -148,10 +149,13 @@ class DailyMissionNotifier extends StateNotifier<DailyMissionState> {
     if (!state.allCompleted) return;
 
     _dailyMissionCompleteEmitted = true;
-    _rewardExporter.exportDailyMissionComplete(
-      date: state.date.toIso8601String().substring(0, 10),
-      completedCount: state.completedCount,
-      totalCount: state.totalCount,
+    guardSharedExport(
+      _rewardExporter.exportDailyMissionComplete(
+        date: state.date.toIso8601String().substring(0, 10),
+        completedCount: state.completedCount,
+        totalCount: state.totalCount,
+      ),
+      label: 'daily_mission_complete',
     );
   }
 
