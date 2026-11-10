@@ -4,12 +4,15 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tsundoku_quest/core/infrastructure/shared_export_guard.dart';
 import 'package:tsundoku_quest/domain/models/book.dart';
+import 'package:tsundoku_quest/domain/models/reading_queue_entry.dart';
 import 'package:tsundoku_quest/domain/models/user_book.dart';
 import 'package:tsundoku_quest/domain/models/war_trophy.dart';
 import 'package:tsundoku_quest/domain/repositories/shelf_repository.dart';
 import 'package:tsundoku_quest/domain/repositories/user_book_repository.dart';
 import 'package:tsundoku_quest/domain/repositories/reading_session_repository.dart';
 import 'package:tsundoku_quest/features/bookshelf/data/book_deletion_service.dart';
+import 'package:tsundoku_quest/features/bookshelf/data/book_restore_service.dart';
+import 'package:tsundoku_quest/features/bookshelf/domain/book_restore_plan.dart';
 import 'package:tsundoku_quest/features/bookshelf/data/user_book_repository_provider.dart';
 import 'package:tsundoku_quest/features/bookshelf/domain/book_deletion_plan.dart';
 import 'package:tsundoku_quest/features/reading/data/quick_memo_draft_store.dart';
@@ -85,6 +88,9 @@ class BookDataNotifier extends StateNotifier<BookDataState> {
   /// 本削除時の連鎖削除（セッション/棚/キュー/メモ下書き）
   final BookDeletionService? _deletionService;
 
+  /// 単体削除の Undo（連鎖復元）。削除前スナップショットから逆順に戻す。
+  final BookRestoreService? _restoreService;
+
   /// 戦利品クリーンアップコールバックを設定する（provider 構築時に一度だけ呼ぶ）。
   // ignore: avoid_setters_without_getters
   set trophyCleanup(void Function(String userBookId)? callback) =>
@@ -104,11 +110,14 @@ class BookDataNotifier extends StateNotifier<BookDataState> {
   /// [completionExporter] が指定された場合、読了時に専用ファイルへの書き出しを行う（kozuchi金運バフ用）。
   /// [deletionService] が指定された場合、蔵書削除時に孤児データ（セッション/棚/
   /// 読書キュー/メモ下書き）を裏で連鎖削除する。
-  BookDataNotifier([this._repository, this._sessionRepository, TsundokuRewardEventExporter? rewardExporter, TsundokuBookEventExporter? bookEventExporter, TsundokuBookCompletionExporter? completionExporter, BookDeletionService? deletionService])
+  /// [restoreService] が指定された場合、単体削除の Undo で削除前スナップショット
+  /// から逆順に連鎖復元できる（画面が [captureRestoreSnapshot] を先に呼ぶ）。
+  BookDataNotifier([this._repository, this._sessionRepository, TsundokuRewardEventExporter? rewardExporter, TsundokuBookEventExporter? bookEventExporter, TsundokuBookCompletionExporter? completionExporter, BookDeletionService? deletionService, BookRestoreService? restoreService])
       : _rewardExporter = rewardExporter,
         _bookEventExporter = bookEventExporter,
         _completionExporter = completionExporter,
         _deletionService = deletionService,
+        _restoreService = restoreService,
         super(BookDataState(isLoading: _repository != null));
 
   // ═══════════════════════════════════════════
@@ -372,6 +381,57 @@ class BookDataNotifier extends StateNotifier<BookDataState> {
     ));
   }
 
+  /// 単体削除の Undo 用: 削除**前**に復元スナップショットを取得する。
+  ///
+  /// [removeUserBook] は連鎖削除を即時発火するため、必ず削除の前に呼ぶこと。
+  /// 取得できない環境（復元サービス未配線）では null を返す（削除は続行できる）。
+  Future<BookRestoreSnapshot?> captureRestoreSnapshot(UserBook userBook) async {
+    final service = _restoreService;
+    if (service == null) return null;
+    try {
+      return await service.capture(userBook: userBook);
+    } catch (e, stack) {
+      appLog.warn('📦 [BookData] 復元スナップショット取得に失敗: $e\n$stack');
+      return null;
+    }
+  }
+
+  /// 単体削除の取り消し。スナップショットから**逆順**に連鎖復元する。
+  ///
+  /// 呼出元（画面操作・試練）の zone を汚さないよう専用 zone で隔離し、
+  /// 例外は外へ出さない。[onDone] は復元結果を1回だけ受け取る（UI は止めない）。
+  void restoreUserBook(
+    BookRestoreSnapshot snapshot, {
+    void Function(BookRestoreReport report)? onDone,
+  }) {
+    final service = _restoreService;
+    if (service == null) {
+      onDone?.call(const BookRestoreReport());
+      return;
+    }
+    unawaited(runZonedGuarded(
+      () async {
+        BookRestoreReport report;
+        try {
+          report = await service.restore(
+            BookRestorePlan.forBook(snapshot.userBook.id),
+            snapshot,
+          );
+        } catch (e, stack) {
+          // service は throw しない契約だが、念のため握る
+          appLog.warn('📦 [BookData] 連鎖復元で想定外の失敗: $e\n$stack');
+          report = const BookRestoreReport();
+        }
+        if (!mounted) return;
+        onDone?.call(report);
+      },
+      (e, stack) {
+        // 永続化層の非同期失敗（Hive未初期化等）は隔離して記録のみ
+        appLog.warn('📦 [BookData] 連鎖復元の非同期失敗を隔離: $e\n$stack');
+      },
+    ));
+  }
+
   UserBook? getUserBook(String id) {
     try {
       return state.userBooks.firstWhere((ub) => ub.id == id);
@@ -452,21 +512,66 @@ final bookDataProvider =
     saveQueue: readingQueueRepository?.saveEntries,
     draftStore: SharedPreferencesQuickMemoDraftStore(),
   );
-  return BookDataNotifier(
+  // 単体削除の Undo（削除計画の逆順に連鎖復元）。
+  // 埋め込み先（本体）は notifier 自身が持つため late で束ねる。
+  final draftStore = SharedPreferencesQuickMemoDraftStore();
+  final queueRepo = readingQueueRepository;
+  late final BookDataNotifier notifier;
+  final restoreService = BookRestoreService(
+    loadSessions: sessionRepository?.getByUserBook,
+    loadShelves: shelfRepository?.listShelves,
+    loadQueue: queueRepo?.loadEntries,
+    loadTrophies: () async {
+      List<WarTrophy> trophies = const [];
+      try {
+        trophies = ref.read(warTrophyProvider);
+      } catch (_) {
+        // テスト環境等でプロバイダが未初期化の場合は対象なし
+      }
+      return trophies;
+    },
+    draftStore: draftStore,
+    addUserBook: (userBook) => notifier.addUserBook(userBook),
+    addSession: sessionRepository?.createSession,
+    addBookToShelf: shelfRepository?.addBookToShelf,
+    restoreQueueEntries: queueRepo == null
+        ? null
+        : (entries) async {
+            // 削除で消えた当該書のエントリだけを戻す（他書は巻き込まない）
+            final current = await queueRepo.loadEntries();
+            final target = {for (final e in entries) e.userBookId};
+            final merged = <ReadingQueueEntry>[
+              ...current.where((e) => !target.contains(e.userBookId)),
+              ...entries,
+            ];
+            await queueRepo.saveEntries(merged);
+          },
+    saveDraft: (userBookId, draft) => draftStore.save(userBookId, draft),
+    addTrophy: (trophy) {
+      try {
+        ref.read(warTrophyProvider.notifier).addTrophy(trophy);
+      } catch (_) {
+        // テスト環境等でリポジトリがない場合は何もしない
+      }
+    },
+  );
+  notifier = BookDataNotifier(
     repository,
     sessionRepository,
     rewardExporter,
     const TsundokuBookEventExporter(), // kozuchi 連携用（蔵書追加）
     const TsundokuBookCompletionExporter(), // kozuchi 連携用（読了→金運バフ）
     deletionService,
+    restoreService,
   )..trophyCleanup = (userBookId) {
-      // 本削除時に紐づく戦利品（読書感想）も削除する
-      try {
-        ref
-            .read(warTrophyProvider.notifier)
-            .removeTrophiesByUserBook(userBookId);
-      } catch (_) {
-        // テスト環境等でリポジトリがない場合は何もしない
-      }
-    };
+    // 本削除時に紐づく戦利品（読書感想）も削除する
+    try {
+      ref
+          .read(warTrophyProvider.notifier)
+          .removeTrophiesByUserBook(userBookId);
+    } catch (_) {
+      // テスト環境等でリポジトリがない場合は何もしない
+    }
+  };
+  return notifier;
 });

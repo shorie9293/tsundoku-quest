@@ -205,6 +205,33 @@ class _BookshelfScreenState extends ConsumerState<BookshelfScreen> {
     );
   }
 
+  /// 単体削除（スワイプ／削除ボタン）。削除**前**にスナップショットを取り、
+  /// 削除直後の SnackBar の Undo で連鎖復元（削除計画の逆順）できるようにする。
+  Future<void> _deleteSingleBook(UserBook book) async {
+    final notifier = ref.read(bookDataProvider.notifier);
+    final messenger = ScaffoldMessenger.of(context);
+    // removeUserBook は連鎖削除を即時発火するため、必ず先に控える
+    final snapshot = await notifier.captureRestoreSnapshot(book);
+
+    notifier.removeUserBook(book.id);
+    if (!mounted || snapshot == null) return;
+
+    showUndoSnackBar(
+      context,
+      message: '「${book.book?.title ?? '本'}」を削除しました',
+      onUndo: () {
+        notifier.restoreUserBook(
+          snapshot,
+          onDone: (report) {
+            // 復元結果は非ブロッキングに1回だけ通知（UI は止めない）
+            if (!messenger.mounted) return;
+            messenger.showSnackBar(SnackBar(content: Text(report.summary)));
+          },
+        );
+      },
+    );
+  }
+
   /// 下部の一括操作バー。
   Widget _buildBulkActionBar() {
     return Material(
@@ -505,9 +532,7 @@ class _BookshelfScreenState extends ConsumerState<BookshelfScreen> {
                         onEdit: () => EditBookModal.show(context, book),
                                 onDelete: _selectionMode
                                     ? null
-                                    : () => ref
-                                        .read(bookDataProvider.notifier)
-                                        .removeUserBook(book.id),
+                                    : () => _deleteSingleBook(book),
                       ),
                       ))
                   .toList(),
@@ -544,9 +569,7 @@ class _BookshelfScreenState extends ConsumerState<BookshelfScreen> {
                       onEdit: () => EditBookModal.show(context, book),
                               onDelete: _selectionMode
                                   ? null
-                                  : () => ref
-                                      .read(bookDataProvider.notifier)
-                                      .removeUserBook(book.id),
+                                  : () => _deleteSingleBook(book),
                     ),
                     ))
                 .toList(),
@@ -583,9 +606,7 @@ class _BookshelfScreenState extends ConsumerState<BookshelfScreen> {
                         onEdit: () => EditBookModal.show(context, book),
                                 onDelete: _selectionMode
                                     ? null
-                                    : () => ref
-                                        .read(bookDataProvider.notifier)
-                                        .removeUserBook(book.id),
+                                    : () => _deleteSingleBook(book),
                       ),
                       ))
                   .toList(),
