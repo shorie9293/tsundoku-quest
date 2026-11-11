@@ -31,6 +31,7 @@ import 'package:tsundoku_quest/features/reminders/presentation/quiet_hours_setti
 import 'package:tsundoku_quest/features/reminders/data/notification_permission_requester.dart';
 import 'package:tsundoku_quest/features/reminders/presentation/reminder_settings_screen.dart';
 import 'package:tsundoku_quest/features/settings/presentation/app_lock_settings_screen.dart';
+import 'package:tsundoku_quest/features/settings/presentation/cross_app_link_status_screen.dart';
 import 'package:tsundoku_quest/features/settings/presentation/reduce_motion_settings_screen.dart';
 import 'package:tsundoku_quest/features/settings/presentation/text_scale_settings_screen.dart';
 import 'package:tsundoku_quest/features/settings/presentation/theme_mode_settings_screen.dart';
@@ -56,6 +57,7 @@ class SettingsHubScreen extends StatelessWidget {
     this.aboutBuilder = buildAboutSettings,
     this.crashLogBuilder = buildCrashLogSettings,
     this.helpBuilder = buildHelpSettings,
+    this.crossAppLinkStatusScreenBuilder,
     this.accountDeletionBuilder,
     this.autoBackupStatusStore,
   });
@@ -75,6 +77,11 @@ class SettingsHubScreen extends StatelessWidget {
 
   /// 「遊び方・ヘルプ」の遷移先（既定は [HelpScreen]）。
   final WidgetBuilder helpBuilder;
+
+  /// 「連携状況（現世間の受け渡し）」の遷移先。
+  ///
+  /// null のときは既定の [CrossAppLinkStatusScreen] を開く。
+  final WidgetBuilder? crossAppLinkStatusScreenBuilder;
 
   /// アカウント削除（退会）の遷移先。
   ///
@@ -155,6 +162,13 @@ class SettingsHubScreen extends StatelessWidget {
           icon: Icons.help_outline,
           label: '遊び方・ヘルプ',
           builder: helpBuilder,
+        ),
+        _SettingsHubItem(
+          id: 'cross_app_link_status',
+          icon: Icons.swap_horiz,
+          label: '連携状況（現世間の受け渡し）',
+          builder: crossAppLinkStatusScreenBuilder ??
+              (_) => const CrossAppLinkStatusScreen(),
         ),
         if (accountDeletionBuilder case final builder?)
           _SettingsHubItem(

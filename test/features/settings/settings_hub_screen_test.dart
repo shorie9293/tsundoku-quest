@@ -78,8 +78,8 @@ void main() {
 
     expect(find.byKey(AppKeys.settingsHubScreen), findsOneWidget);
     expect(find.text('設定'), findsOneWidget);
-    // 「遊び方・ヘルプ」追加により 10 → 11（既存項目は不変）。
-    expect(find.byType(ListTile), findsNWidgets(11));
+    // 「連携状況（現世間の受け渡し）」追加により 11 → 12（既存項目は不変）。
+    expect(find.byType(ListTile), findsNWidgets(12));
 
     const labels = <String>[
       '不具合の報告',
@@ -93,6 +93,7 @@ void main() {
       '自動バックアップ',
       'アプリについて',
       '遊び方・ヘルプ',
+      '連携状況（現世間の受け渡し）',
     ];
     for (final label in labels) {
       expect(find.text(label), findsOneWidget);
@@ -162,7 +163,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(AppKeys.settingsHubScreen), findsOneWidget);
-    expect(find.byType(ListTile), findsNWidgets(11));
+    expect(find.byType(ListTile), findsNWidgets(12));
   });
 
   testWidgets('テーマ設定画面の導線から設定ハブへ到達できる', (tester) async {
