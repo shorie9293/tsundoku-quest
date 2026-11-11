@@ -70,8 +70,9 @@ void main() {
     expect(hubItemKeys(tester), [
       for (final id in existingIds) AppKeys.settingsHubItem(id),
       AppKeys.settingsHubItem('help'),
+      AppKeys.settingsHubItem('cross_app_link_status'),
     ]);
-    expect(find.byType(ListTile), findsNWidgets(existingIds.length + 1));
+    expect(find.byType(ListTile), findsNWidgets(existingIds.length + 2));
   });
 
   testWidgets('タップで HelpScreen へ遷移する', (tester) async {
