@@ -19,6 +19,7 @@ import '../../bookshelf/data/daily_mission_provider.dart';
 import '../data/reading_session_repository_provider.dart';
 import '../data/quick_memo_draft_store.dart';
 import '../domain/quick_memo.dart';
+import '../domain/reading_date_key.dart';
 import '../../history/data/reading_forecast_service.dart';
 import '../../history/presentation/widgets/reading_forecast_card.dart';
 import '../../../../domain/models/reading_session.dart';
@@ -300,7 +301,7 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
       final adventurer = ref.read(adventurerProvider.notifier);
       adventurer.updateReadingStats(minutes: durationMinutes, pages: endPage - _startPage);
 
-      final today = DateTime.now().toUtc().toIso8601String().substring(0, 10);
+      final today = ReadingDateKey.today();
       adventurer.addReadingDate(today);
     } catch (e) {
       appLog.warn('⚠️ [ReadingScreen] 統計更新失敗: $e');
@@ -361,7 +362,7 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
     // 冒険者の統計更新
     try {
       ref.read(adventurerProvider.notifier).updateReadingStats(minutes: minutes, pages: 0);
-      final today = DateTime.now().toUtc().toIso8601String().substring(0, 10);
+      final today = ReadingDateKey.today();
       ref.read(adventurerProvider.notifier).addReadingDate(today);
     } catch (e) {
       appLog.warn('⚠️ [ReadingScreen] 統計更新失敗: $e');

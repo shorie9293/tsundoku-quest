@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../domain/models/reading_session.dart';
 import '../../../domain/repositories/reading_session_repository.dart';
 import '../domain/weekly_reading_buckets.dart';
+import '../domain/reading_date_key.dart';
 
 /// Supabaseをデータストアに使用したReadingSessionRepositoryの具象実装
 class SupabaseReadingSessionRepository implements ReadingSessionRepository {
@@ -100,18 +101,13 @@ class SupabaseReadingSessionRepository implements ReadingSessionRepository {
     final response = await _client
         .from('reading_sessions')
         .select('started_at') as List<dynamic>;
-    // Extract unique dates from started_at timestamps
-    final dateSet = <String>{};
-    for (final row in response) {
-      if (row is Map<String, dynamic> && row['started_at'] is String) {
-        final dateStr = row['started_at'] as String;
-        // Extract YYYY-MM-DD from ISO 8601 timestamp
-        final dateOnly = dateStr.length >= 10 ? dateStr.substring(0, 10) : dateStr;
-        dateSet.add(dateOnly);
-      }
-    }
-    final result = dateSet.toList()..sort((a, b) => b.compareTo(a));
-    return result;
+    // 日付キーはローカル暦（UTC の先頭10文字切り出しでは JST 早朝が前日になる）。
+    return ReadingDateKey.uniqueSortedDescending(
+      response
+          .whereType<Map<String, dynamic>>()
+          .map((row) => row['started_at'])
+          .whereType<String>(),
+    );
   }
 
   @override

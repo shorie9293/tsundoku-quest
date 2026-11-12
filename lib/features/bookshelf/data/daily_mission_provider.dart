@@ -6,6 +6,7 @@ import 'package:tsundoku_quest/core/infrastructure/shared_export_guard.dart';
 import 'package:tsundoku_quest/core/infrastructure/hive/box_manager.dart';
 import 'package:tsundoku_quest/features/shared/data/tsundoku_reward_event_exporter.dart';
 import 'package:tsundoku_quest/features/shared/providers/reward_event_exporter_provider.dart';
+import 'package:tsundoku_quest/features/reading/domain/reading_date_key.dart';
 import '../domain/daily_mission.dart';
 import 'package:tsundoku_quest/core/logging/app_logger.dart';
 
@@ -151,7 +152,7 @@ class DailyMissionNotifier extends StateNotifier<DailyMissionState> {
     _dailyMissionCompleteEmitted = true;
     guardSharedExport(
       _rewardExporter.exportDailyMissionComplete(
-        date: state.date.toIso8601String().substring(0, 10),
+        date: ReadingDateKey.fromDateTime(state.date),
         completedCount: state.completedCount,
         totalCount: state.totalCount,
       ),

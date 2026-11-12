@@ -129,7 +129,15 @@ void main() {
   });
 
   group('normalizeReadingDates', () {
-    test('先頭10文字・空除去・重複除去・昇順', () {
+    // 期待値は実ローカル暦から算出する。特定TZの決め打ちは CI(UTC) で赤化する。
+    String localKey(String iso) {
+      final l = DateTime.parse(iso).toLocal();
+      final m = l.month.toString().padLeft(2, '0');
+      final d = l.day.toString().padLeft(2, '0');
+      return '${l.year}-$m-$d';
+    }
+
+    test('ローカル暦の日付キー・空除去・重複除去・昇順', () {
       final result = AdventurerProgress.normalizeReadingDates([
         '2026-10-03T21:00:00Z',
         '2026-10-01',
@@ -137,7 +145,26 @@ void main() {
         '2026-10-03',
       ]);
 
-      expect(result, ['2026-10-01', '2026-10-03']);
+      // UTC インスタントはローカル暦へ落ちる（JST 06:00 → 10-04 / UTC 21:00 → 10-03）。
+      // 旧実装は UTC の先頭10文字を切っており、JST 早朝の読書を前日に計上していた。
+      final expected = <String>{
+        '2026-10-01',
+        '2026-10-03',
+        localKey('2026-10-03T21:00:00Z'),
+      }.toList()
+        ..sort();
+      expect(result, expected);
+    });
+
+    test('解釈できない壊れ値は捨て、例外を投げない', () {
+      final result = AdventurerProgress.normalizeReadingDates([
+        'abc',
+        '',
+        '   ',
+        '2026-02-30T00:00:00Z',
+        '2026-10-01',
+      ]);
+      expect(result, ['2026-10-01']);
     });
   });
 }

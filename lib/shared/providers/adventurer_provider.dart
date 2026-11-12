@@ -8,6 +8,7 @@ import 'package:tsundoku_quest/domain/repositories/adventurer_repository.dart';
 import 'package:tsundoku_quest/features/shared/data/adventurer_progress_repository.dart';
 import 'package:tsundoku_quest/features/shared/data/tsundoku_reward_event_exporter.dart';
 import 'package:tsundoku_quest/features/shared/providers/reward_event_exporter_provider.dart';
+import 'package:tsundoku_quest/features/reading/domain/reading_date_key.dart';
 import 'xp_calculator.dart';
 import 'package:tsundoku_quest/core/logging/app_logger.dart';
 
@@ -237,7 +238,9 @@ class AdventurerNotifier extends StateNotifier<AdventurerStats> {
   // ━━━ 読書日付操作 ━━━
 
   void addReadingDate(String date) {
-    final dateStr = date.length >= 10 ? date.substring(0, 10) : date;
+    // 不正・解釈不能な入力は無視する（throw しない）。日付キーはローカル暦。
+    final dateStr = ReadingDateKey.tryFromIso(date);
+    if (dateStr == null) return;
     if (!state.readingDates.contains(dateStr)) {
       state = _copyWith(
         readingDates: [...state.readingDates, dateStr],

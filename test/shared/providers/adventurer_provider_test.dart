@@ -100,5 +100,39 @@ void main() {
         expect(notifier.state.longestStreak, 14);
       });
     });
+
+    group('addReadingDate（ローカル暦・不正入力）', () {
+      test('UTC ISO はローカル暦の日付キーへ正規化される', () {
+        const raw = '2026-11-12T20:00:00.000Z';
+        final local = DateTime.parse(raw).toLocal();
+        final expected = '${local.year}-'
+            '${local.month.toString().padLeft(2, '0')}-'
+            '${local.day.toString().padLeft(2, '0')}';
+
+        final notifier = AdventurerNotifier();
+        notifier.addReadingDate(raw);
+
+        expect(notifier.state.readingDates, contains(expected));
+        // ローカル暦が UTC 暦とずれる TZ では、旧実装の値と食い違うはず。
+        if (expected != raw.substring(0, 10)) {
+          expect(
+              notifier.state.readingDates,
+              isNot(contains(raw.substring(0, 10))),
+              reason: 'UTC の先頭10文字切り出しへ戻ってはならない');
+        }
+        if (local.timeZoneOffset == const Duration(hours: 9)) {
+          expect(notifier.state.readingDates, contains('2026-11-13'));
+        }
+      });
+
+      test('解釈できない入力は無視される（throw しない）', () {
+        final notifier = AdventurerNotifier();
+        for (final raw in ['abc', '', '   ', '2026-13-45T99:99:99Z']) {
+          expect(() => notifier.addReadingDate(raw), returnsNormally,
+              reason: 'raw=$raw');
+        }
+        expect(notifier.state.readingDates, isEmpty);
+      });
+    });
   });
 }

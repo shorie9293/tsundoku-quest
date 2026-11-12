@@ -10,6 +10,7 @@ import 'package:tsundoku_quest/core/infrastructure/hive/box_manager.dart';
 import 'package:uuid/uuid.dart';
 import 'package:tsundoku_quest/core/logging/app_logger.dart';
 import 'package:tsundoku_quest/features/reading/domain/weekly_reading_buckets.dart';
+import 'package:tsundoku_quest/features/reading/domain/reading_date_key.dart';
 
 class HiveReadingSessionRepository implements ReadingSessionRepository {
   final BoxManagerInterface _boxManager;
@@ -64,15 +65,10 @@ class HiveReadingSessionRepository implements ReadingSessionRepository {
     try {
       final box = await _getBox();
       final all = BoxHelper.loadCollection(box);
-      final dateSet = <String>{};
-      for (final session in all) {
-        final dateStr = session.startedAt.length >= 10
-            ? session.startedAt.substring(0, 10)
-            : session.startedAt;
-        dateSet.add(dateStr);
-      }
-      final result = dateSet.toList()..sort((a, b) => b.compareTo(a));
-      return result;
+      // 日付キーはローカル暦（UTC の先頭10文字切り出しでは JST 早朝が前日になる）。
+      return ReadingDateKey.uniqueSortedDescending(
+        all.map((s) => s.startedAt),
+      );
     } catch (e) {
       appLog.warn('[HiveReadingSessionRepo] getAllReadingDates failed: $e');
       return [];

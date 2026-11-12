@@ -5,6 +5,7 @@
 library;
 
 import 'package:tsundoku_quest/domain/models/adventurer_stats.dart';
+import 'package:tsundoku_quest/features/reading/domain/reading_date_key.dart';
 
 class AdventurerProgress {
   final int level;
@@ -67,13 +68,16 @@ class AdventurerProgress {
     );
   }
 
-  /// 読書日リストの正規化（先頭10文字・空除去・重複除去・昇順）
+  /// 読書日リストの正規化（ローカル暦の日付キー・空除去・重複除去・昇順）
+  ///
+  /// 解釈できない壊れ値は捨てる。`'2026-11-12T20:00:00.000Z'` のような
+  /// UTC インスタントはローカル暦の日付へ落としてから扱う。
   static List<String> normalizeReadingDates(Iterable<String> dates) {
     final seen = <String>{};
     final result = <String>[];
     for (final raw in dates) {
-      final value = raw.length >= 10 ? raw.substring(0, 10) : raw;
-      if (value.isEmpty) continue;
+      final value = ReadingDateKey.tryFromIso(raw);
+      if (value == null || value.isEmpty) continue;
       if (seen.add(value)) result.add(value);
     }
     result.sort();
