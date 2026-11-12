@@ -1,12 +1,17 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../domain/models/reading_session.dart';
 import '../../../domain/repositories/reading_session_repository.dart';
+import '../domain/weekly_reading_buckets.dart';
 
 /// Supabaseをデータストアに使用したReadingSessionRepositoryの具象実装
 class SupabaseReadingSessionRepository implements ReadingSessionRepository {
   final SupabaseClient _client;
+  final DateTime Function() _clock;
 
-  SupabaseReadingSessionRepository(this._client);
+  SupabaseReadingSessionRepository(
+    this._client, {
+    DateTime Function()? clock,
+  }) : _clock = clock ?? DateTime.now;
 
   @override
   Future<ReadingSession> startSession(String userBookId, int startPage) async {
@@ -162,9 +167,10 @@ class SupabaseReadingSessionRepository implements ReadingSessionRepository {
 
   @override
   Future<List<int>> getWeeklyReadingMinutes() async {
-    final now = DateTime.now().toUtc();
-    final weekStart = now.subtract(const Duration(days: 6));
-    final weekStartStr = weekStart.toIso8601String();
+    final now = _clock();
+    // 下限は「ローカル週初め 0 時」を UTC 化した ISO。
+    // 時刻付き UTC インスタントを引くとローカル最古の日が落ちる。
+    final weekStartStr = WeeklyReadingBuckets.weekStartIso(now);
 
     final response = await _client
         .from('reading_sessions')
@@ -172,24 +178,19 @@ class SupabaseReadingSessionRepository implements ReadingSessionRepository {
         .gte('started_at', weekStartStr)
         .not('duration_minutes', 'is', null) as List<dynamic>;
 
-    // Initialize 7 days with 0 minutes
-    final dailyMinutes = List.filled(7, 0);
+    // 集計は純粋モジュールに一任（index 6 = 今日、ローカル暦）。
+    final samples = <ReadingSample>[];
     for (final row in response) {
       if (row is Map<String, dynamic> &&
           row['started_at'] is String &&
           row['duration_minutes'] is int) {
-        final ts = row['started_at'] as String;
-        final duration = row['duration_minutes'] as int;
-        final dateStr = ts.length >= 10 ? ts.substring(0, 10) : ts;
-        // Calculate day index from weekStart
-        final date = DateTime.parse(dateStr);
-        final diff = date.difference(weekStart).inDays;
-        if (diff >= 0 && diff < 7) {
-          dailyMinutes[diff] += duration;
-        }
+        samples.add((
+          startedAt: row['started_at'] as String,
+          durationMinutes: row['duration_minutes'] as int,
+        ));
       }
     }
-    return dailyMinutes;
+    return WeeklyReadingBuckets.build(samples, now: now);
   }
 
   @override

@@ -9,12 +9,17 @@ import 'package:tsundoku_quest/domain/repositories/reading_session_repository.da
 import 'package:tsundoku_quest/core/infrastructure/hive/box_manager.dart';
 import 'package:uuid/uuid.dart';
 import 'package:tsundoku_quest/core/logging/app_logger.dart';
+import 'package:tsundoku_quest/features/reading/domain/weekly_reading_buckets.dart';
 
 class HiveReadingSessionRepository implements ReadingSessionRepository {
   final BoxManagerInterface _boxManager;
+  final DateTime Function() _clock;
   static const _uuid = Uuid();
 
-  HiveReadingSessionRepository(this._boxManager);
+  HiveReadingSessionRepository(
+    this._boxManager, {
+    DateTime Function()? clock,
+  }) : _clock = clock ?? DateTime.now;
 
   Box<ReadingSession>? _box;
 
@@ -195,27 +200,17 @@ class HiveReadingSessionRepository implements ReadingSessionRepository {
     try {
       final box = await _getBox();
       final all = BoxHelper.loadCollection(box);
-      final now = DateTime.now().toUtc();
-      final weekStart = now.subtract(const Duration(days: 6));
-      final dailyMinutes = List.filled(7, 0);
-
-      for (final session in all) {
-        if (session.durationMinutes == null) continue;
-        try {
-          final ts = session.startedAt.length >= 10
-              ? session.startedAt.substring(0, 10)
-              : session.startedAt;
-          final date = DateTime.parse(ts);
-          final diff = date.difference(weekStart).inDays;
-          if (diff >= 0 && diff < 7) {
-            dailyMinutes[diff] += session.durationMinutes!;
-          }
-        } catch (_) {}
-      }
-      return dailyMinutes;
+      // バケット計算は純粋モジュールに一任する（ローカル暦・index 6 = 今日）。
+      return WeeklyReadingBuckets.build(
+        all.map(
+          (s) => (startedAt: s.startedAt, durationMinutes: s.durationMinutes),
+        ),
+        now: _clock(),
+      );
     } catch (e) {
-      appLog.warn('[HiveReadingSessionRepo] getWeeklyReadingMinutes failed: $e');
-      return List.filled(7, 0);
+      appLog
+          .warn('[HiveReadingSessionRepo] getWeeklyReadingMinutes failed: $e');
+      return List.filled(WeeklyReadingBuckets.days, 0);
     }
   }
 
