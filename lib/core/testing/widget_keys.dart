@@ -10,6 +10,7 @@ class AppKeys {
 
   // ━━━ 書庫（ホーム） ━━━
   static const Key bookshelfScreen = Key('screen_bookshelf');
+  static const Key bookshelfEmptyState = Key('view_bookshelf_empty');
   static const Key adventurerHeader = Key('header_adventurer');
   static const Key dungeonSummary = Key('section_dungeon_summary');
   static const Key xpBar = Key('bar_xp');

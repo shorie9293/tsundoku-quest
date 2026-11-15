@@ -5,6 +5,7 @@ import 'package:takamagahara_ui/takamagahara_ui.dart' hide AppKeys;
 import '../../../core/theme/app_theme.dart';
 import '../../../core/testing/widget_keys.dart';
 import '../../../core/widgets/dungeon_background.dart';
+import '../../../core/widgets/empty_state.dart';
 import '../../../domain/models/book_shelf.dart';
 import '../../../domain/models/user_book.dart';
 import '../../../shared/providers/book_data_provider.dart';
@@ -619,42 +620,20 @@ class _BookshelfScreenState extends ConsumerState<BookshelfScreen> {
               testId: 'sec_bookshelf_empty',
               label: '書庫はまだ空です',
               explicitChildNodes: true,
-              child: Padding(
-              padding: const EdgeInsets.all(32),
-              child: Column(
-                children: [
-                  const Text('📚', style: TextStyle(fontSize: 48)),
-                  const SizedBox(height: 16),
-                  const Text(
-                    '書庫はまだ空です',
-                    style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.textPrimary),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    '最初の冒険の書を登録して、ダンジョンへの扉を開きましょう！',
-                          style: TextStyle(
-                              fontSize: 13, color: AppTheme.textSecondary),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  SemanticHelper.interactive(
-                    testId: 'btn_empty_state_explore',
-                    label: '探索に出る',
-                    child: ElevatedButton.icon(
-                      onPressed: () => context.go('/explore'),
-                      icon: const Text('🧭'),
-                      label: const Text('探索に出る'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.accent,
-                      ),
-                    ),
-                  ),
-                ],
+              child: EmptyStateView(
+                key: AppKeys.bookshelfEmptyState,
+                emoji: '📚',
+                emojiSize: 48,
+                actionKey: const Key('btn_bookshelf_empty_explore'),
+                actionSemanticId: 'btn_empty_state_explore',
+                actionEmoji: '🧭',
+                spec: EmptyStateSpec(
+                  title: '書庫はまだ空です',
+                  description: '最初の冒険の書を登録して、ダンジョンへの扉を開きましょう！',
+                  actionLabel: '探索に出る',
+                  onAction: () => context.go('/explore'),
+                ),
               ),
-            ),
             ),
 
           const SizedBox(height: 32),

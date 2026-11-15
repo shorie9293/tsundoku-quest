@@ -5,6 +5,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/testing/widget_keys.dart';
 import '../../../../core/time/local_calendar_date.dart';
 import '../../../../core/widgets/dungeon_background.dart';
+import '../../../../core/widgets/empty_state.dart';
 import '../../../../domain/models/user_book.dart';
 import '../../../../shared/providers/adventurer_provider.dart';
 import '../../../../shared/providers/derived_provider.dart';
@@ -455,30 +456,28 @@ class _EmptyNotesPlaceholder extends StatelessWidget {
     return SemanticHelper.container(
       testId: 'txt_history_notes_empty',
       label: '感想を書いてみよう',
-      child: Container(
-      key: AppKeys.readingNotesEmpty,
-      padding: const EdgeInsets.symmetric(vertical: 24),
-      child: Center(
-        child: Column(
-          children: [
-            const Text('✍️',
-                style: const TextStyle(fontSize: 32)),
-            const SizedBox(height: 8),
-            const Text('感想を書いてみよう',
-                style: TextStyle(
-                    fontSize: 14,
-                    color: AppTheme.textSecondary)),
-            const SizedBox(height: 4),
-            const Text(
-              '読了時に学びを記録すると、ここに表示されます',
-              style: TextStyle(
-                  fontSize: 12,
-                  color: AppTheme.textSecondary),
-              textAlign: TextAlign.center,
+      child: EmptyStateView(
+        key: AppKeys.readingNotesEmpty,
+        emoji: '✍️',
+        emojiSize: 32,
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        actionKey: const Key('btn_history_notes_empty_search'),
+        actionSemanticId: 'btn_history_notes_empty_search',
+        // 既存の導線は「感想を検索」のみ（新規の執筆画面は存在しない）。
+        // 検索ボタンと同じ遷移を空状態の次の一手として差し出す。
+        spec: EmptyStateSpec(
+          title: '感想を書いてみよう',
+          description: '読了時に学びを記録すると、ここに表示されます',
+          actionLabel: '感想を探す',
+          onAction: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => const ReadingNoteSearchScreen(
+                queryPreferences:
+                    SharedPreferencesReadingNoteQueryPreferencesStore(),
+              ),
             ),
-          ],
+          ),
         ),
-      ),
       ),
     );
   }
