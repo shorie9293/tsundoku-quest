@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/time/local_calendar_date.dart';
 import '../data/reading_notes_provider.dart';
 
 /// 読書感想カード（検索画面・一覧共通）
@@ -11,9 +12,9 @@ class ReadingNoteCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final title = note.bookTitle ?? '不明な本';
-    final date = note.createdAt.length >= 10
-        ? note.createdAt.substring(0, 10)
-        : note.createdAt;
+    // 日付は**ローカル暦**。以前は createdAt.substring(0, 10)（= UTC 暦日）で、
+    // JST 00:00〜08:59 の感想が前日表示になっていた。正準 LocalCalendarDate へ委譲。
+    final date = LocalCalendarDate.displayDate(note.createdAt);
 
     return Container(
       key: Key('card_reading_note_${note.id}'),

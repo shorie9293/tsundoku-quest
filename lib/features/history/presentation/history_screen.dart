@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:takamagahara_ui/takamagahara_ui.dart' hide AppKeys;
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/testing/widget_keys.dart';
+import '../../../../core/time/local_calendar_date.dart';
 import '../../../../core/widgets/dungeon_background.dart';
 import '../../../../domain/models/user_book.dart';
 import '../../../../shared/providers/adventurer_provider.dart';
@@ -491,9 +492,9 @@ class _NoteCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final title = note.bookTitle ?? '不明な本';
-    final date = note.createdAt.length >= 10
-        ? note.createdAt.substring(0, 10)
-        : note.createdAt;
+    // 日付は**ローカル暦**。以前は createdAt.substring(0, 10)（= UTC 暦日）で、
+    // JST 00:00〜08:59 の感想が前日表示になっていた。正準 LocalCalendarDate へ委譲。
+    final date = LocalCalendarDate.displayDate(note.createdAt);
 
     return SemanticHelper.container(
       testId: 'card_history_note_${note.id}',
