@@ -21,6 +21,12 @@ class FallbackReadingSessionRepository implements ReadingSessionRepository {
   final ReadingSessionRepository _local;
   final BoxManagerInterface _boxManager;
 
+  /// 書き込み系メソッドが「成功した時のみ」呼ぶフック。
+  ///
+  /// 読書セッションの書き込み後に派生Provider（ヒートマップ・週間グラフ）を
+  /// 落とすための単一窓口。失敗時・読み取り時には呼ばない。
+  final void Function()? _onSuccessfulWrite;
+
   /// ローカル発セッションのプレフィックス
   static const _localPrefix = 'local:';
 
@@ -31,9 +37,25 @@ class FallbackReadingSessionRepository implements ReadingSessionRepository {
     required ReadingSessionRepository primary,
     required ReadingSessionRepository local,
     required BoxManagerInterface boxManager,
+    void Function()? onSuccessfulWrite,
   })  : _primary = primary,
         _local = local,
-        _boxManager = boxManager;
+        _boxManager = boxManager,
+        _onSuccessfulWrite = onSuccessfulWrite;
+
+  /// 書き込み成功の通知。
+  ///
+  /// コールバック自体が throw しても書き込み結果（戻り値・保存内容）を
+  /// 壊さないよう握りつぶし、警告ログを1回だけ残す。
+  void _notifyWriteSucceeded() {
+    final callback = _onSuccessfulWrite;
+    if (callback == null) return;
+    try {
+      callback();
+    } catch (e) {
+      appLog.warn('[FallbackSession] 書き込み成功フック失敗: $e');
+    }
+  }
 
   /// オンライン復帰時にローカルで完結したセッションを Supabase へ同期する。
   ///
@@ -42,12 +64,17 @@ class FallbackReadingSessionRepository implements ReadingSessionRepository {
   /// 同期には createSession を使い、元の startedAt/endedAt/duration を
   /// 保持したまま INSERT する（タイムスタンプのシフト防止）。
   /// 再実行防止のため _isSyncing ガードを持つ。
+  ///
+  /// なお本メソッドは書き込みを伴うが onSuccessfulWrite は**呼ばない**。
+  /// 同期は起動時・復帰時に一括で走るため、ここで無効化すると
+  /// 「同期 → 無効化 → 再取得 → …」の過剰リフレッシュを誘発するため。
+  /// （同期後は呼び出し元の main.dart が個別に経路を持つ）
   Future<void> syncLocalSessionsToRemote() async {
     if (_isSyncing) return;
     _isSyncing = true;
     try {
-      final box = await _boxManager.getBox<ReadingSession>(
-          BoxNames.readingSessions);
+      final box =
+          await _boxManager.getBox<ReadingSession>(BoxNames.readingSessions);
       final markedIds = box.values
           .where((s) => s.id.startsWith(_localPrefix))
           .map((s) => s.id)
@@ -81,7 +108,9 @@ class FallbackReadingSessionRepository implements ReadingSessionRepository {
   @override
   Future<ReadingSession> startSession(String userBookId, int startPage) async {
     try {
-      return await _primary.startSession(userBookId, startPage);
+      final session = await _primary.startSession(userBookId, startPage);
+      _notifyWriteSucceeded();
+      return session;
     } catch (e) {
       appLog.warn('⚠️ [FallbackSession] startSession 失敗、ローカルに退避: $e');
       final session = await _local.startSession(userBookId, startPage);
@@ -99,6 +128,8 @@ class FallbackReadingSessionRepository implements ReadingSessionRepository {
           await _boxManager.getBox<ReadingSession>(BoxNames.readingSessions);
       await box.put(localMarked.id, localMarked);
       await box.flush();
+      // ローカル退避でも「書き込み成功」なので派生Providerを落とす
+      _notifyWriteSucceeded();
       return localMarked;
     }
   }
@@ -110,10 +141,15 @@ class FallbackReadingSessionRepository implements ReadingSessionRepository {
     int durationMinutes,
   ) async {
     if (sessionId.startsWith(_localPrefix)) {
-      return _local.endSession(
+      final ended = await _local.endSession(
           sessionId.substring(_localPrefix.length), endPage, durationMinutes);
+      _notifyWriteSucceeded();
+      return ended;
     }
-    return _primary.endSession(sessionId, endPage, durationMinutes);
+    final ended =
+        await _primary.endSession(sessionId, endPage, durationMinutes);
+    _notifyWriteSucceeded();
+    return ended;
   }
 
   @override
@@ -130,22 +166,30 @@ class FallbackReadingSessionRepository implements ReadingSessionRepository {
         durationMinutes: session.durationMinutes,
         createdAt: session.createdAt,
       );
-      return _local.updateSession(unmarked);
+      await _local.updateSession(unmarked);
+      _notifyWriteSucceeded();
+      return;
     }
-    return _primary.updateSession(session);
+    await _primary.updateSession(session);
+    _notifyWriteSucceeded();
   }
 
   @override
   Future<void> deleteSession(String sessionId) async {
     if (sessionId.startsWith(_localPrefix)) {
-      return _local.deleteSession(sessionId.substring(_localPrefix.length));
+      await _local.deleteSession(sessionId.substring(_localPrefix.length));
+      _notifyWriteSucceeded();
+      return;
     }
-    return _primary.deleteSession(sessionId);
+    await _primary.deleteSession(sessionId);
+    _notifyWriteSucceeded();
   }
 
   @override
   Future<ReadingSession> createSession(ReadingSession session) async {
-    return _primary.createSession(session);
+    final created = await _primary.createSession(session);
+    _notifyWriteSucceeded();
+    return created;
   }
 
   @override
@@ -215,8 +259,7 @@ class FallbackReadingSessionRepository implements ReadingSessionRepository {
       primaryWeekly = await _primary.getWeeklyReadingMinutes();
     } catch (_) {}
     final localWeekly = await _local.getWeeklyReadingMinutes();
-    return List.generate(
-        7, (i) => primaryWeekly[i] + localWeekly[i]);
+    return List.generate(7, (i) => primaryWeekly[i] + localWeekly[i]);
   }
 
   @override
