@@ -57,6 +57,7 @@ import 'features/goals/data/reading_goal_repository.dart';
 import 'features/lifecycle/domain/day_rollover_detector.dart';
 import 'features/lifecycle/presentation/app_lifecycle_refresher.dart';
 import 'features/history/data/reading_statistics_provider.dart';
+import 'features/history/data/reading_habit_provider.dart';
 import 'features/history/data/weekly_reading_provider.dart';
 import 'features/goals/data/reading_goal_provider.dart';
 import 'features/bookshelf/data/daily_mission_provider.dart';
@@ -106,20 +107,32 @@ void wireRewardEventExporter({
   }
 }
 
-/// 日付跨ぎ（前面復帰）で再計算すべき「日付依存 Provider」の invalidate。
+/// 日付跨ぎ（前面復帰）で再計算すべき「日付依存 Provider」の一覧。
 ///
-/// `grep -rn "DateTime.now()" lib` で実在を確認したものだけを列挙する。
-/// 依存の連鎖で再計算されるものは末端だけを落とす。
+/// `grep -rn "DateTime.now()" lib --include=*provider*.dart` と
+/// 「ローカル暦で集計窓を切るリポジトリを watch する Provider」を機械列挙し、
+/// 実在するものだけを載せる。列挙漏れは
+/// `test/features/lifecycle/date_dependent_invalidation_test.dart` が検出する。
 ///   - [statisticsClockProvider] … 月別/年別読書統計（monthly/yearly）の時刻源
 ///   - [monthlyGoalProgressProvider] / [yearlyGoalProgressProvider] … 今月/今年の達成率
 ///   - [dailyMissionProvider] … デイリーミッション（日付が変われば再生成）
 ///   - [weeklyReadingMinutesProvider] … 直近7日窓の読書時間
+///   - [readingHabitSessionsProvider] … ヒートマップ／日次目標／バッジの元データ
+///     （非 autoDispose の FutureProvider。invalidate しない限り前日キャッシュが
+///     アプリ再起動まで固定される）
+final List<ProviderOrFamily> dateDependentProviders = <ProviderOrFamily>[
+  statisticsClockProvider,
+  monthlyGoalProgressProvider,
+  yearlyGoalProgressProvider,
+  dailyMissionProvider,
+  weeklyReadingMinutesProvider,
+  readingHabitSessionsProvider,
+];
+
 void invalidateDateDependentProviders(ProviderContainer container) {
-  container.invalidate(statisticsClockProvider);
-  container.invalidate(monthlyGoalProgressProvider);
-  container.invalidate(yearlyGoalProgressProvider);
-  container.invalidate(dailyMissionProvider);
-  container.invalidate(weeklyReadingMinutesProvider);
+  for (final provider in dateDependentProviders) {
+    container.invalidate(provider);
+  }
 }
 
 /// 未捕捉例外の最終防壁。
