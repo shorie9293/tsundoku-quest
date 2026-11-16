@@ -3,7 +3,10 @@ import 'dart:async';
 import 'package:tsundoku_quest/core/infrastructure/hive/box_manager.dart';
 import 'package:tsundoku_quest/domain/models/reading_session.dart';
 import 'package:tsundoku_quest/domain/repositories/reading_session_repository.dart';
+import 'package:tsundoku_quest/features/reading/domain/local_session_sync.dart';
 import 'package:tsundoku_quest/core/logging/app_logger.dart';
+
+import 'local_session_sync_executor.dart';
 
 /// Supabase 失敗時に Hive へフォールバックする読書セッションリポジトリ。
 ///
@@ -28,7 +31,7 @@ class FallbackReadingSessionRepository implements ReadingSessionRepository {
   final void Function()? _onSuccessfulWrite;
 
   /// ローカル発セッションのプレフィックス
-  static const _localPrefix = 'local:';
+  static const _localPrefix = LocalSessionSyncPlanner.localPrefix;
 
   /// 同期処理の再入防止ガード
   bool _isSyncing = false;
@@ -65,6 +68,12 @@ class FallbackReadingSessionRepository implements ReadingSessionRepository {
   /// 保持したまま INSERT する（タイムスタンプのシフト防止）。
   /// 再実行防止のため _isSyncing ガードを持つ。
   ///
+  /// 冪等性: 計画立案と意思決定は純粋層 [LocalSessionSyncPlanner]、
+  /// 逐次実行は [LocalSessionSyncExecutor] に委譲する。
+  /// 重複キー違反（同一 PK が既にある＝前回の push は成功していた）は
+  /// 「反映済み」と解釈してローカル行を掃除する。これを失敗扱いにすると
+  /// delete に到達せず、再試行が永久に重複キーで失敗して二重計上が固定される。
+  ///
   /// なお本メソッドは書き込みを伴うが onSuccessfulWrite は**呼ばない**。
   /// 同期は起動時・復帰時に一括で走るため、ここで無効化すると
   /// 「同期 → 無効化 → 再取得 → …」の過剰リフレッシュを誘発するため。
@@ -75,28 +84,46 @@ class FallbackReadingSessionRepository implements ReadingSessionRepository {
     try {
       final box =
           await _boxManager.getBox<ReadingSession>(BoxNames.readingSessions);
-      final markedIds = box.values
-          .where((s) => s.id.startsWith(_localPrefix))
-          .map((s) => s.id)
-          .toList();
-      for (final markedId in markedIds) {
-        try {
-          final rawId = markedId.substring(_localPrefix.length);
-          // 完了データは元キー（プレフィックス無し）に保存されている
-          final completed = box.get(rawId);
-          if (completed == null) continue;
 
-          await _primary.createSession(completed);
+      final markedIds = <String>[];
+      final rawById = <String, ReadingSession>{};
+      for (final key in box.keys) {
+        final stringKey = key.toString();
+        final session = box.get(key);
+        if (session == null) continue;
+        if (stringKey.startsWith(_localPrefix)) {
+          markedIds.add(stringKey);
+        } else {
+          rawById[stringKey] = session;
+        }
+      }
 
-          // 同期成功 → local: 印行と元キー行の両方を削除。
-          // 元キー行を残すと集計系（getTotalReadingMinutesAll 等）が
-          // primary と local を加算するため同一セッションを二重カウントする。
+      final plan = LocalSessionSyncPlanner.plan(
+        markedIds: markedIds,
+        rawById: rawById,
+      );
+      if (plan.isEmpty) return;
+
+      final executor = LocalSessionSyncExecutor(
+        push: (session) async {
+          await _primary.createSession(session);
+        },
+        removeLocal: (rawId, markedId) async {
+          // 印行 → 元キー行の順。元キー行が残ると集計系
+          // （getTotalReadingMinutesAll 等）が primary と加算して二重になる。
           await box.delete(markedId);
           await box.delete(rawId);
           await box.flush();
-        } catch (e) {
-          appLog.warn('⚠️ [FallbackSession] 同期失敗（次回再試行）: $e');
-        }
+        },
+      );
+
+      final report = await executor.run(plan);
+      if (report.pushed > 0 || report.alreadyPresent > 0) {
+        appLog.info('[FallbackSession] ローカルセッション同期: $report');
+      }
+      if (report.hasFailures) {
+        appLog.warn('⚠️ [FallbackSession] 同期失敗（次回再試行）: '
+            '${report.failedRawIds}');
       }
     } catch (e) {
       appLog.warn('⚠️ [FallbackSession] 同期処理失敗: $e');
