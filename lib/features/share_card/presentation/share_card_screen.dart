@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../core/testing/widget_keys.dart';
+import '../../../../core/widgets/empty_state.dart';
 import 'package:tsundoku_quest/features/share_card/data/share_card_exporter.dart';
 import 'package:tsundoku_quest/features/share_card/domain/share_card_data.dart';
 import 'package:tsundoku_quest/features/share_card/domain/share_card_service.dart';
@@ -86,9 +87,13 @@ class _ShareCardScreenState extends State<ShareCardScreen> {
       key: AppKeys.shareCardScreen,
       appBar: AppBar(title: const Text('読了カードを共有')),
       body: widget.candidates.isEmpty
-          ? const Center(
+          ? Center(
               key: AppKeys.shareCardEmpty,
-              child: Text('読了した本がまだない'),
+              child: EmptyStateView(
+                key: const Key('view_share_card_empty'),
+                emoji: '🎴',
+                spec: EmptyStateSpec(title: '読了した本がまだない'),
+              ),
             )
           : SafeArea(
               child: Column(

@@ -10,6 +10,7 @@ import '../../../core/search/search_history_store.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/testing/widget_keys.dart';
 import '../../../core/widgets/dungeon_background.dart';
+import '../../../core/widgets/empty_state.dart';
 import '../../../domain/models/book_shelf.dart';
 import '../../../domain/models/user_book.dart';
 import '../../../shared/providers/book_data_provider.dart';
@@ -380,27 +381,19 @@ class _LibrarySearchScreenState extends ConsumerState<LibrarySearchScreen> {
   }
 
   Widget _buildEmptyState() {
+    // 絞り込み中だけ、既存の「検索条件をリセット」導線を空状態の次の一手として差し出す。
+    final hasFilters = _query.activeFilterCount > 0;
     return Center(
-      key: AppKeys.libraryEmptyState,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text('🔍', style: TextStyle(fontSize: 40)),
-          const SizedBox(height: 12),
-          const Text(
-            '条件に合う本が見つかりません',
-            style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.textPrimary),
-          ),
-          const SizedBox(height: 8),
-          if (_query.activeFilterCount > 0)
-            TextButton(
-              onPressed: _reset,
-              child: const Text('検索条件をリセット'),
-            ),
-        ],
+      child: EmptyStateView(
+        key: AppKeys.libraryEmptyState,
+        emoji: '🔍',
+        emojiSize: 40,
+        actionKey: const Key('btn_library_empty_reset'),
+        spec: EmptyStateSpec(
+          title: '条件に合う本が見つかりません',
+          actionLabel: hasFilters ? '検索条件をリセット' : null,
+          onAction: hasFilters ? _reset : null,
+        ),
       ),
     );
   }

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:takamagahara_ui/takamagahara_ui.dart';
 
 import 'crash_log_entry.dart';
 import 'crash_log_repository.dart';
 import 'crash_log_service.dart';
 import 'error_boundary.dart';
+import '../widgets/empty_state.dart';
 
 /// 端末内クラッシュログの閲覧画面。
 ///
@@ -97,22 +97,12 @@ class _EmptyView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      key: CrashKeys.crashLogEmpty,
-      child: Padding(
-        padding: EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.check_circle_outline,
-              size: 48,
-              color: TakamagaharaColors.deepPurple,
-            ),
-            SizedBox(height: 12),
-            Text('記録された不具合はありません'),
-          ],
-        ),
+    return Center(
+      child: EmptyStateView(
+        key: CrashKeys.crashLogEmpty,
+        emoji: '✅',
+        padding: const EdgeInsets.all(24),
+        spec: EmptyStateSpec(title: '記録された不具合はありません'),
       ),
     );
   }

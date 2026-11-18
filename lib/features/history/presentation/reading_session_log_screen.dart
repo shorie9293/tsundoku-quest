@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 import '../../../../core/testing/widget_keys.dart';
 import '../../../../core/text/japanese_number.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/empty_state.dart';
 import '../../../../domain/models/reading_session.dart';
 import '../../../../domain/models/user_book.dart';
 import '../../../../domain/repositories/reading_session_repository.dart';
@@ -155,7 +156,17 @@ class _ReadingSessionLogScreenState
           ? Container(
               key: AppKeys.readingSessionLogEmpty,
               alignment: Alignment.center,
-              child: const Text('読書記録がありません'),
+              child: EmptyStateView(
+                key: const Key('view_reading_session_log_empty'),
+                emoji: '📝',
+                actionKey: const Key('btn_reading_session_log_empty_add'),
+                // 既存の AppBar「手動で記録」と同じ導線を空状態の次の一手として差し出す。
+                spec: EmptyStateSpec(
+                  title: '読書記録がありません',
+                  actionLabel: '手動で記録',
+                  onAction: _openForm,
+                ),
+              ),
             )
           : ListView.builder(
               key: AppKeys.readingSessionLogList,

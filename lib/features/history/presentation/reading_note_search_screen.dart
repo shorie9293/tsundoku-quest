@@ -8,6 +8,7 @@ import '../../../../core/search/search_history_chips.dart';
 import '../../../../core/search/search_history_store.dart';
 import '../../../../core/testing/widget_keys.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/empty_state.dart';
 import '../../bookshelf/data/query_preferences.dart';
 import '../data/reading_notes_provider.dart';
 import '../domain/reading_note_query.dart';
@@ -311,7 +312,22 @@ class _ReadingNoteSearchScreenState
                 ? Container(
                     key: AppKeys.readingNoteEmpty,
                     alignment: Alignment.center,
-                    child: const Text('条件に合う感想がありません'),
+                    child: EmptyStateView(
+                      key: const Key('view_reading_note_empty'),
+                      emoji: '🔎',
+                      actionKey: const Key('btn_reading_note_empty_reset'),
+                      // 既存の「条件をクリア」導線を再利用する（条件が既定のままなら差し出さない）。
+                      spec: EmptyStateSpec(
+                        title: '条件に合う感想がありません',
+                        actionLabel: _query.isDefault ? null : '条件をクリア',
+                        onAction: _query.isDefault
+                            ? null
+                            : () {
+                                _controller.clear();
+                                _updateQuery(const ReadingNoteQuery());
+                              },
+                      ),
+                    ),
                   )
                 : ListView.builder(
                     key: AppKeys.readingNoteList,

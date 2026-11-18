@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/testing/widget_keys.dart';
 import '../../../core/widgets/dungeon_background.dart';
+import '../../../core/widgets/empty_state.dart';
 import '../../../shared/providers/book_data_provider.dart';
 import '../domain/stagnation.dart';
 
@@ -133,21 +134,12 @@ class _StagnantBooksScreenState extends ConsumerState<StagnantBooksScreen> {
             const SizedBox(height: 4),
             Expanded(
               child: visible.isEmpty
-                  ? const Center(
-                      key: AppKeys.stagnantBooksEmpty,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text('⏳', style: TextStyle(fontSize: 40)),
-                          SizedBox(height: 12),
-                          Text(
-                            '停滞している本はありません',
-                            style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: AppTheme.textPrimary),
-                          ),
-                        ],
+                  ? Center(
+                      child: EmptyStateView(
+                        key: AppKeys.stagnantBooksEmpty,
+                        emoji: '⏳',
+                        emojiSize: 40,
+                        spec: EmptyStateSpec(title: '停滞している本はありません'),
                       ),
                     )
                   : ListView.builder(

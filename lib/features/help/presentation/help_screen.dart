@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:takamagahara_ui/takamagahara_ui.dart' hide AppKeys;
 
 import 'package:tsundoku_quest/core/testing/widget_keys.dart';
+import 'package:tsundoku_quest/core/widgets/empty_state.dart';
 import 'package:tsundoku_quest/features/help/domain/help_catalog.dart';
 import 'package:tsundoku_quest/features/help/domain/help_topic.dart';
 
@@ -60,10 +61,11 @@ class _HelpScreenState extends State<HelpScreen> {
           ),
           Expanded(
             child: hits.isEmpty
-                ? const Center(
-                    child: Text(
-                      '見つかりませんでした',
+                ? Center(
+                    child: EmptyStateView(
                       key: AppKeys.helpEmptyMessage,
+                      emoji: '🔍',
+                      spec: EmptyStateSpec(title: '見つかりませんでした'),
                     ),
                   )
                 : ListView(

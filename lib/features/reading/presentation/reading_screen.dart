@@ -9,6 +9,7 @@ import '../../../../core/constants/reading_tips.dart';
 import '../../../../core/haptics.dart';
 import '../../../../core/text/japanese_number.dart';
 import '../../../../core/widgets/dungeon_background.dart';
+import '../../../../core/widgets/empty_state.dart';
 import '../../../../shared/providers/book_data_provider.dart';
 import '../../../../shared/providers/adventurer_provider.dart';
 import '../../../../shared/providers/xp_calculator.dart';
@@ -648,9 +649,15 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
     if (book == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('読書中')),
-        body: const DungeonBackground(
+        body: DungeonBackground(
           screenType: ScreenType.reading,
-          child: Center(child: Text('本が見つかりません')),
+          child: Center(
+            child: EmptyStateView(
+              key: const Key('view_reading_empty'),
+              emoji: '📕',
+              spec: EmptyStateSpec(title: '本が見つかりません'),
+            ),
+          ),
         ),
       );
     }

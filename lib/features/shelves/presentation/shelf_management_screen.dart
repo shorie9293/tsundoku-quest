@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:takamagahara_ui/takamagahara_ui.dart' hide AppKeys;
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/dungeon_background.dart';
+import '../../../core/widgets/empty_state.dart';
 import '../../../domain/models/book_shelf.dart';
 import '../../../domain/models/user_book.dart';
 import '../../../shared/providers/book_data_provider.dart';
@@ -225,7 +226,7 @@ class _ShelfManagementScreenState extends ConsumerState<ShelfManagementScreen> {
                 testId: 'sec_shelves_empty',
                 label: '自作棚はまだありません',
                 explicitChildNodes: true,
-                child: const _EmptyState(),
+                child: _EmptyState(onCreate: _createShelf),
               )
             : SemanticHelper.container(
                 testId: 'list_shelves',
@@ -251,33 +252,23 @@ class _ShelfManagementScreenState extends ConsumerState<ShelfManagementScreen> {
 }
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState();
+  const _EmptyState({required this.onCreate});
+
+  /// 既存の AppBar「＋（棚を作る）」導線を空状態の次の一手として再利用する。
+  final VoidCallback onCreate;
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Padding(
-        padding: EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('🗂️', style: TextStyle(fontSize: 48)),
-            SizedBox(height: 16),
-            Text(
-              '自作棚はまだありません',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.textPrimary,
-              ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              '右上の ＋ から棚を作って、本をテーマ別に整理しましょう',
-              style: TextStyle(fontSize: 13, color: AppTheme.textSecondary),
-              textAlign: TextAlign.center,
-            ),
-          ],
+    return Center(
+      child: EmptyStateView(
+        key: const Key('view_shelf_management_empty'),
+        emoji: '🗂️',
+        actionKey: const Key('btn_shelf_management_empty_create'),
+        spec: EmptyStateSpec(
+          title: '自作棚はまだありません',
+          description: '右上の ＋ から棚を作って、本をテーマ別に整理しましょう',
+          actionLabel: '棚を作る',
+          onAction: onCreate,
         ),
       ),
     );

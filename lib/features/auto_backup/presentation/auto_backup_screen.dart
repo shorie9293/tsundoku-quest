@@ -7,6 +7,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:tsundoku_quest/core/testing/widget_keys.dart';
+import 'package:tsundoku_quest/core/widgets/empty_state.dart';
 import 'package:tsundoku_quest/features/auto_backup/data/auto_backup_status_store.dart';
 import 'package:tsundoku_quest/features/auto_backup/data/auto_backup_store.dart';
 import 'package:tsundoku_quest/features/auto_backup/domain/auto_backup_policy.dart';
@@ -338,9 +339,11 @@ class _AutoBackupScreenState extends State<AutoBackupScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'バックアップはまだありません',
-                key: ValueKey('auto_backup_empty'),
+              EmptyStateView(
+                key: const ValueKey('auto_backup_empty'),
+                emoji: '🗄️',
+                padding: EdgeInsets.zero,
+                spec: EmptyStateSpec(title: 'バックアップはまだありません'),
               ),
               if (_error != null) ...[
                 const SizedBox(height: 8),

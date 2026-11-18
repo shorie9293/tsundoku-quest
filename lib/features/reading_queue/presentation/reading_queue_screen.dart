@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:takamagahara_ui/takamagahara_ui.dart' hide AppKeys;
 import 'package:tsundoku_quest/core/testing/widget_keys.dart';
+import 'package:tsundoku_quest/core/widgets/empty_state.dart';
 import 'package:tsundoku_quest/domain/models/reading_queue_entry.dart';
 import 'package:tsundoku_quest/domain/models/user_book.dart';
 import 'package:tsundoku_quest/features/reading_queue/data/reading_queue_provider.dart';
@@ -49,10 +50,17 @@ class ReadingQueueScreen extends ConsumerWidget {
               SemanticHelper.container(
                 testId: 'txt_reading_queue_empty',
                 label: 'キューが空です',
-                child: const Padding(
+                child: EmptyStateView(
                   key: AppKeys.readingQueueEmpty,
-                  padding: EdgeInsets.all(16),
-                  child: Text('キューが空です。積読から本を追加しよう。'),
+                  emoji: '📖',
+                  padding: const EdgeInsets.all(16),
+                  actionKey: const Key('btn_reading_queue_empty_add'),
+                  // 既存の FAB（積読から追加）と同じ導線を空状態の次の一手として差し出す。
+                  spec: EmptyStateSpec(
+                    title: 'キューが空です。積読から本を追加しよう。',
+                    actionLabel: '積読から追加',
+                    onAction: () => _showAddSheet(context, ref, tsundokuBooks),
+                  ),
                 ),
               ),
             const Divider(height: 1),

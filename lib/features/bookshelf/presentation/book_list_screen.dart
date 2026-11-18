@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_theme.dart';
 import '../../../../core/testing/widget_keys.dart';
+import '../../../../core/widgets/empty_state.dart';
 import '../../../../domain/models/user_book.dart';
 import 'widgets/book_card.dart';
 import 'widgets/edit_book_modal.dart';
@@ -23,10 +23,10 @@ class BookListScreen extends StatelessWidget {
       key: AppKeys.bookListScreen,
       appBar: AppBar(title: Text('📋 $title')),
       body: books.isEmpty
-          ? const Center(
-              child: Text(
-                '表示する本がありません',
-                style: TextStyle(color: AppTheme.textSecondary),
+          ? Center(
+              child: EmptyStateView(
+                key: const Key('view_book_list_empty'),
+                spec: EmptyStateSpec(title: '表示する本がありません'),
               ),
             )
           : ListView.builder(

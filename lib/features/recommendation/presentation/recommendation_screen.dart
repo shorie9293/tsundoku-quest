@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/testing/widget_keys.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/dungeon_background.dart';
+import '../../../core/widgets/empty_state.dart';
 import '../../../domain/models/recommendation.dart';
 import '../../../domain/models/user_book.dart';
 import '../../../shared/providers/book_data_provider.dart';
@@ -124,17 +125,11 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen> {
             recommendations: _recommendations.skip(1).toList(),
           ),
         ] else ...[
-          const Padding(
-            padding: EdgeInsets.all(32),
-            child: Center(
-              child: Text(
-                '現在のおすすめはありません',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: AppTheme.textSecondary,
-                ),
-              ),
-            ),
+          EmptyStateView(
+            key: const Key('view_recommendation_empty'),
+            emoji: '📚',
+            padding: const EdgeInsets.all(32),
+            spec: EmptyStateSpec(title: '現在のおすすめはありません'),
           ),
         ],
         // もっと見るボタン
