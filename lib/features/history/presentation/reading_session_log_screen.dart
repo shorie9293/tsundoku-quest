@@ -301,6 +301,7 @@ class _SessionFormDialogState extends State<_SessionFormDialog> {
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
     );
+    if (!mounted) return;
     if (picked != null) {
       setState(() => _date = DateTime(picked.year, picked.month, picked.day));
     }

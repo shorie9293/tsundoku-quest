@@ -219,6 +219,7 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
           // セッションが24時間以内なら復元（それ以上は放置による不正な加算を防止）
           if (now.difference(savedStart).inHours < 24) {
             final additionalSeconds = now.difference(savedStart).inSeconds;
+            if (!mounted) return;
             setState(() {
               _elapsedSeconds = savedElapsed + additionalSeconds;
             });

@@ -98,6 +98,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
           mimeType: 'application/json',
           body: json,
         );
+        if (!mounted) return;
         setState(() {
           _lastCollected = data;
           _resultMessage =
@@ -105,6 +106,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
         });
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() => _resultMessage = '書き出しに失敗しました: $e');
     }
   }
@@ -131,6 +133,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
         preview = null;
       }
       final result = await _repository.restore(data);
+      if (!mounted) return;
       setState(() {
         final base =
             '復元しました（追加 蔵書${result.addedBooks}冊・セッション${result.addedSessions}回／スキップ 蔵書${result.skippedBooks}冊・セッション${result.skippedSessions}回）';
@@ -140,6 +143,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
         _importController.clear();
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => _resultMessage = '復元に失敗しました: $e');
     }
   }
@@ -147,6 +151,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
   Future<void> _collectSummary() async {
     try {
       final data = await _repository.collect();
+      if (!mounted) return;
       setState(() {
         _lastCollected = data;
         _resultMessage = null;
