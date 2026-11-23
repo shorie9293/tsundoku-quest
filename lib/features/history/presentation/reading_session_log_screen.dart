@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../../core/constants/input_limits.dart';
 import '../../../../core/testing/widget_keys.dart';
 import '../../../../core/text/japanese_number.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -388,6 +390,11 @@ class _SessionFormDialogState extends State<_SessionFormDialog> {
               key: AppKeys.readingSessionFormDuration,
               controller: _durationController,
               keyboardType: TextInputType.number,
+              inputFormatters: [
+                LengthLimitingTextInputFormatter(
+                  InputLimits.sessionMinutesDigits,
+                ),
+              ],
               decoration: const InputDecoration(labelText: '読書時間（分）'),
             ),
             const SizedBox(height: 8),
@@ -395,6 +402,9 @@ class _SessionFormDialogState extends State<_SessionFormDialog> {
               key: AppKeys.readingSessionFormStartPage,
               controller: _startPageController,
               keyboardType: TextInputType.number,
+              inputFormatters: [
+                LengthLimitingTextInputFormatter(InputLimits.pageNumberDigits),
+              ],
               decoration: const InputDecoration(labelText: '開始ページ'),
             ),
             const SizedBox(height: 8),
@@ -402,6 +412,9 @@ class _SessionFormDialogState extends State<_SessionFormDialog> {
               key: AppKeys.readingSessionFormEndPage,
               controller: _endPageController,
               keyboardType: TextInputType.number,
+              inputFormatters: [
+                LengthLimitingTextInputFormatter(InputLimits.pageNumberDigits),
+              ],
               decoration: const InputDecoration(labelText: '終了ページ（任意）'),
             ),
             if (_errorText != null) ...[

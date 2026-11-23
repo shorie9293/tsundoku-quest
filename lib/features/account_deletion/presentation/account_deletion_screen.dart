@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'package:takamagahara_ui/takamagahara_ui.dart' hide AppKeys;
 
+import 'package:tsundoku_quest/core/constants/input_limits.dart';
 import 'package:tsundoku_quest/features/account_deletion/domain/account_deletion_policy.dart';
 import 'package:tsundoku_quest/features/account_deletion/domain/account_deletion_service.dart';
 import 'package:tsundoku_quest/features/account_deletion/presentation/account_deletion_app_keys.dart';
@@ -200,6 +202,11 @@ class _ConfirmationDialogState extends State<_ConfirmationDialog> {
             key: AccountDeletionAppKeys.confirmField,
             controller: _controller,
             autofocus: true,
+            inputFormatters: [
+              LengthLimitingTextInputFormatter(
+                InputLimits.accountDeletionConfirm,
+              ),
+            ],
             decoration: InputDecoration(
               border: const OutlineInputBorder(),
               labelText: '確認文字',

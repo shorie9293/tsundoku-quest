@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tsundoku_quest/core/constants/input_limits.dart';
 import 'package:tsundoku_quest/core/theme/app_theme.dart';
 import 'package:tsundoku_quest/core/testing/widget_keys.dart';
 import 'package:tsundoku_quest/core/text/japanese_number.dart';
@@ -197,6 +199,11 @@ class _ReadingGoalScreenState extends ConsumerState<ReadingGoalScreen> {
             key: AppKeys.readingGoalMonthlyField,
             controller: _monthlyController,
             keyboardType: TextInputType.number,
+            inputFormatters: [
+              LengthLimitingTextInputFormatter(
+                InputLimits.readingGoalBooksDigits,
+              ),
+            ],
             decoration: const InputDecoration(
               labelText: '月間の読了目標（冊）',
               hintText: '例: 2',
@@ -207,6 +214,11 @@ class _ReadingGoalScreenState extends ConsumerState<ReadingGoalScreen> {
             key: AppKeys.readingGoalYearlyField,
             controller: _yearlyController,
             keyboardType: TextInputType.number,
+            inputFormatters: [
+              LengthLimitingTextInputFormatter(
+                InputLimits.readingGoalBooksDigits,
+              ),
+            ],
             decoration: const InputDecoration(
               labelText: '年間の読了目標（冊）',
               hintText: '例: 24',

@@ -1,9 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/constants/input_limits.dart';
 import '../../../core/search/search_history.dart';
 import '../../../core/search/search_history_chips.dart';
 import '../../../core/search/search_history_store.dart';
@@ -224,6 +226,9 @@ class _LibrarySearchScreenState extends ConsumerState<LibrarySearchScreen> {
               child: TextField(
                 key: AppKeys.librarySearchField,
                 controller: _textController,
+                inputFormatters: [
+                  LengthLimitingTextInputFormatter(InputLimits.searchQuery),
+                ],
                 onChanged: _updateText,
                 onSubmitted: (value) {
                   _userTouched = true;

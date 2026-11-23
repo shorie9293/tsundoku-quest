@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/constants/input_limits.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/testing/widget_keys.dart';
 import '../../../core/widgets/dungeon_background.dart';
@@ -104,6 +106,9 @@ class _StagnantBooksScreenState extends ConsumerState<StagnantBooksScreen> {
               child: TextField(
                 key: AppKeys.stagnantBooksSearchField,
                 controller: _textController,
+                inputFormatters: [
+                  LengthLimitingTextInputFormatter(InputLimits.searchQuery),
+                ],
                 onChanged: (_) => setState(() {}),
                 decoration: InputDecoration(
                   hintText: '書名・著者で検索',

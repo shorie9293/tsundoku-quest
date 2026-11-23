@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:takamagahara_ui/takamagahara_ui.dart' hide AppKeys;
 
+import 'package:tsundoku_quest/core/constants/input_limits.dart';
 import 'package:tsundoku_quest/core/testing/widget_keys.dart';
 import 'package:tsundoku_quest/core/widgets/empty_state.dart';
 import 'package:tsundoku_quest/features/help/domain/help_catalog.dart';
@@ -48,6 +50,9 @@ class _HelpScreenState extends State<HelpScreen> {
               child: TextField(
                 key: AppKeys.helpSearchField,
                 controller: _controller,
+                inputFormatters: [
+                  LengthLimitingTextInputFormatter(InputLimits.searchQuery),
+                ],
                 onChanged: (value) => setState(() => _query = value),
                 textInputAction: TextInputAction.search,
                 decoration: const InputDecoration(

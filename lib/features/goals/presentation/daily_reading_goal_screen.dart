@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:takamagahara_ui/takamagahara_ui.dart' hide AppKeys;
 
+import 'package:tsundoku_quest/core/constants/input_limits.dart';
 import 'package:tsundoku_quest/core/testing/widget_keys.dart';
 import 'package:tsundoku_quest/core/text/japanese_number.dart';
 import 'package:tsundoku_quest/domain/models/reading_session.dart';
@@ -267,6 +269,11 @@ class _DailyReadingGoalScreenState
                     key: AppKeys.dailyReadingGoalTargetField,
                     controller: _targetController,
                     keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      LengthLimitingTextInputFormatter(
+                        InputLimits.dailyGoalMinutesDigits,
+                      ),
+                    ],
                     decoration: const InputDecoration(
                       labelText: '1日の目標（分）',
                       border: OutlineInputBorder(),

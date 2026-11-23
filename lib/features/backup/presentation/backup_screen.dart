@@ -7,12 +7,13 @@
 library;
 
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
+import 'package:tsundoku_quest/core/constants/input_limits.dart';
 import 'package:tsundoku_quest/features/auto_backup/domain/restore_preview.dart';
 import 'package:tsundoku_quest/features/backup/data/backup_repository.dart';
 import 'package:tsundoku_quest/features/backup/domain/backup_csv.dart';
@@ -231,6 +232,13 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                     key: BackupKeys.importField,
                     controller: _importController,
                     maxLines: 6,
+                    // バックアップJSON全体を受ける欄。上限は十分大きく取り、
+                    // 切り詰めで復元不能にならないようにする。
+                    inputFormatters: [
+                      LengthLimitingTextInputFormatter(
+                        InputLimits.backupJsonImport,
+                      ),
+                    ],
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
                       hintText: '{"tsundoku_quest_backup": true, ...}',

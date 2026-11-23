@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/constants/input_limits.dart';
 import '../../../../core/search/search_history.dart';
 import '../../../../core/search/search_history_chips.dart';
 import '../../../../core/search/search_history_store.dart';
@@ -179,6 +181,9 @@ class _ReadingNoteSearchScreenState
                   child: TextField(
                     key: AppKeys.readingNoteSearchField,
                     controller: _controller,
+                    inputFormatters: [
+                      LengthLimitingTextInputFormatter(InputLimits.searchQuery),
+                    ],
                     decoration: const InputDecoration(
                       hintText: '本文・書籍名で検索',
                       prefixIcon: Icon(Icons.search),

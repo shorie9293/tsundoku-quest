@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'dart:io';
 import 'dart:async';
+import '../../../core/constants/input_limits.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/testing/widget_keys.dart';
 import '../../../core/widgets/dungeon_background.dart';
@@ -241,6 +243,9 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
           TextField(
             key: AppKeys.searchField,
             controller: _searchController,
+            inputFormatters: [
+              LengthLimitingTextInputFormatter(InputLimits.searchQuery),
+            ],
             decoration: const InputDecoration(
               hintText: 'タイトルまたはISBNで検索',
               prefixIcon: Icon(Icons.search),
@@ -366,6 +371,9 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
           TextField(
             key: AppKeys.manualTitleField,
             controller: _titleController,
+            inputFormatters: [
+              LengthLimitingTextInputFormatter(InputLimits.bookTitle),
+            ],
             decoration:
                 const InputDecoration(hintText: 'タイトル *', labelText: 'タイトル'),
           ),
@@ -373,6 +381,9 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
           TextField(
             key: AppKeys.manualAuthorField,
             controller: _authorController,
+            inputFormatters: [
+              LengthLimitingTextInputFormatter(InputLimits.bookAuthor),
+            ],
             decoration:
                 const InputDecoration(hintText: '著者 (カンマ区切り)', labelText: '著者'),
           ),
@@ -380,6 +391,9 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
           TextField(
             key: AppKeys.manualIsbnField,
             controller: _isbnController,
+            inputFormatters: [
+              LengthLimitingTextInputFormatter(InputLimits.isbn),
+            ],
             decoration:
                 const InputDecoration(hintText: 'ISBN', labelText: 'ISBN'),
           ),

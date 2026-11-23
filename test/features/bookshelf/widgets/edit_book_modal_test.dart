@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tsundoku_quest/core/constants/input_limits.dart';
 import 'package:tsundoku_quest/core/testing/widget_keys.dart';
 import 'package:tsundoku_quest/core/theme/app_theme.dart';
 import 'package:tsundoku_quest/domain/models/book.dart';
 import 'package:tsundoku_quest/domain/models/user_book.dart';
 import 'package:tsundoku_quest/shared/providers/book_data_provider.dart';
 import 'package:tsundoku_quest/features/bookshelf/presentation/widgets/edit_book_modal.dart';
+import 'package:tsundoku_quest/features/reading/domain/quick_memo.dart';
 import 'package:hive/hive.dart';
 import 'dart:io';
 
@@ -266,6 +268,52 @@ void main() {
       await pumpModal(tester, book: book);
 
       expect(find.text('既存のメモ'), findsOneWidget);
+    });
+
+    // ── 長さ上限（切り捨て・破損の防止）─────────────────────────
+    testWidgets('上限超過の長文を保存すると先頭2000文字が保持され、再読込で欠損しない',
+        (tester) async {
+      await pumpModal(tester);
+
+      // 上限（2000）を大きく超える 5001 文字を入力する
+      final filler = List.generate(
+        5000,
+        (i) => String.fromCharCode(0x3042 + (i % 40)),
+      ).join();
+      final overLimit = '先頭$filler';
+
+      await tester.enterText(find.byType(TextField), overLimit);
+      await tester.pumpAndSettle();
+
+      // 入力段階で上限に切り詰められている（例外なし）
+      expect(tester.takeException(), isNull);
+
+      await tester.tap(find.text('保存'));
+      await tester.pumpAndSettle();
+
+      final saved = mockNotifier.lastUpdatedNotes;
+      expect(saved, isNotNull);
+      expect(saved!.length, InputLimits.bookNotes);
+      expect(saved, overLimit.substring(0, InputLimits.bookNotes));
+      expect(saved.startsWith('先頭'), isTrue);
+      expect(tester.takeException(), isNull);
+
+      // 保存済みメモを持つ本として再読込 → 先頭N文字がそのまま復元される
+      await tester.pumpWidget(const SizedBox.shrink());
+      await pumpModal(tester, book: _testUserBook(notes: saved));
+
+      expect(find.text(saved), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    test('入力上限は保存先ドメインの上限と整合する', () {
+      // クイックメモは QuickMemoDraft の切り詰め長と一致させる（無言の欠損防止）
+      expect(InputLimits.quickMemo, QuickMemoDraft.maxLength);
+      // バックアップJSONは全体を受けるに足る大きさ
+      expect(InputLimits.backupJsonImport, greaterThanOrEqualTo(100000));
+      // 確認語は照合定数より十分長い
+      expect(InputLimits.accountDeletionConfirm, greaterThan(2));
+      expect(InputLimits.appLockRecoveryConfirm, greaterThan(3));
     });
   });
 }

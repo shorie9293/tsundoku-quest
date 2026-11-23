@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/testing/widget_keys.dart';
+import '../../../../core/constants/input_limits.dart';
 import '../../../../core/constants/reading_tips.dart';
 import '../../../../core/haptics.dart';
 import '../../../../core/text/japanese_number.dart';
@@ -841,6 +843,11 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
                   key: AppKeys.readingPageInput,
                   controller: _pageController,
                   keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    LengthLimitingTextInputFormatter(
+                      InputLimits.pageNumberDigits,
+                    ),
+                  ],
                   decoration: InputDecoration(
                     hintText: '${book.currentPage}',
                     suffixText: '/ ${book.book?.pageCount ?? "?"}',
@@ -857,6 +864,10 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
             key: AppKeys.readingMemo,
             controller: _memoController,
             onChanged: _onMemoChanged,
+            // 保存先ドメイン（QuickMemoDraft.maxLength）と同一上限。
+            inputFormatters: [
+              LengthLimitingTextInputFormatter(InputLimits.quickMemo),
+            ],
             decoration:
                 const InputDecoration(hintText: 'メモ...', labelText: 'クイックメモ'),
             maxLines: 2,
@@ -924,18 +935,29 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
                         AppKeys.trophyLearning3
                       ][i],
                       controller: _learningControllers[i],
+                      inputFormatters: [
+                        LengthLimitingTextInputFormatter(
+                          InputLimits.trophyEntry,
+                        ),
+                      ],
                       decoration: InputDecoration(hintText: '学び ${i + 1}'),
                     ),
                   )),
           TextField(
             key: AppKeys.trophyAction,
             controller: _actionController,
+            inputFormatters: [
+              LengthLimitingTextInputFormatter(InputLimits.trophyEntry),
+            ],
             decoration: const InputDecoration(hintText: 'これから取る1つの行動'),
           ),
           const SizedBox(height: 8),
           TextField(
             key: AppKeys.trophyQuote,
             controller: _quoteController,
+            inputFormatters: [
+              LengthLimitingTextInputFormatter(InputLimits.trophyEntry),
+            ],
             decoration: const InputDecoration(hintText: 'お気に入りの一文 (任意)'),
           ),
           const SizedBox(height: 16),

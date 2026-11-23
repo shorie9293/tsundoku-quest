@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../../core/constants/input_limits.dart';
 import '../../../../../core/theme/app_theme.dart';
 import '../../../../../core/testing/widget_keys.dart';
 import '../../../../../domain/models/user_book.dart';
@@ -286,6 +288,11 @@ class _EditBookModalState extends ConsumerState<EditBookModal> {
                       child: TextField(
                         controller: _notesController,
                         maxLines: 3,
+                        inputFormatters: [
+                          LengthLimitingTextInputFormatter(
+                            InputLimits.bookNotes,
+                          ),
+                        ],
                         style: const TextStyle(color: AppTheme.textPrimary),
                         decoration: InputDecoration(
                           hintText: '読書メモを入力…',

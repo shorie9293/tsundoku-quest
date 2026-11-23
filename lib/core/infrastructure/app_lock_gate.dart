@@ -9,6 +9,7 @@ import '../../features/account_deletion/data/hive_account_deletion_data_eraser.d
 import '../../features/auto_backup/data/auto_backup_store.dart';
 import '../../features/auto_backup/domain/auto_backup_policy.dart';
 import '../../features/backup/data/backup_repository.dart';
+import '../constants/input_limits.dart';
 import '../testing/widget_keys.dart';
 import 'app_lock_recovery_policy.dart';
 import 'app_lock_repository.dart';
@@ -301,6 +302,11 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
                         key: AppKeys.appLockRecoveryConfirmField,
                         controller: _confirmController,
                         enabled: !_recovering,
+                        inputFormatters: [
+                          LengthLimitingTextInputFormatter(
+                            InputLimits.appLockRecoveryConfirm,
+                          ),
+                        ],
                         decoration: InputDecoration(
                           labelText: '確認のため「'
                               '${LockRecoveryPolicy.confirmationPhrase}」と入力',
