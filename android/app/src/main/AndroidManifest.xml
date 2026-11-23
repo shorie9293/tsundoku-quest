@@ -35,19 +35,19 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
-            <!-- Deep link: app://cross-reward?source=<送客元>&reward=<報酬タイプ> -->
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW"/>
-                <category android:name="android.intent.category.DEFAULT"/>
-                <category android:name="android.intent.category.BROWSABLE"/>
-                <data android:scheme="app" android:host="cross-reward"/>
-            </intent-filter>
             <!-- Deep link: app://open（送客元アプリからのホーム起動導線） -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="app" android:host="open"/>
+            </intent-filter>
+            <!-- Deep link: app://tsundoku（現世を指定した送客導線） -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="app" android:host="tsundoku"/>
             </intent-filter>
         </activity>
         <meta-data
