@@ -62,6 +62,7 @@ import 'features/history/data/weekly_reading_provider.dart';
 import 'features/goals/data/reading_goal_provider.dart';
 import 'features/bookshelf/data/daily_mission_provider.dart';
 import 'package:tsundoku_quest/core/logging/app_logger.dart';
+import 'package:tsundoku_quest/core/text_scale_composition.dart';
 
 /// アプリ完全終了状態から起動した場合の初期ディープリンクを保持
 Uri? _pendingInitialDeepLink;
@@ -546,7 +547,7 @@ class _TsundokuQuestAppState extends ConsumerState<TsundokuQuestApp> {
         return MediaQuery(
           data: applyReduceMotion(
             MediaQuery.of(context).copyWith(
-              textScaler: TextScaler.linear(textScale),
+              textScaler: composeWithSystemTextScaler(context, textScale),
             ),
             reduceMotion,
           ),
